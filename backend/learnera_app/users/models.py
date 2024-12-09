@@ -26,5 +26,7 @@ class CustomUser(AbstractUser):
     is_student = models.BooleanField(default=False)
     is_parent = models.BooleanField(default=False)
     
+    
+    
     def __str__(self):
         return self.username
