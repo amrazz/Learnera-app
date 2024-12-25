@@ -19,3 +19,10 @@ class SchoolAdmin(models.Model):
         return f"name : {self.user.username} - {self.school_name}"
 
 
+
+class AdmissionNumber(models.Model):
+    key = models.CharField(max_length=50, unique=True)
+    value = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f"{self.key}: {self.value}"

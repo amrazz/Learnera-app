@@ -31,15 +31,10 @@ const Hero = () => {
             <br /> Integrated Solutions
           </p>
         </div>
-        <div className="flex flex-wrap animate-fade animate-delay-300 justify-center items-center py-10 space-y-4 md:space-y-0 md:space-x-10">
-          <div className="flex gap-10 flex-wrap items-center">
-            <CustomButton title="I'm a School" />
+        <div className="flex flex-col md:flex-row gap-3 animate-fade animate-delay-300 justify-center items-center py-10 md:space-y-0 md:space-x-10">
             <CustomButton title="I'm a Student" />
-          </div>
-          <div className="flex gap-10 flex-wrap items-center">
             <CustomButton title="I'm a Tutor" />
             <CustomButton title="I'm a Parent" />
-          </div>
         </div>
       </div>
     </section>

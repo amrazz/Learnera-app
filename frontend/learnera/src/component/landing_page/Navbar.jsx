@@ -5,14 +5,21 @@ import {
   menu,
   hoveredLogo,
 } from "../../assets/landing_page/index";
-import { navLinks } from "./constants";
-import { Link } from "react-router-dom";
+import { navLinks, navLinks2 } from "./constants";
+import { Link, useNavigate } from "react-router-dom";
 
 const Navbar = ({scrollToSection, aboutRef,}) => {
   const [active, setActive] = useState("");
   const [toggle, setToggle] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+
+  const navigate = useNavigate();
+
+  const handleSignInClick = () => {
+    navigate("/login"); // Use navigate here
+  };
+
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 50) {
@@ -26,6 +33,7 @@ const Navbar = ({scrollToSection, aboutRef,}) => {
       window.removeEventListener("scroll", handleScroll);
     };
   }, []);
+
   return (
     <nav
       className={`w-full z-20 sticky top-0 duration-200 ease-in-out opacity-95 transition-all ${
@@ -72,7 +80,7 @@ const Navbar = ({scrollToSection, aboutRef,}) => {
           ))}
         </ul>
 
-        <div className="relative inline-block px-5 py-3 font-medium group max-sm:hidden">
+        <div className="relative cursor-pointer inline-block px-5 py-3 font-medium group max-sm:hidden" onClick={handleSignInClick}>
           <span className="absolute inset-0 w-full h-full transition duration-200 ease-out transform translate-x-1 translate-y-1 bg-black group-hover:-translate-x-0 group-hover:-translate-y-0"></span>
           <span className="absolute inset-0 w-full h-full bg-white border-2 border-black group-hover:bg-black"></span>
           <span className="relative text-black font-montserrat group-hover:text-white">
@@ -97,7 +105,7 @@ const Navbar = ({scrollToSection, aboutRef,}) => {
         } sm:hidden absolute right-0 top-20 bg-gradient-to-tr from-gray-800 via-black to-gray-600 px-10 rounded-md py-4 mr-20`}
       >
         <ul className="list-none flex flex-col text-center gap-4">
-          {navLinks.map((link) => (
+          {navLinks2.map((link) => (
             <li
               key={link.id}
               className={`${
@@ -106,6 +114,9 @@ const Navbar = ({scrollToSection, aboutRef,}) => {
               onClick={() => {
                 setActive(link.name);
                 setToggle(false);
+              if(link.name === 'Sign In') {
+                  handleSignInClick();
+                }
               }}
             >
               {link.name}

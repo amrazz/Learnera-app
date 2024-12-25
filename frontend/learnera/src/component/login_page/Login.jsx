@@ -1,87 +1,241 @@
-import React, { useState } from "react";
-import { CustomButton } from "../landing_page/CustomBtn";
+import React, { useCallback, useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { Formik, Form, Field, ErrorMessage } from "formik";
+import * as Yup from "yup";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { login_image } from "../../assets/landing_page";
+import { login, schooladmin_login } from "../../redux/features/auth/actions";
+import { useNavigate } from "react-router-dom";
+import { Eye, EyeOff, LogIn } from "lucide-react";
+import { PropagateLoader } from "react-spinners";
+import { ACCESS_TOKEN, REFRESH_TOKEN } from "../../constants";
+
+const LoginSchema = Yup.object().shape({
+  username: Yup.string()
+    .required("Username is required")
+    .min(3, "Username must be at least 3 characters"),
+  password: Yup.string().required("Password is required"),
+  // .min(6, "Password must be at least 6 characters"),
+  role: Yup.string().required("Role is required"),
+});
 
 const Login = () => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
+
+  const { status, error, Role, isAuthenticated } = useSelector(
+    (state) => state.auth
+  );
+
+  useEffect(() => {
+    const currentPath = window.location.pathname;
+    if (currentPath === '/login') {
+        localStorage.removeItem(ACCESS_TOKEN);
+        localStorage.removeItem(REFRESH_TOKEN);
+    }
+}, []);
+
+useEffect(() => {
+    if (isAuthenticated && Role) {
+        const routes = {
+            school_admin: "/admin_dashboard",
+            teacher: "/teacher_dashboard",
+            student: "/student_dashboard",
+            parent: "/parent_dashboard"
+        };
+
+        const targetRoute = routes[Role];
+        if (targetRoute) {
+            navigate(targetRoute);
+        }
+    }
+}, [isAuthenticated, Role, navigate]);
+
+  const toggleShowPassword = useCallback(() => {
+    setShowPassword((prev) => !prev);
+  }, []);
+
+  const handleSubmit = async (values, { setSubmitting }) => {
+    try {
+      const roleMapping = {
+        student: "is_student",
+        teacher: "is_teacher",
+        parent: "is_parent",
+        school_admin: "school_admin",
+      };
+
+      const credentials = {
+        username: values.username,
+        password: values.password,
+        role: roleMapping[values.role] || values.role,
+      };
+
+      const action = values.role === "school_admin" ? schooladmin_login : login;
+
+      await dispatch(action(credentials)).unwrap();
+      toast.success("Login successful!");
+    } catch (err) {
+      toast.error(err?.message || "An error occurred. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gradient-to-tr from-blue-500 via-purple-500 to-pink-500 ">
-      <div
-        className="bg-white w-full max-w-5xl p-4 md:p-6 m-5 rounded-2xl flex flex-col md:flex-row shadow-lg overflow-hidden"
-        style={{ height: "90vh" }}
-      >
-        <div className="flex flex-col w-full md:w-1/2 p-4 md:p-8">
-          <h1 className="text-center md:text-start text-3xl md:text-4xl font-bold font-montserrat">
-            Hello, <br /> Welcome Back
-          </h1>
-          <p className="text-center md:text-start font-montserrat mb-6 text-gray-800 leading-relaxed">
-            Welcome Back to the real world
-          </p>
-          <form className="flex flex-col space-y-4 font-montserrat w-full">
+    <div className="flex justify-center items-center min-h-screen bg-gradient-to-tr from-blue-500 via-purple-500 to-pink-500 p-4 w-full h-screen">
+      <ToastContainer />
+      <div className="bg-white w-full max-w-5xl h-[90vh] max-h-[900px] rounded-2xl flex flex-col md:flex-row shadow-2xl">
+        <div className="w-full md:w-1/2 p-4 md:p-8 flex flex-col justify-center">
+          <div className="max-w-md w-full mx-auto space-y-6">
             <div>
-              <label htmlFor="username" className="block mb-1 text-gray-500">
-                Username
-              </label>
-              <input
-                id="username"
-                className="w-full px-4 py-2 border rounded-lg border-gray-300 shadow-md tracking-widest"
-                type="text"
-                placeholder="Enter your username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-              />
+              <h1 className="text-3xl md:text-4xl font-bold text-center md:text-left mb-2 text-gray-800">
+                Welcome Back
+              </h1>
+              <p className="text-gray-600 text-center md:text-left mb-6">
+                Sign in to access your dashboard
+              </p>
             </div>
-            <div>
-              <label htmlFor="password" className="block mb-1 text-gray-500">
-                Password
-              </label>
-              <input
-                id="password"
-                className="w-full px-4 py-2 border rounded-lg border-gray-300 shadow-md tracking-widest"
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-            <div className="flex justify-between items-center text-sm">
-              <label className="flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="form-checkbox text-purple-600 cursor-pointer"
-                />
-                <span className="ml-2">Remember me</span>
-              </label>
-              <a
-                href="#"
-                aria-label="Forgot Password"
-                className="text-purple-600 hover:underline"
-              >
-                Forgot Password?
-              </a>
-            </div>
-            <div className="flex justify-center">
-              <CustomButton title="Sign In" aria-label="Sign In" />
-            </div>
-          </form>
-          <p className="mt-6 text-sm text-center">
-            Don't have an account?
-            <a
-              href="#"
-              aria-label="Sign Up"
-              className="text-purple-600 hover:underline"
+
+            <Formik
+              initialValues={{
+                username: "",
+                password: "",
+                role: "student",
+              }}
+              validationSchema={LoginSchema}
+              onSubmit={handleSubmit}
             >
-              Sign Up
-            </a>
-          </p>
+              {({ isSubmitting, errors, touched }) => (
+                <Form className="space-y-4 m-5">
+                  <div>
+                    <label
+                      htmlFor="role"
+                      className="block mb-2 text-sm font-medium text-gray-700"
+                    >
+                      Select Role
+                    </label>
+                    <Field
+                      as="select"
+                      name="role"
+                      className={`w-full px-4 py-2 border rounded-lg transition duration-300 ${
+                        touched.role && errors.role
+                          ? "border-red-500 ring-2 ring-red-200"
+                          : "border-gray-300 hover:border-blue-500"
+                      }`}
+                    >
+                      <option value="student">Student</option>
+                      <option value="teacher">Teacher</option>
+                      <option value="school_admin">School Admin</option>
+                      <option value="parent">Parent</option>
+                    </Field>
+                    <ErrorMessage
+                      name="role"
+                      component="div"
+                      className="text-red-500 text-sm mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="username"
+                      className="block mb-2 text-sm font-medium text-gray-700"
+                    >
+                      Username
+                    </label>
+                    <Field
+                      type="text"
+                      name="username"
+                      className={`w-full px-4 py-2 border rounded-lg transition duration-300 ${
+                        touched.username && errors.username
+                          ? "border-red-500 ring-2 ring-red-200"
+                          : "border-gray-300 hover:border-blue-500"
+                      }`}
+                      placeholder="Enter your username"
+                    />
+                    <ErrorMessage
+                      name="username"
+                      component="div"
+                      className="text-red-500 text-sm mt-1"
+                    />
+                  </div>
+
+                  <div className="relative">
+                    <label
+                      htmlFor="password"
+                      className="block mb-2 text-sm font-medium text-gray-700"
+                    >
+                      Password
+                    </label>
+                    <div className="relative">
+                      <Field
+                        type={showPassword ? "text" : "password"}
+                        name="password"
+                        className={`w-full px-4 py-2 border rounded-lg pr-10 transition duration-300 ${
+                          touched.password && errors.password
+                            ? "border-red-500 ring-2 ring-red-200"
+                            : "border-gray-300 hover:border-blue-500"
+                        }`}
+                        placeholder="Enter your password"
+                      />
+                      <button
+                        type="button"
+                        onClick={toggleShowPassword}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 focus:outline-none"
+                      >
+                        {showPassword ? (
+                          <EyeOff size={20} />
+                        ) : (
+                          <Eye size={20} />
+                        )}
+                      </button>
+                    </div>
+                    <ErrorMessage
+                      name="password"
+                      component="div"
+                      className="text-red-500 text-sm mt-1"
+                    />
+                  </div>
+
+                  {/* Submit Button */}
+                  <div className="pt-4">
+                    <button
+                      type="submit"
+                      disabled={isSubmitting || status === "loading"}
+                      className="flex items-center justify-center w-full py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition duration-300 disabled:opacity-50"
+                    >
+                      {status === "loading" ? (
+                        <PropagateLoader
+                          color="white"
+                          className="mr-2 my-4 flex items-center"
+                        />
+                      ) : (
+                        "Sign In"
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Error Message */}
+                  {error && (
+                    <div className="text-red-500 text-center mt-4">
+                      {error.error === "Login Failed"
+                        ? "Invalid username or password"
+                        : "Authentication Failed"}
+                    </div>
+                  )}
+                </Form>
+              )}
+            </Formik>
+          </div>
         </div>
-        <div className="hidden md:flex w-full md:w-1/2 justify-center items-center">
+
+        {/* Right Side - Illustration */}
+        <div className="hidden md:flex w-1/2 bg-gradient-to-br from-blue-100 rounded-2xl to-purple-100 justify-center items-center p-4 lg:p-8">
           <img
             src={login_image}
             alt="Login illustration"
-            className="max-h-[112%] max-w-full object-contain"
+            className="max-h-full max-w-full object-contain hover:scale-110 transition-all duration-300 ease-in-out"
           />
         </div>
       </div>
