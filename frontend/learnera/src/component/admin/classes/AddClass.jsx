@@ -7,9 +7,8 @@ import "react-toastify/dist/ReactToastify.css";
 import { Navigate, useNavigate } from "react-router-dom";
 
 const AddClass = () => {
-
   const [teachers, setTeachers] = useState([]);
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const validationSchema = Yup.object({
     class_name: Yup.string()
@@ -25,53 +24,31 @@ const AddClass = () => {
       .integer("Student Count must be an integer"),
   });
 
-  const handleSubmit = async (values, {resetForm}) => {
-
+  const handleSubmit = async (values, { resetForm }) => {
     try {
       const response = await api.post("school_admin/add_class/", values);
-      console.log(`this is the class create response ${response.data}`);
 
       if (response.status === 201) {
         toast.success("New Class Created Successfully!", {
           position: "top-right",
           autoClose: 3000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: "light",
         });
         resetForm();
-
-        setTimeout(() => {
-          navigate('/admin_dashboard/show_class')
-        }, 3000);
-      } else {
-        toast.error("Failed to create class. Please try again.");
+        setTimeout(() => navigate("/admin_dashboard/show_class"), 1000);
       }
     } catch (error) {
       const errorData = error?.response?.data;
       let errorMessage = "An unexpected error occurred! Please try again.";
 
       if (errorData && typeof errorData === "object") {
-        errorMessage = Object.entries(errorData)
-          .map(
-            ([field, messages]) =>
-              `${field}: ${messages.map((msg) => msg.string).join(", ")}`
-          )
-          .join("\n");
+        errorMessage = Object.values(errorData).flat().join(", ");
+      } else if (typeof errorData === "string") {
+        errorMessage = errorData;
       }
 
       toast.error(errorMessage, {
         position: "top-right",
         autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "light",
       });
     }
   };

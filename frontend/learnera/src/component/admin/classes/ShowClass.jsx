@@ -1,18 +1,35 @@
 import React, { useEffect, useState } from "react";
 import api from "../../../api";
 import { Pencil, Plus, Search, Trash2, Users } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import Modal from "../Modal";
 
 const ShowClass = () => {
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedSection, setSelectedSection] = useState(null);
+  const [selectedClass, setSelectedClass] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showBlockModal, setShowBlockModal] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchClass = async () => {
       try {
         const response = await api.get("school_admin/classes");
         if (response) {
-          setClasses(response.data);
+          const sortedData = response.data.sort((a, b) => {
+            a.class_name.localeCompare(b.class_name)
+
+          })
+
+          sortedData.forEach((cls) => {
+            cls.sections.sort((a, b) =>
+              a.section_name.localeCompare(b.section_name)
+            );
+          });
+          setClasses(sortedData);
           console.log(`classes ${response.data}`);
         }
       } catch (error) {
@@ -27,15 +44,55 @@ const ShowClass = () => {
   const filteredClasses = classes.filter((cls) =>
     cls.class_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  
+
+  const handleDeleteClick = (classId, sectionId) => {
+    setSelectedClass(classId);
+    setSelectedSection(sectionId);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    try {
+      const response = await api.delete(
+        `school_admin/class/${selectedClass}/section/${selectedSection}/`
+      );
+      if (response.status === 204) {
+        setClasses((prevClasses) =>
+          prevClasses.map((cls) =>
+            cls.id === selectedClass
+              ? {
+                  ...cls,
+                  sections: cls.sections.filter(
+                    (sec) => sec.id !== selectedSection
+                  ),
+                }
+              : cls
+          )
+        );
+        setShowDeleteModal(false);
+      }
+    } catch (error) {
+      console.error("Error deleting section:", error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-8">
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Section"
+        message="Are you sure you want to delete this section? This action cannot be undone."
+        confirmButtonClass="bg-red-500"
+        confirmText="Delete"
+      />
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl font-bold text-gray-800">Class Management</h1>
           <button
             onClick={() => {
-              /* Navigate to add class */
+              navigate("/admin_dashboard/add_class");
             }}
             className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
           >
@@ -71,42 +128,50 @@ const ShowClass = () => {
               className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
             >
               <div className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-xl font-semibold text-gray-800">
-                      Class {cls.class_name}
-                    </h3>
-                  
-                  </div>
-                  <div className="flex gap-2">
-                    <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-full">
-                      <Pencil size={18} />
-                    </button>
-                    <button className="p-2 text-red-600 hover:bg-red-50 rounded-full">
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
+                <div className="mb-4">
+                  <h3 className="text-xl font-semibold text-gray-800">
+                    Class {cls.class_name}
+                  </h3>
                 </div>
 
                 <div className="space-y-3">
                   <div>
                     <h4 className="font-medium text-gray-700 mb-2">Sections</h4>
                     <div className="flex overflow-x-auto gap-4 p-4 bg-blue-50 rounded-lg">
-  {cls.sections.map((section) => (
-    <div
-      key={section.id}
-      className="flex-shrink-0 w-40 p-4 bg-white shadow rounded-lg text-center"
-    >
-      <h3 className="text-blue-700 font-semibold">
-        Section {section.section_name}
-      </h3>
-      <div className="flex items-center justify-center gap-2 text-gray-600 mt-2">
-        <Users size={16} /> {section.student_count}
-      </div>
-    </div>
-  ))}
-</div>
+                      {cls.sections.map((section) => (
+                        <div
+                          key={section.id}
+                          className="flex-shrink-0 w-40 p-4 bg-white shadow rounded-lg text-center"
+                        >
+                          <div className=" flex justify-between">
+                            {/* Edit Button */}
+                            <Link
+                              to={`/admin_dashboard/edit_class/${cls.id}/${section.id}`}
+                            >
+                              <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-full">
+                                <Pencil size={18} />
+                              </button>
+                            </Link>
 
+                            {/* Delete Button */}
+                            <button
+                              onClick={() =>
+                                handleDeleteClick(cls.id, section.id)
+                              }
+                              className="p-2 text-red-600 hover:bg-red-50 rounded-full"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
+                          <h3 className="text-blue-700 font-semibold">
+                            Section {section.section_name}
+                          </h3>
+                          <div className="flex items-center justify-center gap-2 text-gray-600 mt-2">
+                            <Users size={16} /> {section.student_count}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
                   {/* Class Teacher */}

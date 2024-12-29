@@ -2,10 +2,16 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 from .views import (
     CreateSchoolClassViewSet,
+    DeleteClassSectionView,
+    ParentBlockUnblockView,
+    ParentDetailView,
+    ParentListCreateView,
+    ParentStudentManagementView,
     SchoolAdminLoginView,
     CreateStudentView,
     ClassListView,
     SchoolClassListView,
+    SchoolClassSectionUpdateView,
     ShowStudentsView,
     StudentDetailView,
     StudentUpdateView,
@@ -27,8 +33,17 @@ urlpatterns = [
     path("student_update/<int:pk>/", StudentUpdateView.as_view(), name="student-update"),
     path("student_delete/<int:pk>/", StudentDeleteView.as_view(), name="student-delete"),
     path("student_block/<int:pk>/", StudentBlockView.as_view(), name="student-block"),
-    path("classes", SchoolClassListView.as_view(), name='class-list')
+    path("classes", SchoolClassListView.as_view(), name='class-list'),
+    path("update/class/<int:pk>/section/<int:section_pk>/", SchoolClassSectionUpdateView.as_view(), name='update-class-section'),
+    path("class/<int:class_id>/section/<int:section_id>/", DeleteClassSectionView.as_view(), name='delete-class-secion'),
+    
+    
+    path('parents/', ParentListCreateView.as_view(), name='parent-list-create'),
+    path('parents/<int:pk>/', ParentDetailView.as_view(), name='parent-detail'),
+    path('parents/<int:pk>/students/', ParentStudentManagementView.as_view(), name='parent-student-management'),
+    path('parents/<int:pk>/block/', ParentBlockUnblockView.as_view(), name="parent-block-unblock")
 ]
+
 
 urlpatterns += [
     path("", include(router.urls)),

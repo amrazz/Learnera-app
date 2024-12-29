@@ -6,6 +6,7 @@ import { EditForm } from "./constants";
 import api from "../../../api";
 import { UserCircle2 } from "lucide-react";
 import { HashLoader } from "react-spinners";
+import { toast, ToastContainer } from "react-toastify";
 
 const StudentInfoSchema = Yup.object().shape({
   first_name: Yup.string()
@@ -74,9 +75,14 @@ const EditStudentInfo = () => {
       );
 
       if (response.status === 200) {
-        navigate(`/admin_dashboard/student_info/${studentId}`);
+
+        toast.success("Student has been updated successfully")
+        setTimeout(() => {
+          navigate(`/admin_dashboard/student_info/${studentId}`);
+        }, 2000)
       }
     } catch (error) {
+      toast.error(error.response?.data?.error || "Failed to update student")
       setError(error.response?.data?.error || "Failed to update student");
     } finally {
       setSubmitting(false);
@@ -112,6 +118,7 @@ const EditStudentInfo = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <ToastContainer />
       <div className="bg-white shadow-xl rounded-2xl overflow-hidden">
         <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-6">
           <h2 className="text-2xl font-bold text-white flex items-center">

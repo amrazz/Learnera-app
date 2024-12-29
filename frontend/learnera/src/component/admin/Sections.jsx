@@ -9,6 +9,12 @@ import AdminDashboard from "./AdminDashboard";
 import AddClass from "./classes/AddClass";
 import ShowClass from './classes/ShowClass'
 import Logout from "../login_page/Logout";
+import EditClass from "./classes/EditClass";
+import AddParents from "./parent/AddParents";
+import ShowParents from "./parent/ShowParents";
+import ParentInfo from "./parent/ParentInfo";
+import EditParent from "./parent/EditParent";
+import ParentCredentials from "./parent/ParentCredentials";
 
 
 const Sections = () => {
@@ -22,11 +28,16 @@ const Sections = () => {
       <Route path="student_credentials" element={<StudentCredentials />} />
       <Route path="student_info/:studentId" element={<StudentInfo />} />
       <Route path="student_info/:studentId/edit" element={<EditStudentInfo />} />
-
       <Route path="add_class" element={<AddClass />} />
-      <Route path="show_class" element={<ShowClass />} />
+    <Route path="show_class" element={<ShowClass />} />
+    <Route path="edit_class/:classId/:sectionId" element={<EditClass />} />
+
+    <Route path="add_parents" element={<AddParents />} />
+    <Route path="show_parents" element={<ShowParents />} />
+    <Route path="parent_info/:parentId" element={<ParentInfo />} />
+    <Route path="parent_info/:parentId/edit" element={<EditParent />} />
+    <Route path="parent_credentials" element={<ParentCredentials />} />
     </Routes>
   );
 };
-
 export default Sections;

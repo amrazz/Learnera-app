@@ -1,11 +1,253 @@
-import React from 'react'
+import React, { useState, useEffect } from "react";
+import { Formik, Form, Field, ErrorMessage } from "formik";
+import * as Yup from "yup";
+import api from "../../../api";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { useNavigate, useParams } from "react-router-dom";
 
 const EditClass = () => {
-  return (
-    <div>
-      
-    </div>
-  )
-}
+  const [initialValues, setInitialValues] = useState({
+    class_name: "",
+    section_name: "",
+    student_count: 30,
+    class_teacher: "",
+  });
+  const [teachers, setTeachers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+  const { classId, sectionId } = useParams();
 
-export default EditClass
+
+  const validationSchema = Yup.object({
+    class_name: Yup.string()
+      .max(2, "Class Name must be at most 2 characters")
+      .required("Class Name is required"),
+    section_name: Yup.string()
+      .max(1, "Section must be a single character")
+      .required("Section is required"),
+    student_count: Yup.number()
+      .default(30)
+      .required("Student Count is required")
+      .positive("Student Count must be a positive number")
+      .integer("Student Count must be an integer"),
+  });
+
+  useEffect(() => {
+    const fetchClassData = async () => {
+      try {
+        const response = await api.get("school_admin/classes");
+
+
+        const classData = response.data.find(
+          cls => cls.id === parseInt(classId)
+        );
+
+        if(!classData) {
+          toast.error("Class not found!!")
+          setTimeout(() => {
+            navigate("/admin_dashboard/show_class");
+            
+          })
+          return;
+        }
+        const section = classData.sections.find(
+          section => section.id === parseInt(sectionId)
+        );
+        
+        if (!section) {
+          toast.error("Section not found");
+          setTimeout(() => {
+            navigate("/admin_dashboard/show_class");
+            
+          })
+          return;
+        }
+        
+        setInitialValues({
+          class_name: classData.class_name,
+          section_name: section.section_name,
+          student_count: section.student_count,
+          class_teacher: classData.class_teacher?.id || "",
+        });
+        
+        setIsLoading(false);
+      } catch (error) {
+        toast.error("Failed to fetch class data");
+        navigate('/admin_dashboard/show_class');
+      }
+    };
+  
+    if (classId && sectionId) {
+      fetchClassData();
+    }
+  }, [classId, sectionId, navigate]);
+
+  const handleSubmit = async (values, { setSubmitting }) => {
+    try {
+      const response = await api.put(`school_admin/update/class/${classId}/section/${sectionId}/`, values);
+
+      if (response.status === 200) {
+        toast.success("Class Updated Successfully!", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "light",
+        });
+
+        setTimeout(() => {
+          navigate('/admin_dashboard/show_class');
+        }, 3000);
+      }
+    } catch (error) {
+      const errorData = error?.response?.data;
+      let errorMessage = "An unexpected error occurred! Please try again.";
+
+      if (errorData && typeof errorData === "object") {
+        errorMessage = Object.entries(errorData)
+          .map(([field, messages]) => 
+            `${field}: ${Array.isArray(messages) ? messages.join(", ") : messages}`
+          )
+          .join("\n");
+      }
+
+      toast.error(errorMessage);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-r from-gray-50 to-gray-200 p-10">
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-white rounded-xl shadow-lg p-8">
+          <h1 className="font-sans text-center text-3xl font-bold text-blue-800 mb-10">
+            Edit Class
+          </h1>
+
+          <Formik
+            initialValues={initialValues}
+            validationSchema={validationSchema}
+            onSubmit={handleSubmit}
+            enableReinitialize
+          >
+            {({ isSubmitting }) => (
+              <Form className="space-y-8">
+                <div className="grid gap-6 grid-cols-2">
+                  {/* Class Name */}
+                  <div>
+                    <label className="block text-gray-700 font-semibold mb-2">
+                      Class
+                    </label>
+                    <Field
+                      type="text"
+                      name="class_name"
+                      maxLength="2"
+                      placeholder="Enter class (e.g., 10)"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    />
+                    <ErrorMessage
+                      name="class_name"
+                      component="div"
+                      className="text-red-600 text-sm mt-1"
+                    />
+                  </div>
+
+                  {/* Section */}
+                  <div>
+                    <label className="block text-gray-700 font-semibold mb-2">
+                      Section
+                    </label>
+                    <Field
+                      type="text"
+                      name="section_name"
+                      maxLength="1"
+                      placeholder="Enter section (e.g., A)"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    />
+                    <ErrorMessage
+                      name="section_name"
+                      component="div"
+                      className="text-red-600 text-sm mt-1"
+                    />
+                  </div>
+
+                  {/* Student Count */}
+                  <div>
+                    <label className="block text-gray-700 font-semibold mb-2">
+                      Student Count
+                    </label>
+                    <Field
+                      type="number"
+                      name="student_count"
+                      placeholder="Enter student count"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    />
+                    <ErrorMessage
+                      name="student_count"
+                      component="div"
+                      className="text-red-600 text-sm mt-1"
+                    />
+                  </div>
+
+                  {/* Class Teacher */}
+                  <div>
+                    <label className="block text-gray-700 font-semibold mb-2">
+                      Class Teacher
+                    </label>
+                    <Field
+                      as="select"
+                      name="class_teacher"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    >
+                      <option value="">Select Teacher</option>
+                      {/* {teachers.map((teacher) => (
+                        <option key={teacher.id} value={teacher.id}>
+                          {teacher.user.first_name} {teacher.user.last_name}
+                        </option>
+                      ))} */}
+                    </Field>
+                    <ErrorMessage
+                      name="class_teacher"
+                      component="div"
+                      className="text-red-600 text-sm mt-1"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-4 mt-6">
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all"
+                  >
+                    {isSubmitting ? "Saving..." : "Update"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => navigate('/admin_dashboard/show_class')}
+                    className="px-6 py-3 bg-gray-500 text-white font-semibold rounded-lg hover:bg-gray-600 transition-all"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </Form>
+            )}
+          </Formik>
+          <ToastContainer />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default EditClass;
