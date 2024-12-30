@@ -1,0 +1,12 @@
+Welcome to {{ app_name }}!
+
+Hello and welcome to {{ app_name }}! Your {{ user_type }} account has been created successfully.
+
+Your login credentials:
+Username: {{ username }}
+Password: {{ password }}
+
+Please change your password after your first login for security purposes.
+
+Best regards,
+The {{ app_name }} Team

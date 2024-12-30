@@ -24,7 +24,6 @@ const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-
   const { status, error, Role, isAuthenticated } = useSelector(
     (state) => state.auth
   );
@@ -38,13 +37,13 @@ const Login = () => {
 }, []);
 
 useEffect(() => {
-    if (isAuthenticated && Role) {
-        const routes = {
-            school_admin: "/admin_dashboard",
-            teacher: "/teacher_dashboard",
-            student: "/student_dashboard",
-            parent: "/parent_dashboard"
-        };
+  if (isAuthenticated && Role) {
+    const routes = {
+      is_student: "/students",
+      is_teacher: "/teachers",
+      is_parent: "/parents",
+      school_admin: "/admin_dashboard",
+    };
 
         const targetRoute = routes[Role];
         if (targetRoute) {
@@ -76,8 +75,23 @@ useEffect(() => {
 
       await dispatch(action(credentials)).unwrap();
       toast.success("Login successful!");
+
+      setTimeout(() => {
+        const routes = {
+          is_student : "/students",
+          is_teacher: "/teachers",
+          is_parent: "/parents",
+          school_admin: "/admin_dashboard",
+        }
+          const targetRoute = routes[credentials.role];
+          if (targetRoute) {
+            navigate(targetRoute);
+          }
+          }, 2000)
+
+
     } catch (err) {
-      toast.error(err?.message || "An error occurred. Please try again.");
+      toast.error(err || "Invalid Credentials. Please try again.");
     } finally {
       setSubmitting(false);
     }

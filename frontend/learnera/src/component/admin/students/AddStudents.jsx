@@ -3,6 +3,7 @@ import { useFormik } from "formik";
 import { initialValues, validationSchema, inputs } from "./constants";
 import api from "../../../api";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const AddStudents = () => {
   const [profile, setProfile] = useState(null);
@@ -99,14 +100,19 @@ const AddStudents = () => {
         if (response.status === 201) {
           const { admission_number, username, password } = response.data;
           console.log("This is the student credentials", response.data);
+          toast.success("New Student Created successfully")
+
+          setTimeout(() => {
+
+            navigate("/admin_dashboard/student_credentials", {
+              state: {
+                admissionNumber: admission_number,
+                username: username,
+                password: password,
+              },
+            });
+          }, 2000)
           
-          navigate("/admin_dashboard/student_credentials", {
-            state: {
-              admissionNumber: admission_number,
-              username: username,
-              password: password,
-            },
-          });
           resetForm();
         }
       } catch (error) {

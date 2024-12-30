@@ -2,13 +2,22 @@ import React, { useState } from "react";
 import { Dropdown } from "primereact/dropdown";
 import { CiMail } from "react-icons/ci";
 import { FaBell } from "react-icons/fa";
-import { IoMenu } from "react-icons/io5";
+import { IoLogOutSharp, IoMenu } from "react-icons/io5";
 import "primereact/resources/themes/saga-blue/theme.css";
 import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
+import { useNavigate } from "react-router-dom";
+import Modal from "../../../Modal";
 
 const Nav = ({ setActiveMenu }) => {
   const [selectedOption, setSelectedOption] = useState(null);
+  const [showLogoutModal, setShowLogoutModal] = useState(false); // State to manage modal visibility
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    setShowLogoutModal(false); // Close the modal
+    navigate("/logout"); // Redirect to logout
+  };
 
   return (
     <div className="flex flex-wrap items-center justify-between px-4 py-4 md:px-6 md:py-6 bg-gradient-to-r from-white via-gray-100 to-white shadow-lg rounded-lg">
@@ -66,8 +75,26 @@ const Nav = ({ setActiveMenu }) => {
           </span>
         </button>
 
-
+        {/* Logout Button */}
+        <button
+          onClick={() => setShowLogoutModal(true)}
+          className="relative p-2 text-gray-600 hover:text-blue-600 focus:outline-none transition-all duration-300"
+          title="Logout"
+        >
+          <IoLogOutSharp size={26} />
+        </button>
       </div>
+
+      {/* Logout Confirmation Modal */}
+      <Modal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={handleLogout}
+        title="Logout Confirmation"
+        message="Are you sure you want to logout?"
+        confirmButtonClass="bg-blue-500"
+        confirmText="Logout"
+      />
     </div>
   );
 };

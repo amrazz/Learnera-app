@@ -28,7 +28,6 @@ class CustomUser(AbstractUser):
     is_student = models.BooleanField(default=False)
     is_parent = models.BooleanField(default=False)
     
-    otp = models.CharField(max_length=6, blank=True,null=True)
     otp_verified = models.BooleanField(default=False)
     
     def __str__(self):

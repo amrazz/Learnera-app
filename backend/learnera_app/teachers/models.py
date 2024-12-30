@@ -45,6 +45,7 @@ class Teacher(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE) 
     qualifications = models.TextField(blank=True, null=True) 
     classes = models.ManyToManyField(SchoolClass, related_name='teachers') 
+    sections = models.ManyToManyField(Section, related_name='teachers')
     subjects = models.ManyToManyField(Subject, related_name='teachers') 
     
     

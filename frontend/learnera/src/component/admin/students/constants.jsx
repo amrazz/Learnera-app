@@ -40,64 +40,99 @@ export const initialValues = {
 };
 
 export const validationSchema = Yup.object({
-  profileImage: Yup.mixed()
-    .required("Profile Image is required")
-    .test(
-      "fileSize",
-      "File size must be less than 2MB",
-      (value) => value && value.size <= 2 * 1024 * 1024
-    )
-    .test(
-      "fileType",
-      "Only JPEG and PNG formats are allowed",
-      (value) => value && ["image/jpeg", "image/png"].includes(value.type)
-    ),
-  username: Yup.string().required("Username is required"),
-  firstName: Yup.string().required("First Name is required"),
-  lastName: Yup.string().required("Last Name is required"),
-  class: Yup.string().required("Class is required"),
-  section: Yup.string().required("Section is required"),
-  parentName: Yup.string().required("Parent Name is required"),
-  phoneNumber: Yup.string()
-  .matches(/^(99|62|9)[0-9]{8}$/, "Phone number must start with 99, 62, or 9 and be exactly 10 digits")
-    .required("Phone number is required"),
-  city: Yup.string().required("City is required"),
-  state: Yup.string().required("State is required"),
-  parentEmail: Yup.string()
-    .email("Invalid email address")
-    .required("Parent Email is required"),
-  // gender: Yup.string().required("Gender is required"),
-  dateOfBirth: Yup.date()
-    .required("Date of Birth is required")
-    .max(new Date(), "Date of Birth can't be in the future"),
+  username: Yup.string()
+      .trim()
+      .matches(/^(?!\s{2,})/, "Username cannot start with two spaces")
+      .required("Username is required"),
   email: Yup.string()
-    .email("Invalid email address")
-    .required("Email is required"),
-  address: Yup.string().required("Address is required"),
-  district: Yup.string().required("District is required"),
-  country: Yup.string().required("Country is required"),
+      .email("Invalid email format")
+      .required("Email is required"),
   password: Yup.string()
-    .min(8, "Password must be at least 8 characters")
-    .matches(
-      /[!@#$%^&*(),.?":{}|<>]/,
-      "Password must contain at least one symbol"
-    )
-    .matches(/[0-9]/, "Password must contain at least one number")
-    .matches(/[A-Z]/, "Password must contain at least one uppercase letter")
-    .matches(/[a-z]/, "Password must contain at least one lowercase letter")
-    .required("Password is required"),
+      .min(8, "Password must be at least 8 characters")
+      .matches(/[A-Z]/, "Password must contain at least one uppercase letter")
+      .matches(/[a-z]/, "Password must contain at least one lowercase letter")
+      .matches(/\d/, "Password must contain at least one number")
+      .matches(/[@$!%*?&#]/, "Password must contain at least one special character")
+      .required("Password is required"),
+  firstName: Yup.string()
+      .trim()
+      .matches(/^(?!\s{2,})/, "First name cannot start with two spaces")
+      .matches(/^[a-zA-Z]+$/, "First name can only contain letters")
+      .required("First name is required"),
+  lastName: Yup.string()
+      .trim()
+      .matches(/^(?!\s{2,})/, "Last name cannot start with two spaces")
+      .matches(/^[a-zA-Z]+$/, "Last name can only contain letters")
+      .required("Last name is required"),
+  phoneNumber: Yup.string()
+      .matches(/^\d{10}$/, "Phone number must be exactly 10 digits")
+      .required("Phone number is required"),
+  emergencyContactNumber: Yup.string()
+      .matches(/^\d{10}$/, "Emergency contact number must be exactly 10 digits")
+      .nullable(),
+      dateOfBirth: Yup.date()
+      .required("Date of birth is required")
+      .test(
+          "is-10-years-old",
+          "You must be at least 10 years old",
+          (value) => {
+              const today = new Date();
+              const birthDate = new Date(value);
+              const age = today.getFullYear() - birthDate.getFullYear();
+              const monthDifference = today.getMonth() - birthDate.getMonth();
+              const dayDifference = today.getDate() - birthDate.getDate();
+
+              return (
+                  age > 10 ||
+                  (age === 10 && (monthDifference > 0 || (monthDifference === 0 && dayDifference >= 0)))
+              );
+          }
+      ),
+  gender: Yup.string()
+      .required("Gender is required"),
+  address: Yup.string()
+      .trim()
+      .matches(/^(?!\s{2,})/, "Address cannot start with two spaces")
+      .required("Address is required"),
+  city: Yup.string()
+      .trim()
+      .matches(/^(?!\s{2,})/, "City cannot start with two spaces")
+      .required("City is required"),
+  state: Yup.string()
+      .trim()
+      .matches(/^(?!\s{2,})/, "State cannot start with two spaces")
+      .required("State is required"),
+  district: Yup.string()
+      .trim()
+      .matches(/^(?!\s{2,})/, "District cannot start with two spaces")
+      .required("District is required"),
+  country: Yup.string()
+      .trim()
+      .matches(/^(?!\s{2,})/, "Country cannot start with two spaces")
+      .required("Country is required"),
+      profileImage: Yup.mixed()
+      .required("Profile image is required")
+      .test(
+          "fileType",
+          "Only JPEG, PNG, or JPG files are allowed",
+          (value) => {
+              if (!value) return false;
+              const fileType = ["image/jpeg", "image/png", "image/jpg"];
+              return fileType.includes(value.type);
+          }
+      )
+      .test(
+          "fileSize",
+          "File size must be less than 2MB",
+          (value) => {
+              if (!value) return false; 
+              const maxSize = 2 * 1024 * 1024; 
+              return value.size <= maxSize;
+          }
+      ),
   confirmPassword: Yup.string()
     .oneOf([Yup.ref("password"), null], "Passwords must match")
     .required("Confirm Password is required"),
-  emergencyContactNumber: Yup.string()
-    .matches(
-      /^[0-9]{10}$/,
-      "Emergency contact number must be exactly 10 digits"
-    )
-    .notOneOf(
-      [Yup.ref("phoneNumber"), null],
-      "Phone number and emergency contact cannot be the same"
-    )
 });
 
 export const inputs = [

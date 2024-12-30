@@ -25,10 +25,8 @@ class UserLoginserializers(serializers.Serializer):
         if not user:
             raise serializers.ValidationError("Invalid credentials")
 
-        validate_roles = ["is_student", "is_teacher", "is_parent"]
         if not hasattr(user, role) or not getattr(user, role):
             raise serializers.ValidationError(f"You are not a {role.upper().replace('is', "")}.")
-        
         
 
         return {

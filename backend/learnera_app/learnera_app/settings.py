@@ -81,15 +81,15 @@ ROOT_URLCONF = "learnera_app.urls"
 
 TEMPLATES = [
     {
-        "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
-        "APP_DIRS": True,
-        "OPTIONS": {
-            "context_processors": [
-                "django.template.context_processors.debug",
-                "django.template.context_processors.request",
-                "django.contrib.auth.context_processors.auth",
-                "django.contrib.messages.context_processors.messages",
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [os.path.join(BASE_DIR, 'school_admin/templates')],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
             ],
         },
     },
@@ -164,3 +164,13 @@ AUTH_USER_MODEL = "users.CustomUser"
 
 CORS_ALLOWED_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = ["http://localhost:5173"]
+
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com' 
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'learnerapp999@gmail.com' 
+EMAIL_HOST_PASSWORD = 'aefo gizd jepp lweo' 
+DEFAULT_FROM_EMAIL = 'Learnera <your.email@gmail.com>'

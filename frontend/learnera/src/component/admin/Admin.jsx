@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import SideBar from "./layout/sidebar/SideBar";
 import Nav from "./layout/header/Nav";
 import Sections from "./Sections";
-import BackToTop from "./BackToTop";
+import BackToTop from "../BackToTop";
 
 const Admin = () => {
   const [activeMenu, setActiveMenu] = useState(false);

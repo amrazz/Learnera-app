@@ -10,25 +10,27 @@ from .serializers import (
     SchoolClassUpdateSerializer,
     SchoolClassCreateSerializer,
     SchoolAdminStudentSerializers,
+    TeacherSerializer,
 )
-from parents.models import Parent
 from django.db import transaction
+from parents.models import  Parent
 from .models import AdmissionNumber
-from students.models import Student
+from students.models import  Student
+from .email import send_welcome_main
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-from teachers.models import SchoolClass, Section
 from rest_framework_simplejwt.tokens import RefreshToken
+from teachers.models import SchoolClass, Section, Teacher
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework import permissions, status, viewsets, generics
 
 
-
 # STUDENT MANAGEMENT
 
-#--------------------------------------------------------------
+# --------------------------------------------------------------
+
 
 class SchoolAdminLoginView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -90,6 +92,13 @@ class CreateStudentView(APIView):
             serializer = SchoolAdminStudentSerializers(data=student_data)
             if serializer.is_valid():
                 student = serializer.save()
+                
+                send_welcome_main(
+                    user_type='student',
+                    email = user_data['email'],
+                    username=user_data['username'],
+                    password=user_data['password']
+                )
                 return Response(
                     {
                         "message": "Student created successfully",
@@ -175,7 +184,7 @@ class StudentDetailView(APIView):
 
 
 class StudentUpdateView(APIView):
-    permission_classes = [permissions.IsAdminUser]  
+    permission_classes = [permissions.IsAdminUser]
 
     def put(self, request, pk, *args, **kwargs):
         try:
@@ -301,9 +310,9 @@ class StudentBlockView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-
 # CLASS MANAGEMENT
 # -----------------------------------------------------------------------------
+
 
 class CreateSchoolClassViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAdminUser]
@@ -324,7 +333,6 @@ class CreateSchoolClassViewSet(viewsets.ModelViewSet):
             },
             status=status.HTTP_201_CREATED,
         )
-
 
 
 class SchoolClassListView(generics.ListAPIView):
@@ -396,13 +404,14 @@ class DeleteClassSectionView(APIView):
 
 # PARENT MANAGEMENT
 
-#--------------------------------------------------------------------
+# --------------------------------------------------------------------
 
 
 class ParentPagination(PageNumberPagination):
     page_size = 10
-    page_size_query_param = 'page_size'
+    page_size_query_param = "page_size"
     max_page_size = 100
+
 
 class ParentListCreateView(APIView):
     permission_classes = [permissions.IsAdminUser]
@@ -412,39 +421,43 @@ class ParentListCreateView(APIView):
         serializer = ParentSerializer(parents, many=True)
         return Response(serializer.data)
 
-
     def post(self, request, *args, **kwargs):
-        try :
-            user_data = json.loads(request.data.get('user', '{}'))
-            if 'profile_image' in request.FILES:
-                user_data['profile_image'] = request.FILES['profile_image']
-                
+        try:
+            user_data = json.loads(request.data.get("user", "{}"))
+            if "profile_image" in request.FILES:
+                user_data["profile_image"] = request.FILES["profile_image"]
+
             data = {
-                'user' : user_data,
-                'occupation': request.data.get('occupation', ''),
-            
+                "user": user_data,
+                "occupation": request.data.get("occupation", ""),
             }
-            
-            if 'student_admission_numbers' in request.data:
-                admission_numbers = json.loads(request.data['student_admission_numbers'])
-                data['student_admission_numbers'] = admission_numbers
+
+            if "student_admission_numbers" in request.data:
+                admission_numbers = json.loads(
+                    request.data["student_admission_numbers"]
+                )
+                data["student_admission_numbers"] = admission_numbers
         except json.JSONDecodeError:
             return Response(
-                        {"error": "Invalid student_admission_numbers format"},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-        print('this is the parent data : ', data)
+                {"error": "Invalid student_admission_numbers format"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        print("this is the parent data : ", data)
         serializers = ParentSerializer(data=data)
         if serializers.is_valid():
             parent = serializers.save()
+            send_welcome_main(
+                    user_type='parent',
+                    email = user_data['email'],
+                    username=user_data['username'],
+                    password=user_data['password']
+                )
             return Response(
-                ParentSerializer(parent).data,
-                status=status.HTTP_201_CREATED
+                ParentSerializer(parent).data, status=status.HTTP_201_CREATED
             )
         return Response(serializers.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    
-    
+
 class ParentDetailView(APIView):
     permission_classes = [permissions.IsAdminUser]
 
@@ -459,40 +472,36 @@ class ParentDetailView(APIView):
 
     def put(self, request, pk):
         parent = self.get_object(pk)
-        
+
         try:
-            data = json.loads(request.data.get('data', '{}'))
-            
-            if 'profile_image' in request.FILES:
-                if 'user' not in data:
-                    data['user'] = {}
-                data['user']['profile_image'] = request.FILES['profile_image']
-            
+            data = json.loads(request.data.get("data", "{}"))
+
+            if "profile_image" in request.FILES:
+                if "user" not in data:
+                    data["user"] = {}
+                data["user"]["profile_image"] = request.FILES["profile_image"]
+
             serializer = ParentSerializer(
-                parent, 
-                data=data, 
+                parent,
+                data=data,
                 partial=True,
-                context={'request': request}  # Add request to context
+                context={"request": request},  # Add request to context
             )
             if serializer.is_valid():
-                
+
                 parent = serializer.save()
                 print(f"this is the validated parent", parent)
                 return Response(
-                    ParentSerializer(parent, context={'request': request}).data, 
-                    status=status.HTTP_200_OK
-                )            
+                    ParentSerializer(parent, context={"request": request}).data,
+                    status=status.HTTP_200_OK,
+                )
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except json.JSONDecodeError:
             return Response(
-                {"error": "Invalid JSON data"},
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": "Invalid JSON data"}, status=status.HTTP_400_BAD_REQUEST
             )
         except Exception as e:
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
         parent = self.get_object(pk)
@@ -501,24 +510,24 @@ class ParentDetailView(APIView):
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
-    
+
 class ParentStudentManagementView(APIView):
     permission_classes = [permissions.IsAdminUser]
 
     def post(self, request, pk):
         parent = get_object_or_404(Parent, pk=pk)
-        action = request.data.get('action')
-        admission_numbers = request.data.get('admission_numbers', [])
+        action = request.data.get("action")
+        admission_numbers = request.data.get("admission_numbers", [])
 
-        if action not in ['add', 'remove']:
+        if action not in ["add", "remove"]:
             return Response(
                 {"error": "Invalid action. Use 'add' or 'remove'"},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         try:
             students = Student.objects.filter(admission_number__in=admission_numbers)
-            if action == 'add':
+            if action == "add":
                 parent.students.add(*students)
             else:
                 parent.students.remove(*students)
@@ -526,60 +535,231 @@ class ParentStudentManagementView(APIView):
             return Response(ParentSerializer(parent).data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
-        
+
+
 class ParentBlockUnblockView(APIView):
     permission_classes = [permissions.IsAdminUser]
-    
+
     def get_object(self, pk):
-        return get_object_or_404(Parent, pk=pk)    
-    
+        return get_object_or_404(Parent, pk=pk)
+
     def post(self, request, pk, *args, **kwargs):
-        try :
+        try:
             parent = self.get_object(pk)
             print("This is the parent", parent)
-            
+
             if not parent.user.is_active:
                 return Response(
-                    {"message" : "Parent is already blocked"},
-                    status=status.HTTP_400_BAD_REQUEST
+                    {"message": "Parent is already blocked"},
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
             parent.user.is_active = False
             parent.user.save()
-            
-            return Response({
-                "message": "Parent has been blocked successfully",
-                "status": "blocked",
-                "user_id": parent.user.id
-            }, status=status.HTTP_200_OK)
+
+            return Response(
+                {
+                    "message": "Parent has been blocked successfully",
+                    "status": "blocked",
+                    "user_id": parent.user.id,
+                },
+                status=status.HTTP_200_OK,
+            )
         except Exception as e:
-            return Response({
-                "message": f"Error blocking parent: {str(e)}"
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
+            return Response(
+                {"message": f"Error blocking parent: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
     def put(self, request, pk):
         try:
             parent = self.get_object(pk)
-            
+
             # Check if parent is already active
             if parent.user.is_active:
                 return Response(
                     {"message": "Parent is already active or Unblock"},
-                    status=status.HTTP_400_BAD_REQUEST
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
-            
+
             parent.user.is_active = True
             parent.user.save()
-            
-            return Response({
-                "message": "Parent has been unblocked successfully",
-                "status": "active",
-                "user_id": parent.user.id
-            }, status=status.HTTP_200_OK)
-            
-        except Exception as e:
-            return Response({
-                "message": f"Error unblocking parent: {str(e)}"
-            }, status=status.HTTP_400_BAD_REQUEST)
-            
 
+            return Response(
+                {
+                    "message": "Parent has been unblocked successfully",
+                    "status": "active",
+                    "user_id": parent.user.id,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        except Exception as e:
+            return Response(
+                {"message": f"Error unblocking parent: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+
+# -----------------------------------------------------------------------------
+
+# Teacher management
+
+
+class TeacherListCreateView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def get(self, request, *args, **kwargs):
+        teacher = Teacher.objects.all()
+        serializer = TeacherSerializer(teacher, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, *args, **kwargs):
+
+        user_data = json.loads(request.data.get("user", {}))
+
+        if "profile_image" in request.FILES:
+            user_data["profile_image"] = request.FILES["profile_image"]
+
+        data = {
+            "user": user_data,
+            "qualifications": request.data.get("qualifications", ""),
+        }
+
+        serlaizer = TeacherSerializer(data=data)
+        print()
+        print("This is the teacher serlaizer", serlaizer)
+        if serlaizer.is_valid():
+            print("is valid")
+            teacher = serlaizer.save()
+            print("TEACHER", teacher)
+            send_welcome_main(
+                    user_type='teacher',
+                    email = user_data['email'],
+                    username=user_data['username'],
+                    password=user_data['password']
+                )
+            return Response(
+                TeacherSerializer(teacher).data, status=status.HTTP_201_CREATED
+            )
+        return Response(serlaizer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TeacherDetailView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def get_object(self, pk):
+        return get_object_or_404(Teacher, pk=pk)
+
+    def get(self, request, pk):
+        teacher = self.get_object(pk)
+        serlaizer = TeacherSerializer(teacher)
+        return Response(serlaizer.data)
+
+    def put(self, request, pk):
+        teacher = self.get_object(pk)
+
+        try:
+            data = json.loads(request.data.get("data", "{}"))
+
+            if "profile_image" in request.FILES:
+                if "user" not in data:
+                    data["user"] = {}
+                data["user"]["profile_image"] = request.FILES["profile_image"]
+
+            serializer = TeacherSerializer(
+                teacher, data=data, partial=True, context={"request": request}
+            )
+
+            if serializer.is_valid():
+                teacher = serializer.save()
+                return Response(
+                    TeacherSerializer(teacher, context={"request": request}).data,
+                    status=status.HTTP_200_OK,
+                )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        except json.JSONDecodeError:
+            return Response(
+                {"error": "Invalid JSON data"}, status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    def patch(self, request, pk):
+        return self.put(request, pk)
+
+    def delete(self, request, pk):
+        try:
+            teacher = self.get_object(pk)
+
+            with transaction.atomic():
+                teacher.user.delete()
+                teacher.delete()
+
+            return Response(
+                {"message": "Teacher deleted successfully"},
+                status=status.HTTP_204_NO_CONTENT,
+            )
+        except Exception as e:
+            return Response(
+                {"error": "Failed to delete teacher", "details": str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+
+class TeacherBlockUnblockView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def get_object(self, pk):
+        return get_object_or_404(Teacher, pk=pk)
+
+    def post(self, request, pk):
+        teacher = self.get_object(pk)
+        try:
+            if not teacher.user.is_active:
+                return Response(
+                    {"message": "Teacher is already blocked"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            teacher.user.is_active = False
+            teacher.user.save()
+
+            return Response(
+                {
+                    "message": "Teacher has been blocked successfully",
+                    "status": "blocked",
+                    "user_id": teacher.user.id,
+                },
+                status=status.HTTP_200_OK,
+            )
+        except Exception as e:
+            return Response(
+                {"message": f"Error blocking parent: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+    def put(self, request, pk):
+        teacher = self.get_object(pk)
+        try:
+            if teacher.user.is_active:
+                return Response(
+                    {
+                        "message": "Teacher is already unblocked or inactive",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            teacher.user.is_active = True
+            teacher.user.save()
+            return Response(
+                {
+                    "message": "Teacher has been Unblocked successfully",
+                    "status": "blocked",
+                    "user_id": teacher.user.id,
+                },
+                status=status.HTTP_200_OK,
+            )
+        except Exception as e:
+            return Response(
+                {"message": f"Error blocking parent: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )

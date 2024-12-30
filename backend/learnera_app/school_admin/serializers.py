@@ -1,10 +1,11 @@
 import json
+from django.db import transaction
+from parents.models import Parent
+from users.models import CustomUser
+from students.models import Student
 from rest_framework import serializers
 from django.contrib.auth import authenticate
-from parents.models import Parent
 from teachers.models import SchoolClass, Section, Teacher
-from students.models import Student
-from users.models import CustomUser
 
 
 class SchoolAdminLoginSerializers(serializers.Serializer):
@@ -319,7 +320,7 @@ class ParentStudentSerializer(serializers.ModelSerializer):
 
 
 class ParentUserSerializer(serializers.ModelSerializer):
-    profile_image = serializers.ImageField(required=False)  # Changed from SerializerMethodField
+    profile_image = serializers.ImageField(required=False) 
     password = serializers.CharField(write_only = True, required = False)
 
     class Meta:
@@ -450,3 +451,68 @@ class ParentSerializer(serializers.ModelSerializer):
             )
 
         parent.students.set(valid_students)
+
+
+# -------------------------------------------------------------------------------------------------
+
+
+
+class TeacherSerializer(serializers.ModelSerializer):
+    user = CustomUserSerializer()
+    class Meta:
+        model = Teacher
+        fields = [
+            "id",
+            "qualifications",
+            "user",
+        ]
+        
+    @transaction.atomic
+    def create(self, validated_data):        
+        user_data = validated_data.pop('user')
+        user_data['is_teacher'] = True
+        
+        user_serializer = CustomUserSerializer(data = user_data)
+        user_serializer.is_valid(raise_exception=True)
+        user = user_serializer.save()
+        
+        
+        teacher = Teacher.objects.create(
+            user = user,
+           **validated_data
+        )
+            
+        return teacher
+    
+    def update(self, instance, validated_data):
+        try:
+            
+            user_data = validated_data.pop("user", None)
+            
+            if 'profile_image' in validated_data:
+                user_data['profile_image'] = validated_data.get('profile_image')
+            
+            if 'qualifications' in validated_data:
+                instance.qualifications = validated_data.get('qualifications')
+            
+            if user_data:
+                user_serializer = CustomUserSerializer(
+                    instance.user,
+                    data = user_data,
+                    partial = True
+                )
+            
+                user_serializer.is_valid(raise_exception=True)
+                user_serializer.save()
+                
+            instance.qualifications = validated_data.get('qualifications', instance.qualifications)
+            
+                
+            instance.save()
+            return instance
+        
+        except Exception as e:
+            raise serializers.ValidationError({
+                "error": "Failed to update teacher",
+                "details": str(e)
+            })

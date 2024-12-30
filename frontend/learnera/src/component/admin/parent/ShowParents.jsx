@@ -146,7 +146,7 @@ const ShowParents = () => {
                       )}
                     </div>
                   </td>
-
+s
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600">
                     {parent.user.email}
                   </td>

@@ -15,6 +15,11 @@ import ShowParents from "./parent/ShowParents";
 import ParentInfo from "./parent/ParentInfo";
 import EditParent from "./parent/EditParent";
 import ParentCredentials from "./parent/ParentCredentials";
+import AddTeachers from "./teachers/AddTeachers";
+import ShowTeachers from "./teachers/ShowTeachers";
+import TeacherInfo from "./teachers/TeacherInfo";
+import EditTeacher from "./teachers/EditTeacher";
+import TeacherCredentials from "./teachers/TeacherCredentials";
 
 
 const Sections = () => {
@@ -37,6 +42,13 @@ const Sections = () => {
     <Route path="parent_info/:parentId" element={<ParentInfo />} />
     <Route path="parent_info/:parentId/edit" element={<EditParent />} />
     <Route path="parent_credentials" element={<ParentCredentials />} />
+
+
+    <Route path="add_teachers" element={<AddTeachers />} />
+    <Route path="show_teachers" element={<ShowTeachers />} />
+    <Route path="teacher_info/:teacherId/" element={<TeacherInfo />} />
+    <Route path="teacher_info/:teacherId/edit" element={<EditTeacher />} />
+    <Route path="teacher_credentials" element={<TeacherCredentials />} />
     </Routes>
   );
 };

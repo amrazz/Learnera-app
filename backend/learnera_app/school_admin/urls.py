@@ -16,7 +16,10 @@ from .views import (
     StudentDetailView,
     StudentUpdateView,
     StudentBlockView,
-    StudentDeleteView
+    StudentDeleteView,
+    TeacherBlockUnblockView,
+    TeacherDetailView,
+    TeacherListCreateView
 )
 
 router = DefaultRouter()
@@ -41,7 +44,12 @@ urlpatterns = [
     path('parents/', ParentListCreateView.as_view(), name='parent-list-create'),
     path('parents/<int:pk>/', ParentDetailView.as_view(), name='parent-detail'),
     path('parents/<int:pk>/students/', ParentStudentManagementView.as_view(), name='parent-student-management'),
-    path('parents/<int:pk>/block/', ParentBlockUnblockView.as_view(), name="parent-block-unblock")
+    path('parents/<int:pk>/block/', ParentBlockUnblockView.as_view(), name="parent-block-unblock"),
+    
+    
+    path('teachers/', TeacherListCreateView.as_view(), name='teacher-list-create'),
+    path('teachers/<int:pk>/', TeacherDetailView.as_view(), name="teacher-detail-view"),
+    path('teachers/<int:pk>/block/', TeacherBlockUnblockView.as_view(), name="teacher-block-unblock-view")
 ]
 
 

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import api from "../../../api";
 import { Pencil, Plus, Search, Trash2, Users } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import Modal from "../Modal";
+import Modal from "../../Modal";
 
 const ShowClass = () => {
   const [classes, setClasses] = useState([]);

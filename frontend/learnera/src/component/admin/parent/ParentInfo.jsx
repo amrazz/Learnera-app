@@ -16,10 +16,12 @@ import {
   Delete,
   Users,
   Unlock,
-  Lock
+  Lock,
+  Cake,
+  Dna
 } from "lucide-react";
 import { HashLoader } from "react-spinners";
-import Modal from "../Modal";
+import Modal from "../../Modal";
 
 const ParentInfo = () => {
   const { parentId } = useParams();
@@ -196,7 +198,7 @@ const ParentInfo = () => {
               )}
             </div>
             <h2 className="text-2xl font-semibold text-gray-800">
-              {parent.user.first_name} {parent.user.last_name}
+              {parent.user.username} 
             </h2>
             <p className="text-gray-500">{parent.user.email}</p>
             <p className="text-gray-500 mt-2">{parent.occupation}</p>
@@ -211,6 +213,11 @@ const ParentInfo = () => {
             <div className="space-y-3">
               <ConditionalDetailRow
                 icon={<Mail className="h-5 w-5 text-blue-500" />}
+                label="First Name"
+                value={parent.user.first_name}
+              />
+               <ConditionalDetailRow
+                icon={<Mail className="h-5 w-5 text-blue-500" />}
                 label="Email"
                 value={parent.user.email}
               />
@@ -224,12 +231,17 @@ const ParentInfo = () => {
                 label="Occupation"
                 value={parent.occupation}
               />
+              <ConditionalDetailRow
+                icon={<Cake className="h-5 w-5 text-purple-500" />}
+                label="Date of Birth"
+                value={parent.user.date_of_birth}
+              />
             </div>
             <div className="space-y-3">
-              <ConditionalDetailRow
-                icon={<Home className="h-5 w-5 text-cyan-500" />}
-                label="Address"
-                value={parent.user.address}
+            <ConditionalDetailRow
+                icon={<Mail className="h-5 w-5 text-blue-500" />}
+                label="Last Name"
+                value={parent.user.last_name}
               />
               <ConditionalDetailRow
                 icon={<MapPin className="h-5 w-5 text-lime-500" />}
@@ -240,6 +252,16 @@ const ParentInfo = () => {
                 icon={<Flag className="h-5 w-5 text-emerald-500" />}
                 label="Country"
                 value={parent.user.country}
+              />
+              <ConditionalDetailRow
+                icon={<MapPin className="h-5 w-5 text-emerald-500" />}
+                label="Address"
+                value={parent.user.address}
+              />
+              <ConditionalDetailRow
+                icon={<Dna className="h-5 w-5 text-blue-500" />}
+                label="Gender"
+                value={parent.user.gender === "M" ? "Male" : "Female"}
               />
             </div>
           </div>

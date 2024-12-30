@@ -19,11 +19,17 @@ import {
   Ban,
   Delete,
   DeleteIcon,
+  PhoneCall,
+  Briefcase,
+  Dna,
+  FolderPen,
+  Lock,
+  Unlock,
 } from "lucide-react";
 import { HashLoader } from "react-spinners";
 import { MdOutlineDelete } from "react-icons/md";
 import { BlockStudent, deleteStudent } from "./CrudFunctions";
-import Modal from "../Modal";
+import Modal from "../../Modal";
 
 const StudentInfo = () => {
   const { studentId } = useParams();
@@ -183,22 +189,26 @@ const StudentInfo = () => {
 
           <button
             onClick={() => setShowDeleteModal(true)}
-            className="bg-red-500 text-white px-4 py-2 rounded-lg shadow-md hover:bg-red-600 flex items-center transition-all duration-300 "
+            className="bg-red-500 text-white px-4 py-2 rounded-lg shadow-md hover:bg-red-600 flex items-center transition-all duration-300"
           >
-            <MdOutlineDelete className="mr-2 h-5 w-5" />
+            <DeleteIcon className="mr-2 h-5 w-5" />
             <span>Delete</span>
           </button>
 
           <button
             onClick={() => setShowBlockModal(true)}
-            className={`${
-              student?.user?.is_active
-              ? "bg-green-500 hover:bg-green-700"
-              : "bg-gray-500 hover:bg-gray-700"
-            } text-white px-4 py-2 rounded-lg flex items-center`}
+            className={`px-4 py-2 rounded-lg shadow-md flex items-center transition-all duration-300 ${
+              student.user.is_active 
+                ? "bg-orange-500 hover:bg-orange-600 text-white"
+                : "bg-green-500 hover:bg-green-600 text-white"
+            }`}
           >
-            <Ban className="mr-2 h-5 w-5" />
-            <span>{student?.user?.is_active ? "Block" : "Unblock"}</span>
+            {student.user.is_active ? (
+              <Lock className="mr-2 h-5 w-5" />
+            ) : (
+              <Unlock className="mr-2 h-5 w-5" />
+            )}
+            <span>{student.user.is_active ? "Block" : "Unblock"}</span>
           </button>
         </div>
       </div>
@@ -222,14 +232,11 @@ const StudentInfo = () => {
                 </div>
               )}
             </div>
-            <h2 className="text-2xl font-semibold text-gray-800">
-              {student.user.first_name} {student.user.last_name}
+            <h2 className="text-2xl font-semibold text-gray-800 mb-2">
+              {student.user.username} 
             </h2>
             <p className="text-gray-500">{student.user.email}</p>
-            <p className="text-gray-500 mt-1">
-              {student.user.gender &&
-                `Gender: ${student.user.gender === "F" ? "Female" : "Male"}`}
-            </p>
+            
           </div>
         </div>
 
@@ -240,51 +247,41 @@ const StudentInfo = () => {
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-3">
               <ConditionalDetailRow
-                icon={<User className="h-5 w-5 text-blue-500" />}
-                label="Admission Number"
-                value={student.admission_number}
+                icon={<FolderPen className="h-5 w-5 text-blue-500" />}
+                label="First Name"
+                value={student.user.first_name}
+              />
+               <ConditionalDetailRow
+                icon={<Mail className="h-5 w-5 text-blue-500" />}
+                label="Email"
+                value={student.user.email}
               />
               <ConditionalDetailRow
-                icon={<BookOpen className="h-5 w-5 text-green-500" />}
-                label="Roll Number"
-                value={student.roll_number}
-              />
-              <ConditionalDetailRow
-                icon={<GraduationCap className="h-5 w-5 text-purple-500" />}
-                label="Class"
-                value={`${student.class_assigned.class_name} - ${student.class_assigned.section_name}`}
-              />
-              <ConditionalDetailRow
-                icon={<Cake className="h-5 w-5 text-pink-500" />}
-                label="Date of Birth"
-                value={student.user.date_of_birth}
-              />
-              <ConditionalDetailRow
-                icon={<PhoneCallIcon className="h-5 w-5 text-indigo-500" />}
+                icon={<PhoneCall className="h-5 w-5 text-green-500" />}
                 label="Phone Number"
                 value={student.user.phone_number}
               />
+              <ConditionalDetailRow
+                icon={<Briefcase className="h-5 w-5 text-purple-500" />}
+                label="Occupation"
+                value={student.occupation}
+              />
+              <ConditionalDetailRow
+                icon={<Cake className="h-5 w-5 text-purple-500" />}
+                label="Date of Birth"
+                value={student.user.date_of_birth}
+              />
+                            <ConditionalDetailRow
+                icon={<Dna className="h-5 w-5 text-blue-500" />}
+                label="Gender"
+                value={student.user.gender === "M" ? "Male" : "Female"}
+              />
             </div>
             <div className="space-y-3">
-              <ConditionalDetailRow
-                icon={<User className="h-5 w-5 text-orange-500" />}
-                label="Parent Name"
-                value={student.parent_name}
-              />
-              <ConditionalDetailRow
-                icon={<Mail className="h-5 w-5 text-red-500" />}
-                label="Parent Email"
-                value={student.parent_email}
-              />
-              <ConditionalDetailRow
-                icon={<Calendar className="h-5 w-5 text-teal-500" />}
-                label="Class Teacher"
-                value={student.class_assigned.class_teacher}
-              />
-              <ConditionalDetailRow
-                icon={<Home className="h-5 w-5 text-cyan-500" />}
-                label="Address"
-                value={student.user.address}
+            <ConditionalDetailRow
+                icon={<FolderPen className="h-5 w-5 text-blue-500" />}
+                label="Last Name"
+                value={student.user.last_name}
               />
               <ConditionalDetailRow
                 icon={<MapPin className="h-5 w-5 text-lime-500" />}
@@ -292,15 +289,21 @@ const StudentInfo = () => {
                 value={student.user.city}
               />
               <ConditionalDetailRow
+                icon={<MapPin className="h-5 w-5 text-lime-500" />}
+                label="State"
+                value={student.user.state}
+              />
+              <ConditionalDetailRow
                 icon={<Flag className="h-5 w-5 text-emerald-500" />}
                 label="Country"
                 value={student.user.country}
               />
               <ConditionalDetailRow
-                icon={<UserCircle2 className="h-5 w-5 text-fuchsia-500" />}
-                label="Emergency Contact"
-                value={student.user.emergency_contact_number}
+                icon={<MapPin className="h-5 w-5 text-emerald-500" />}
+                label="Address"
+                value={student.user.address}
               />
+
             </div>
           </div>
         </div>
