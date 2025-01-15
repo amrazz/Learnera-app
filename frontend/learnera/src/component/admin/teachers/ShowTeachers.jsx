@@ -67,9 +67,6 @@ const ShowTeachers = () => {
                   Teacher Name
                 </th>
                 <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider">
-                  Qualifications
-                </th>
-                <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider">
                   Email
                 </th>
                 <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider">
@@ -87,7 +84,7 @@ const ShowTeachers = () => {
                   className="hover:bg-gray-50 cursor-pointer transition-colors duration-300"
                   key={teacher.user.id}
                   onClick={() =>
-                    navigate(`/admin_dashboard/teacher_info/${teacher.id}`)
+                    navigate(`/admin/teacher_info/${teacher.id}`)
                   }
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -114,10 +111,6 @@ const ShowTeachers = () => {
                         </div>
                       </div>
                     </div>
-                  </td>
-
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {teacher.qualifications || "Not specified"}
                   </td>
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600">

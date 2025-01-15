@@ -25,9 +25,13 @@ import {
   FolderPen,
   Lock,
   Unlock,
+  UserCircle,
+  Users,
+  Heart,
+  Share2,
 } from "lucide-react";
 import { HashLoader } from "react-spinners";
-import { MdOutlineDelete } from "react-icons/md";
+import { MdBedroomParent, MdOutlineDelete } from "react-icons/md";
 import { BlockStudent, deleteStudent } from "./CrudFunctions";
 import Modal from "../../Modal";
 
@@ -71,7 +75,7 @@ const StudentInfo = () => {
         const success = await deleteStudent(studentId); // Await the deleteStudent promise
         if (success) {
             console.log("Delete successful, navigating...");
-            navigate("/admin_dashboard/show_students");
+            navigate("/admin/show_students");
             toast.success("Student deleted successfully!");
         } else {
             toast.error("Failed to delete student");
@@ -170,7 +174,7 @@ const StudentInfo = () => {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center">
           <Link
-            to="/admin_dashboard/show_students"
+            to="/admin/show_students"
             className="mr-4 text-gray-600 hover:text-gray-800 transition-colors"
           >
             <ArrowLeft className="h-6 w-6" />
@@ -179,7 +183,7 @@ const StudentInfo = () => {
         </div>
         <div className="flex items-center gap-4">
           <Link
-            to={`/admin_dashboard/student_info/${studentId}/edit`}
+            to={`/admin/student_info/${studentId}/edit`}
             className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-600 flex items-center transition-all duration-300"
             title="Edit Student Information"
           >
@@ -271,10 +275,20 @@ const StudentInfo = () => {
                 label="Date of Birth"
                 value={student.user.date_of_birth}
               />
-                            <ConditionalDetailRow
+              <ConditionalDetailRow
                 icon={<Dna className="h-5 w-5 text-blue-500" />}
                 label="Gender"
                 value={student.user.gender === "M" ? "Male" : "Female"}
+              />
+              <ConditionalDetailRow
+                icon={<Users className="h-5 w-5 text-blue-500" />}
+                label="Parent Name"
+                value={student.parents['parent_name']}
+              />
+              <ConditionalDetailRow
+                icon={<PhoneCall className="h-5 w-5 text-blue-500" />}
+                label="Parent Phone Number"
+                value={student.parents['parent_phone_number']}
               />
             </div>
             <div className="space-y-3">
@@ -302,6 +316,11 @@ const StudentInfo = () => {
                 icon={<MapPin className="h-5 w-5 text-emerald-500" />}
                 label="Address"
                 value={student.user.address}
+              />
+              <ConditionalDetailRow
+                icon={<Share2 className="h-5 w-5 text-emerald-500" />}
+                label="Parent Role"
+                value={student.parents['relationship_type']}
               />
 
             </div>

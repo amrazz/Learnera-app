@@ -3,70 +3,39 @@ import { useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
 import api from "../../../api";
 import { validationSchema, initialValues, inputs } from "./Constants";
+import { HashLoader } from "react-spinners";
 
 const AddParents = () => {
   const [profile, setProfile] = useState(null);
-  const [students, setStudents] = useState([]);
-  const [selectedStudents, setSelectedStudents] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filteredStudents, setFilteredStudents] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchStudents = async () => {
-      try {
-        const response = await api.get("school_admin/students");
-        if (response.status === 200) {
-          setStudents(response.data);
-          setFilteredStudents(response.data);
-        }
-      } catch (error) {
-        console.error("Error fetching students:", error);
-        setError("Failed to fetch students. Please try again.");
-      }
-    };
-    fetchStudents();
-  }, []);
-
-  useEffect(() => {
-    const filtered = students.filter(
-      (student) =>
-        student.admission_number
-          ?.toString()
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        student.user?.first_name
-          ?.toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        student.user?.last_name
-          ?.toLowerCase()
-          .includes(searchTerm.toLowerCase())
-    );
-    setFilteredStudents(filtered);
-  }, [searchTerm, students]);
 
   const parentFormik = useFormik({
     initialValues,
     validationSchema,
     onSubmit: async (values, { resetForm }) => {
-      if (selectedStudents.length === 0) {
-        setError("Please select at least one student");
-        return;
-      }
 
       setSubmitting(true);
       setError("");
 
       try {
         const formData = new FormData();
+        const generatePassword = (length = 12) => {
+          const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+[]{}|;:,.<>?';
+          let password = '';
+          for (let i = 0; i < length; i++) {
+            password += characters.charAt(Math.floor(Math.random() * characters.length));
+          }
+          return password;
+        };
 
         const userData = {
           username: values.username,
           email: values.email,
-          password: values.password,
+          password: generatePassword(),
           phone_number: values.phoneNumber,
           emergency_contact_number: values.emergencyContactNumber,
           address: values.address,
@@ -81,10 +50,6 @@ const AddParents = () => {
 
         formData.append("user", JSON.stringify(userData));
         formData.append("occupation", values.occupation);
-        formData.append(
-          "student_admission_numbers",
-          JSON.stringify(selectedStudents)
-        );
 
         if (profile) {
           formData.append("profile_image", profile);
@@ -98,14 +63,8 @@ const AddParents = () => {
 
         if (response.status === 201) {
           resetForm();
-          setSelectedStudents([]);
           setProfile(null);
-          navigate("/admin_dashboard/parent_credentials", {
-            state: {
-              username: response.data.username,
-              password: response.data.password,
-            },
-          });
+          navigate("/admin/show_parents");
         }
       } catch (error) {
         console.error("Error adding parent:", error);
@@ -119,18 +78,14 @@ const AddParents = () => {
     },
   });
 
-  const handleStudentSelect = (admissionNumber) => {
-    if (!selectedStudents.includes(admissionNumber)) {
-      setSelectedStudents([...selectedStudents, admissionNumber]);
-    }
-    setSearchTerm("");
-  };
-
-  const removeStudent = (indexToRemove) => {
-    setSelectedStudents(
-      selectedStudents.filter((_, index) => index !== indexToRemove)
+  
+  if (submitting) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <HashLoader color="#4F46E5" />
+      </div>
     );
-  };
+  }
 
   return (
     <div className="max-w-4xl mx-auto p-8 bg-white border border-gray-200 rounded shadow-lg">
@@ -231,46 +186,65 @@ const AddParents = () => {
           ))}
         </div>
 
-        {/* Student Linking Section */}
+        {/* Student Search and Selection Section
         <div className="space-y-4">
-          <label className="block font-medium text-gray-700">
-            Link Students
-          </label>
-
-          <input
-            type="text"
-            placeholder="Search students by name or admission number..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="border p-2 w-full rounded"
-          />
-
+          {renderStudentSearch()}
+          
+          Student Search Results
           {searchTerm && filteredStudents.length > 0 && (
             <div className="border rounded-md max-h-40 overflow-y-auto">
               {filteredStudents.map((student) => (
                 <div
                   key={student.admission_number}
-                  className="p-2 hover:bg-gray-100 cursor-pointer"
-                  onClick={() => handleStudentSelect(student.admission_number)}
+                  className="p-2 hover:bg-gray-100 flex justify-between items-center"
                 >
-                  {student.user.first_name} {student.user.last_name} (
-                  {student.admission_number})
+                  <span>
+                    {student.user.first_name} {student.user.last_name} (
+                    {student.admission_number})
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleStudentSelect(student, 'Father')}
+                      className="px-2 py-1 bg-blue-500 text-white rounded text-sm"
+                    >
+                      Add as Father
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleStudentSelect(student, 'Mother')}
+                      className="px-2 py-1 bg-pink-500 text-white rounded text-sm"
+                    >
+                      Add as Mother
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleStudentSelect(student, 'Guardian')}
+                      className="px-2 py-1 bg-green-500 text-white rounded text-sm"
+                    >
+                      Add as Guardian
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
           )}
 
+          Selected Students Display
           <div className="space-y-2">
-            {selectedStudents.length > 0 ? (
-              selectedStudents.map((admissionNumber, index) => {
+            {studentRelationships.length > 0 ? (
+              studentRelationships.map((relationship, index) => {
                 const student = students.find(
-                  (s) => s.admission_number === admissionNumber
+                  (s) => s.admission_number === relationship.admission_number
                 );
                 return (
                   <div key={index} className="flex items-center gap-2">
                     <div className="flex-1 p-2 bg-gray-50 rounded">
-                      {student?.user?.first_name} {student?.user?.last_name}
-                      (Admission No: {admissionNumber})
+                      <span className="font-medium">
+                        {relationship.relationship_type}:
+                      </span>{" "}
+                      {student?.user?.first_name} {student?.user?.last_name} (
+                      {relationship.admission_number})
                     </div>
                     <button
                       type="button"
@@ -284,11 +258,11 @@ const AddParents = () => {
               })
             ) : (
               <div className="flex justify-center items-center p-4 bg-gray-50 rounded">
-                No student selected
+                No students selected
               </div>
             )}
           </div>
-        </div>
+        </div> */}
 
         {/* Submit Button */}
         <div className="mt-6 text-end">

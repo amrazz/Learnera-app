@@ -104,7 +104,7 @@ const Sidebar = ({ activeMenu, setActiveMenu }) => {
                   {subMenus[item.id].map((subItem, idx) => (
                     <li key={idx}>
                       <Link
-                        to={`/admin_dashboard/${subItem
+                        to={`/admin/${subItem
                           .toLowerCase()
                           .replace(" ", "_")}`}
                         className="p-2 block bg-white/10 hover:bg-white/20 rounded-lg text-gray-300 hover:text-white"

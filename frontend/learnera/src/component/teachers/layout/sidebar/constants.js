@@ -6,11 +6,10 @@ import { CiSettings } from "react-icons/ci";
 import { MegaphoneIcon } from "lucide-react";
 
 export const menu = [
-  { id: "dashboard", name: "Dashboard", logo: LuLayoutDashboard }, 
-  { id: "my-student-list", name: "My Student List", logo: FaBook },
-  { id: "class-incharge", name: "Class Incharge", logo: FaClipboardList },
-  { id: "attendance", name: "Attendance", logo: FaUserCheck }, 
-  { id: "exams", name: "Exams", logo: FaRegEdit }, 
+  { id: "dashboard", name: "Dashboard", logo: LuLayoutDashboard, link : 'dashboard' }, 
+  { id: "my-student-list", name: "My Student List", logo: FaBook, link : 'my-students-list' },
+  { id: "attendance", name: "Attendance", logo: FaUserCheck, link : 'mark-attendance' }, 
+  { id: "exams", name: "Exams", logo: FaRegEdit, link : '' }, 
   { id: "mark-entry", name: "Mark Entry", logo: FaChartLine },
   { id: "assignments", name: "Assignments", logo: FaClipboardList }, 
   { id: "online-class", name: "Online Classes", logo: FaCalendarAlt },
@@ -20,4 +19,6 @@ export const menu = [
 ];
 
 export const subMenus = {
+  attendance: ["Mark Attendance", "Attendance History"],
 };
+

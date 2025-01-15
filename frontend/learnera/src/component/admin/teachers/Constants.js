@@ -8,13 +8,6 @@ const validationSchema = Yup.object({
   email: Yup.string()
       .email("Invalid email format")
       .required("Email is required"),
-  password: Yup.string()
-      .min(8, "Password must be at least 8 characters")
-      .matches(/[A-Z]/, "Password must contain at least one uppercase letter")
-      .matches(/[a-z]/, "Password must contain at least one lowercase letter")
-      .matches(/\d/, "Password must contain at least one number")
-      .matches(/[@$!%*?&#]/, "Password must contain at least one special character")
-      .required("Password is required"),
   firstName: Yup.string()
       .trim()
       .matches(/^(?!\s{2,})/, "First name cannot start with two spaces")
@@ -91,13 +84,28 @@ const validationSchema = Yup.object({
               return value.size <= maxSize;
           }
       ),
-  confirmPassword: Yup.string()
-    .oneOf([Yup.ref("password"), null], "Passwords must match")
-    .required("Confirm Password is required"),
-  qualifications: Yup.string()
-      .trim()
-      .matches(/^(?!\s{2,})/, "Qualifications cannot start with two spaces")
-      .required("Qualifications are required"),
+    documents: Yup.array().of(
+      Yup.mixed()
+        .test(
+          "fileType",
+          "Only PDF files are allowed",
+          (value) => {
+            if (!value) return true;
+            return value.type === "application/pdf";
+          }
+        )
+        .test(
+          "fileSize",
+          "File size must be less than 5MB",
+          (value) => {
+            if (!value) return true;
+            return value.size <= 5 * 1024 * 1024;
+          }
+        )
+    ),
+    documentTitles: Yup.array().of(
+      Yup.string().required("Document title is required")
+    )
 });
 
 const initialValues = {
@@ -115,16 +123,15 @@ const initialValues = {
     state: "",
     district: "",
     country: "",
-    qualifications: "",
     classes: [],
-    subjects: []
+    subjects: [],
+    documents : [],
+    docuementTitles : [],
   };
   
   const inputs = [
     { name: "username", label: "Username", type: "text" },
     { name: "email", label: "Email", type: "email" },
-    { name: "password", label: "Password", type: "password" },
-    { name: "confirmPassword", label: "Confirm Password", type: "password" },
     { name: "firstName", label: "First Name", type: "text" },
     { name: "lastName", label: "Last Name", type: "text" },
     { name: "phoneNumber", label: "Phone Number", type: "tel" },
@@ -136,7 +143,6 @@ const initialValues = {
     { name: "state", label: "State", type: "text" },
     { name: "district", label: "District", type: "text" },
     { name: "country", label: "Country", type: "text" },
-    { name: "qualifications", label: "Qualifications", type: "textarea" },
   ];
 
 
@@ -163,13 +169,13 @@ export { initialValues, validationSchema, inputs }
 // --------------------------------------------
 
 
+
 const TeacherEditSchema = Yup.object().shape({
   username: Yup.string().required("Username is required"),
   first_name: Yup.string().required("First name is required"),
   last_name: Yup.string().required("Last name is required"),
   email: Yup.string().email("Invalid email").required("Email is required"),
   phone_number: Yup.string().required("Phone number is required"),
-  qualifications: Yup.string().required("Qualifications are required"),
   address: Yup.string().required("Address is required"),
   city: Yup.string().required("City is required"),
   state: Yup.string().required("State is required"),
@@ -177,9 +183,30 @@ const TeacherEditSchema = Yup.object().shape({
   country: Yup.string().required("Country is required"),
   date_of_birth: Yup.string().required("Date of birth is required"),
   gender: Yup.string().required("Gender is required"),
+  documents: Yup.array().of(
+    Yup.mixed()
+      .test(
+        "fileType",
+        "Only PDF files are allowed",
+        (value) => {
+          if (!value) return true;
+          return value.type === "application/pdf";
+        }
+      )
+      .test(
+        "fileSize",
+        "File size must be less than 5MB",
+        (value) => {
+          if (!value) return true;
+          return value.size <= 5 * 1024 * 1024;
+        }
+      )
+  ),
+  documentTitles: Yup.array().of(
+    Yup.string().required("Document title is required")
+  )
 });
 
-// Form fields configuratione
 const teacherFormFields = [
   {
     section: "Basic Information",
@@ -189,7 +216,6 @@ const teacherFormFields = [
       { name: "last_name", label: "Last Name", type: "text" },
       { name: "email", label: "Email", type: "email" },
       { name: "phone_number", label: "Phone Number", type: "text" },
-      { name: "qualifications", label: "Qualifications", type: "textarea" },
     ],
   },
   {
@@ -219,6 +245,10 @@ const teacherFormFields = [
       { name: "country", label: "Country", type: "text" },
     ],
   },
+  {
+    section: "Qualification Documents",
+    fields: [] 
+  }
 ];
 
-export {TeacherEditSchema, teacherFormFields, }
+export { TeacherEditSchema, teacherFormFields };

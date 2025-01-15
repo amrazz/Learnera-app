@@ -4,9 +4,13 @@ import api from "../../../api";
 import { validationSchema, inputs, initialValues } from "./Constants";
 import { useFormik } from "formik";
 import { toast } from "react-toastify";
+import { HashLoader } from "react-spinners";
 
 const AddTeachers = () => {
   const [profile, setProfile] = useState(null);
+  const [documents, setDocuments] = useState([]);
+  const [documentTitles, setDocumentTitles] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
   const teacherFormik = useFormik({
@@ -16,12 +20,25 @@ const AddTeachers = () => {
     },
     validationSchema,
     onSubmit: async (values, { resetForm }) => {
+      setSubmitting(true);
       const formData = new FormData();
+
+      const generatePassword = (length = 12) => {
+        const characters =
+          "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+[]{}|;:,.<>?";
+        let password = "";
+        for (let i = 0; i < length; i++) {
+          password += characters.charAt(
+            Math.floor(Math.random() * characters.length)
+          );
+        }
+        return password;
+      };
 
       const userData = {
         username: values.username,
         email: values.email,
-        password: values.password,
+        password: generatePassword(),
         phone_number: values.phoneNumber,
         emergency_contact_number: values.emergencyContactNumber,
         gender: values.gender,
@@ -42,11 +59,15 @@ const AddTeachers = () => {
       };
 
       formData.append("user", JSON.stringify(userData));
-      formData.append("qualifications", payload.qualifications);
 
       if (profile) {
         formData.append("profile_image", profile);
       }
+
+      documents.forEach((doc, index) => {
+        formData.append("documents", doc);
+        formData.append("document_titles", documentTitles[index]);
+      });
 
       try {
         const response = await api.post("school_admin/teachers/", formData, {
@@ -57,22 +78,49 @@ const AddTeachers = () => {
 
         if (response.status === 201) {
           toast.success("Teacher Created successfully");
-          setTimeout(() => {
-            navigate("/admin_dashboard/teacher_credentials", {
-              state: {
-                username: username,
-                password: password,
-              },
-            });
-          }, 2000);
+            navigate("/admin/show_teachers");
           resetForm();
         }
       } catch (error) {
         console.error("Error adding teacher:", error.response?.data || error);
         toast.error("Failed to create teacher");
+      } finally {
+        setSubmitting(false);
       }
     },
   });
+
+  const handleDocumentChange = (event, index) => {
+    const newDocument = [...documents];
+    newDocument[index] = event.target.files[0];
+    setDocuments(newDocument);
+  };
+
+  const handleDocumentTitleChange = (event, index) => {
+    const newTitles = [...documentTitles];
+    newTitles[index] = event.target.value;
+    setDocumentTitles(newTitles);
+  };
+
+  const addDocumentField = () => {
+    setDocuments([...documents, null]);
+    setDocumentTitles([...documentTitles, ""]);
+  };
+
+  const removeDocumentField = (index) => {
+    const newDocuments = documents.filter((_, i) => i !== index);
+    const newTitles = documentTitles.filter((_, i) => i !== index);
+    setDocuments(newDocuments);
+    setDocumentTitles(newTitles);
+  };
+
+  if (submitting) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <HashLoader color="#4F46E5" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto p-8 bg-white border border-gray-200 rounded shadow-lg">
@@ -176,6 +224,46 @@ const AddTeachers = () => {
               )}
             </div>
           ))}
+        </div>
+
+
+        <div className="mt-6">
+          <label className="block font-medium text-gray-700 mb-2">
+            Qualification Documents
+          </label>
+          {documents.map((doc, index) => (
+            <div key={index} className="flex gap-4 mb-4">
+              <div className="flex-1">
+                <input
+                  type="text"
+                  placeholder="Document Title"
+                  value={documentTitles[index]}
+                  onChange={(e) => handleDocumentTitleChange(e, index)}
+                  className="border p-2 w-full rounded mb-2"
+                />
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={(e) => handleDocumentChange(e, index)}
+                  className="w-full"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => removeDocumentField(index)}
+                className="h-10 px-5 bg-red-500 text-white rounded hover:bg-red-600"
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={addDocumentField}
+            className="mt-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+          >
+            Add Document
+          </button>
         </div>
 
         <div className="mt-6 text-end">

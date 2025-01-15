@@ -6,7 +6,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { login_image } from "../../assets/landing_page";
 import { login, schooladmin_login } from "../../redux/features/auth/actions";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, LogIn } from "lucide-react";
 import { PropagateLoader } from "react-spinners";
 import { ACCESS_TOKEN, REFRESH_TOKEN } from "../../constants";
@@ -27,6 +27,8 @@ const Login = () => {
   const { status, error, Role, isAuthenticated } = useSelector(
     (state) => state.auth
   );
+  const location = useLocation();
+  const selectedRole = location.state?.selectedRole || 'student';
 
   useEffect(() => {
     const currentPath = window.location.pathname;
@@ -37,12 +39,16 @@ const Login = () => {
 }, []);
 
 useEffect(() => {
+
+  if (error) {
+    toast.error(error)
+  }
   if (isAuthenticated && Role) {
     const routes = {
       is_student: "/students",
       is_teacher: "/teachers",
       is_parent: "/parents",
-      school_admin: "/admin_dashboard",
+      school_admin: "/admin",
     };
 
         const targetRoute = routes[Role];
@@ -81,7 +87,7 @@ useEffect(() => {
           is_student : "/students",
           is_teacher: "/teachers",
           is_parent: "/parents",
-          school_admin: "/admin_dashboard",
+          school_admin: "/admin",
         }
           const targetRoute = routes[credentials.role];
           if (targetRoute) {
@@ -90,8 +96,8 @@ useEffect(() => {
           }, 2000)
 
 
-    } catch (err) {
-      toast.error(err || "Invalid Credentials. Please try again.");
+    } catch (error) {
+      toast.error(error || "Invalid Credentials. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -139,7 +145,7 @@ useEffect(() => {
                           : "border-gray-300 hover:border-blue-500"
                       }`}
                     >
-                      <option value="student">Student</option>
+                      <option value="student">Student</option>c
                       <option value="teacher">Teacher</option>
                       <option value="school_admin">School Admin</option>
                       <option value="parent">Parent</option>

@@ -1,10 +1,28 @@
 import React, { useState, useEffect } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
+import { Loader } from "lucide-react";
 import api from "../../../api";
 import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import { useNavigate, useParams } from "react-router-dom";
+import SearchTeacher from "./SearchTeacher";
+
+const validationSchema = Yup.object({
+  class_name: Yup.string()
+    .max(2, "Class Name must be at most 2 characters")
+    .required("Class Name is required")
+    .matches(/^[0-9]+$/, "Class Name must be numeric"),
+  section_name: Yup.string()
+    .max(1, "Section must be a single character")
+    .required("Section is required")
+    .matches(/^[A-Z]$/, "Section must be a single uppercase letter"),
+  student_count: Yup.number()
+    .required("Student Count is required")
+    .positive()
+    .integer()
+    .max(100),
+  class_teacher: Yup.string().nullable(),
+});
 
 const EditClass = () => {
   const [initialValues, setInitialValues] = useState({
@@ -14,115 +32,102 @@ const EditClass = () => {
     class_teacher: "",
   });
   const [teachers, setTeachers] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { classId, sectionId } = useParams();
 
-
-  const validationSchema = Yup.object({
-    class_name: Yup.string()
-      .max(2, "Class Name must be at most 2 characters")
-      .required("Class Name is required"),
-    section_name: Yup.string()
-      .max(1, "Section must be a single character")
-      .required("Section is required"),
-    student_count: Yup.number()
-      .default(30)
-      .required("Student Count is required")
-      .positive("Student Count must be a positive number")
-      .integer("Student Count must be an integer"),
-  });
-
   useEffect(() => {
-    const fetchClassData = async () => {
+    const fetchData = async () => {
       try {
-        const response = await api.get("school_admin/classes");
+        const [classResponse, teachersResponse] = await Promise.all([
+          api.get("school_admin/classes"),
+          api.get("school_admin/teachers/"),
+        ]);
 
+        setTeachers(teachersResponse.data);
 
-        const classData = response.data.find(
-          cls => cls.id === parseInt(classId)
+        const classData = classResponse.data.results.find(
+          (cls) => cls.id === parseInt(classId)
         );
 
-        if(!classData) {
-          toast.error("Class not found!!")
-          setTimeout(() => {
-            navigate("/admin_dashboard/show_class");
-            
-          })
-          return;
+        if (!classData) {
+          throw new Error("Class not found");
         }
+
         const section = classData.sections.find(
-          section => section.id === parseInt(sectionId)
+          (section) => section.id === parseInt(sectionId)
         );
-        
+
         if (!section) {
-          toast.error("Section not found");
-          setTimeout(() => {
-            navigate("/admin_dashboard/show_class");
-            
-          })
-          return;
+          throw new Error("Section not found");
         }
-        
+
+        // Get the teacher's full name if a teacher is assigned
+        let teacherName = "";
+        if (classData.class_teacher) {
+          teacherName = `${classData.class_teacher.user.first_name} ${classData.class_teacher.user.last_name}`;
+        }
+
         setInitialValues({
           class_name: classData.class_name,
           section_name: section.section_name,
           student_count: section.student_count,
           class_teacher: classData.class_teacher?.id || "",
+          teacher_name: teacherName, // Add teacher name to initial values
         });
-        
-        setIsLoading(false);
       } catch (error) {
-        toast.error("Failed to fetch class data");
-        navigate('/admin_dashboard/show_class');
+        toast.error(error.message || "Failed to fetch data");
+        setTimeout(() => navigate("/admin/show_class"), 1000);
+      } finally {
+        setIsLoading(false);
       }
     };
-  
-    if (classId && sectionId) {
-      fetchClassData();
-    }
+
+    fetchData();
   }, [classId, sectionId, navigate]);
 
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
-      const response = await api.put(`school_admin/update/class/${classId}/section/${sectionId}/`, values);
+      setIsLoading(true)
+      console.log(`this is the edited data ${JSON.stringify(values)}`); 
+      
+      const payload = {
+        class_name: values.class_name,
+        section: {
+          section_name: values.section_name,
+          student_count: values.student_count,
+          class_teacher: values.class_teacher || null, 
+        },
+      };
+      const response = await api.put(
+        `school_admin/update/class/${classId}/section/${sectionId}/`,
+        payload
+      );
 
       if (response.status === 200) {
-        toast.success("Class Updated Successfully!", {
-          position: "top-right",
-          autoClose: 3000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: "light",
-        });
-
-        setTimeout(() => {
-          navigate('/admin_dashboard/show_class');
-        }, 3000);
+        toast.success("Class Updated Successfully!");
+        setTimeout(() => navigate("/admin/show_class"), 1000);
       }
     } catch (error) {
-      const errorData = error?.response?.data;
-      let errorMessage = "An unexpected error occurred! Please try again.";
-
-      if (errorData && typeof errorData === "object") {
-        errorMessage = Object.entries(errorData)
-          .map(([field, messages]) => 
-            `${field}: ${Array.isArray(messages) ? messages.join(", ") : messages}`
-          )
-          .join("\n");
-      }
-
+      const errorMessage =
+        error.response?.data?.message ||
+        Object.values(error.response?.data || {})
+          .flat()
+          .join(", ") ||
+        "Update failed";
       toast.error(errorMessage);
     } finally {
       setSubmitting(false);
+      isLoading(false)
     }
   };
 
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader className="h-8 w-8 animate-spin text-blue-500" />
+      </div>
+    );
   }
 
   return (
@@ -139,10 +144,9 @@ const EditClass = () => {
             onSubmit={handleSubmit}
             enableReinitialize
           >
-            {({ isSubmitting }) => (
+            {({ isSubmitting, setFieldValue, values }) => (
               <Form className="space-y-8">
-                <div className="grid gap-6 grid-cols-2">
-                  {/* Class Name */}
+                <div className="grid gap-6 md:grid-cols-2">
                   <div>
                     <label className="block text-gray-700 font-semibold mb-2">
                       Class
@@ -151,8 +155,7 @@ const EditClass = () => {
                       type="text"
                       name="class_name"
                       maxLength="2"
-                      placeholder="Enter class (e.g., 10)"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                     <ErrorMessage
                       name="class_name"
@@ -161,7 +164,6 @@ const EditClass = () => {
                     />
                   </div>
 
-                  {/* Section */}
                   <div>
                     <label className="block text-gray-700 font-semibold mb-2">
                       Section
@@ -170,8 +172,7 @@ const EditClass = () => {
                       type="text"
                       name="section_name"
                       maxLength="1"
-                      placeholder="Enter section (e.g., A)"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase"
                     />
                     <ErrorMessage
                       name="section_name"
@@ -180,7 +181,6 @@ const EditClass = () => {
                     />
                   </div>
 
-                  {/* Student Count */}
                   <div>
                     <label className="block text-gray-700 font-semibold mb-2">
                       Student Count
@@ -188,8 +188,9 @@ const EditClass = () => {
                     <Field
                       type="number"
                       name="student_count"
-                      placeholder="Enter student count"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      min="1"
+                      max="100"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                     <ErrorMessage
                       name="student_count"
@@ -198,46 +199,45 @@ const EditClass = () => {
                     />
                   </div>
 
-                  {/* Class Teacher */}
                   <div>
                     <label className="block text-gray-700 font-semibold mb-2">
                       Class Teacher
                     </label>
-                    <Field
-                      as="select"
-                      name="class_teacher"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                    >
-                      <option value="">Select Teacher</option>
-                      {/* {teachers.map((teacher) => (
-                        <option key={teacher.id} value={teacher.id}>
-                          {teacher.user.first_name} {teacher.user.last_name}
-                        </option>
-                      ))} */}
+                    <Field name="class_teacher">
+                      {({ field }) => (
+                        <SearchTeacher
+                          teachers={teachers}
+                          onChange={(value) =>
+                            setFieldValue("class_teacher", value)
+                          }
+                          initialTeacherName={values.teacher_name}
+                        />
+                      )}
                     </Field>
-                    <ErrorMessage
-                      name="class_teacher"
-                      component="div"
-                      className="text-red-600 text-sm mt-1"
-                    />
                   </div>
                 </div>
 
                 <div className="flex justify-end space-x-4 mt-6">
                   <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all"
-                  >
-                    {isSubmitting ? "Saving..." : "Update"}
-                  </button>
-
-                  <button
                     type="button"
-                    onClick={() => navigate('/admin_dashboard/show_class')}
-                    className="px-6 py-3 bg-gray-500 text-white font-semibold rounded-lg hover:bg-gray-600 transition-all"
+                    onClick={() => navigate("/admin/show_class")}
+                    className="px-6 py-3 bg-gray-500 text-white font-semibold rounded-lg hover:bg-gray-600"
                   >
                     Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader className="h-4 w-4 animate-spin" />
+                        Updating...
+                      </>
+                    ) : (
+                      "Update"
+                    )}
                   </button>
                 </div>
               </Form>

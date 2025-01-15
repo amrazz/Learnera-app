@@ -30,7 +30,8 @@ class UserLoginView(APIView):
                     "access_token": str(refresh.access_token),
                     "refresh_token": str(refresh),
                     "role": role,
-                    "otp_verified" : otp_verified
+                    "userEmail" : user.email,
+                    "resetPassword" : user.reset_password
                 },
                 status=status.HTTP_200_OK,
             )
@@ -117,3 +118,51 @@ class VerifyOTPView(APIView):
             {"error": "Invalid OTP."},
             status=status.HTTP_400_BAD_REQUEST
         )
+        
+        
+class ChangePasswordView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request):
+        new_password = request.data.get("new_password")
+        confirm_password = request.data.get("confirm_password")
+        email = request.data.get("userEmail")
+        skip = request.data.get("skip", False)
+        
+        try:
+            user = CustomUser.objects.get(email=email)
+            
+            if user.reset_password:
+                return Response(
+                    {"error": "Password has already been changed."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+                
+            if skip:
+                user.reset_password = True
+                user.save()
+                return Response(
+                    {"message": "Password reset skipped successfully."},
+                    status=status.HTTP_200_OK,
+                )
+                
+            if new_password != confirm_password:
+                return Response(
+                    {"error": "New password and confirmation do not match."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+                
+            user.set_password(new_password)
+            user.reset_password = True
+            user.save()
+            
+            return Response(
+                {"message": "Password changed successfully!"},
+                status=status.HTTP_200_OK,
+            )
+            
+        except CustomUser.DoesNotExist:
+            return Response(
+                {'error': 'User not found'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )

@@ -1,27 +1,51 @@
+from datetime import datetime
 import json
+from django.db.models.functions import TruncMonth
+from django.db.models import Count, Q
+import calendar
+from django.http import Http404
+from jsonschema import ValidationError
+from django.db.models import Prefetch
+
+from django.core.cache import cache
+
+from .services import RollNumberService
 from .serializers import (
     ParentSerializer,
     SectionSerializer,
     ClassListSerializer,
     SchoolClassSerializer,
+    SectionTeacherAssignmentSerializer,
     StudentListSerializer,
     StudentDetailSerializer,
     SchoolAdminLoginSerializers,
     SchoolClassUpdateSerializer,
     SchoolClassCreateSerializer,
     SchoolAdminStudentSerializers,
+    StudentParentRelationshipSerlaizer,
     TeacherSerializer,
+    AttendanceHistorySerializer,
+    AttendanceSchoolClassSerializer,
+    AttendanceSectionSerializer,
+    MonthlyStatisticsSerializer,
 )
 from django.db import transaction
-from parents.models import  Parent
+from parents.models import Parent, StudentParentRelationship
 from .models import AdmissionNumber
-from students.models import  Student
-from .email import send_welcome_main
+from students.models import Student
+from .email import EmailService
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from rest_framework_simplejwt.tokens import RefreshToken
-from teachers.models import SchoolClass, Section, Teacher
+from teachers.models import (
+    AcademicYear,
+    Attendance,
+    SchoolClass,
+    Section,
+    Teacher,
+    TeacherDocument,
+)
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework import permissions, status, viewsets, generics
@@ -66,6 +90,15 @@ class CreateStudentView(APIView):
     @transaction.atomic
     def post(self, request, *args, **kwargs):
         try:
+
+            class_assigned_id = request.data.get("class_assigned")
+            section = Section.objects.get(id=class_assigned_id)
+
+            if section.available_students >= section.student_count:
+                return Response(
+                    {"error": "This section has reached its maximum student limit."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             admission_number_obj, _ = AdmissionNumber.objects.get_or_create(
                 key="admission_number",
                 defaults={"value": "200000"},
@@ -75,7 +108,6 @@ class CreateStudentView(APIView):
             admission_number_obj.value = str(admission_number)
             admission_number_obj.save()
 
-            # Prepare student data
             user_data = json.loads(request.data.get("user", "{}"))
             profile_image = request.FILES.get("profile_image")
             if profile_image:
@@ -83,34 +115,98 @@ class CreateStudentView(APIView):
 
             student_data = {
                 "user": user_data,
-                "parent_name": request.data.get("parent_name", ""),
-                "parent_email": request.data.get("parent_email", ""),
                 "admission_number": str(admission_number),
                 "class_assigned": request.data.get("class_assigned"),
             }
 
+            parent_relationships = json.loads(
+                request.data.get("parent_relationships", "[]")
+            )
+
             serializer = SchoolAdminStudentSerializers(data=student_data)
-            if serializer.is_valid():
-                student = serializer.save()
-                
-                send_welcome_main(
-                    user_type='student',
-                    email = user_data['email'],
-                    username=user_data['username'],
-                    password=user_data['password']
-                )
-                return Response(
-                    {
-                        "message": "Student created successfully",
-                        "student_id": student.id,
-                        "admission_number": admission_number,
-                        "username": user_data["username"],
-                        "password": user_data["password"],
-                    },
-                    status=status.HTTP_201_CREATED,
-                )
-            else:
+            if not serializer.is_valid():
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            student = serializer.save()
+            current_date = datetime.now().date()
+
+            try:
+                active_academic_year = AcademicYear.objects.get(is_active=True)
+            except AcademicYear.DoesNotExist:
+                    active_academic_year = None
+
+            try:
+                active_academic_year = AcademicYear.objects.get(is_active=True)
+            except AcademicYear.DoesNotExist:
+                active_academic_year = None
+
+            if not active_academic_year or not (
+                active_academic_year.start_date <= current_date
+            ):
+                if active_academic_year:
+                    active_academic_year.is_active = False
+                    active_academic_year.save()
+
+                new_start_date = datetime(current_date.year, 6, 1).date()
+                new_end_date = datetime(current_date.year + 1, 3, 30).date()
+
+                new_academic_year = AcademicYear.objects.create(
+                    name=f"{new_start_date.year}-{new_end_date.year}",
+                    start_date=new_start_date,
+                    end_date=new_end_date,
+                    is_active=True,
+                )
+
+                student.academic_year = new_academic_year
+            else:
+                student.academic_year = active_academic_year
+
+            student.save()
+
+
+            section.available_students += 1
+            section.save()
+
+            try:
+                RollNumberService.assign_roll_number(
+                    student, student.class_assigned, student.academic_year
+                )
+                RollNumberService.reorder_by_name(student.class_assigned, student.academic_year)
+            except ValidationError as e:
+                transaction.set_rollback(True)
+                return Response(e.detail, status=status.HTTP_400_BAD_REQUEST)
+
+            for relationship in parent_relationships:
+                parent_id = relationship.get("parent_id")
+                relationship_type = relationship.get("relationship_type")
+
+                if parent_id and relationship_type:
+                    try:
+                        parent = Parent.objects.get(id=parent_id)
+                        StudentParentRelationship.objects.create(
+                            parent=parent,
+                            student=student,
+                            relationship_type=relationship_type,
+                        )
+                    except Parent.DoesNotExist:
+                        raise ValidationError("Invalid parent ID provided")
+
+            try:
+                EmailService.send_welcome_email(
+                    user_type="Student",
+                    email=user_data["email"],
+                    username=user_data["username"],
+                    password=user_data["password"],
+                )
+                print("Welcome email initiated for:", user_data["email"])
+            except Exception as email_error:
+                print(f"Failed to send welcome email: {str(email_error)}")
+
+            # Return success response
+            return Response(
+                {"message": "Student created successfully"},
+                status=status.HTTP_201_CREATED,
+            )
 
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -148,18 +244,12 @@ class ClassListView(APIView):
             )
 
 
-class ShowStudentsView(APIView):
+class ShowStudentsView(generics.ListAPIView):
     permission_classes = [permissions.IsAdminUser]
-
-    def get(self, request, *args, **kwargs):
-        try:
-            students = Student.objects.select_related(
-                "user", "class_assigned", "class_assigned__school_class"
-            ).all()
-            serializer = StudentListSerializer(students, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    queryset = Student.objects.select_related(
+        "user", "class_assigned", "class_assigned__school_class"
+    ).all()
+    serializer_class = StudentListSerializer
 
 
 class StudentDetailView(APIView):
@@ -188,7 +278,7 @@ class StudentUpdateView(APIView):
 
     def put(self, request, pk, *args, **kwargs):
         try:
-            student = Student.objects.get(user__id=pk)
+            student = Student.objects.select_related("user").get(user__id=pk)
 
             student_data = {
                 k: v
@@ -272,6 +362,64 @@ class StudentDeleteView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+# -----------------------------------------------
+
+
+class StudentParentRelationshipView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    @transaction.atomic
+    def post(self, request, student_id):
+        try:
+            student = Student.objects.get(id=student_id)
+            parent_id = request.data.get("parent_id")
+            relationship_type = request.data.get("relationship_type")
+
+            if not all([parent_id, relationship_type]):
+                return Response(
+                    {"error": "Parent ID and relationship type are required"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Remove existing relationship if any
+            StudentParentRelationship.objects.filter(student=student).delete()
+
+            # Create new relationship
+            relationship = StudentParentRelationship.objects.create(
+                student=student,
+                parent_id=parent_id,
+                relationship_type=relationship_type,
+            )
+
+            return Response(
+                {"message": "Parent relationship updated successfully"},
+                status=status.HTTP_200_OK,
+            )
+
+        except Student.DoesNotExist:
+            return Response(
+                {"error": "Student not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, student_id):
+        try:
+            student = Student.objects.get(id=student_id)
+            StudentParentRelationship.objects.filter(student=student).delete()
+            return Response(
+                {"message": "Parent relationship removed successfully"},
+                status=status.HTTP_200_OK,
+            )
+        except Student.DoesNotExist:
+            return Response(
+                {"error": "Student not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+
+# -----------------------------------------------
+
+
 class StudentBlockView(APIView):
     permission_classes = [permissions.IsAdminUser]
 
@@ -337,13 +485,9 @@ class CreateSchoolClassViewSet(viewsets.ModelViewSet):
 
 class SchoolClassListView(generics.ListAPIView):
     queryset = SchoolClass.objects.all().prefetch_related(
-        "sections", "class_teacher", "class_teacher__user"
+        "sections", "sections__class_teacher", "sections__class_teacher__user"
     )
-
     serializer_class = ClassListSerializer
-
-    def get_queryset(self):
-        return super().get_queryset()
 
 
 class SchoolClassSectionUpdateView(generics.UpdateAPIView):
@@ -352,36 +496,38 @@ class SchoolClassSectionUpdateView(generics.UpdateAPIView):
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        section_pk = self.kwargs.get("section_pk")
-
-        if section_pk:
-            try:
-                context["section_instance"] = Section.objects.get(
-                    pk=section_pk, school_class_id=self.kwargs.get("pk")
-                )
-
-            except Section.DoesNotExist:
-                raise Exception("Section not found")
+        try:
+            context["section_instance"] = Section.objects.get(
+                pk=self.kwargs.get("section_pk"), school_class_id=self.kwargs.get("pk")
+            )
+        except Section.DoesNotExist:
+            raise ValidationError("Section does not exist")
         return context
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         section_instance = self.get_serializer_context().get("section_instance")
 
+        # Prepare data for serialization
         data = {
-            "class_name": request.data.get("class_name"),
-            "class_teacher": request.data.get("class_teacher"),
-            "section": {
-                "section_name": request.data.get("section_name"),
-                "student_count": request.data.get("student_count"),
-            },
+            "class_name": request.data.get("class_name", instance.class_name),
         }
 
         serializer = self.get_serializer(instance, data=data, partial=True)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
 
-        return Response(ClassListSerializer(instance).data, status=status.HTTP_200_OK)
+        # Fetch the updated instance with its sections
+        updated_instance = SchoolClass.objects.get(id=instance.id)
+        response_data = ClassListSerializer(updated_instance).data
+
+        return Response(
+            {
+                "message": "Class and section updated successfully",
+                "data": response_data,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class DeleteClassSectionView(APIView):
@@ -402,28 +548,54 @@ class DeleteClassSectionView(APIView):
             )
 
 
+class AssignClassTeacherViewSet(viewsets.ModelViewSet):
+    permission_classes = [permissions.IsAdminUser]
+    serializer_class = SectionTeacherAssignmentSerializer
+    queryset = Section.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        assignment = serializer.save()
+
+        return Response(
+            {
+                "message": "Teacher assigned to section successfully",
+                "data": {
+                    "teacher": assignment["teacher"].user.username,
+                    "section": str(assignment["section"]),
+                },
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
 # PARENT MANAGEMENT
 
 # --------------------------------------------------------------------
 
 
-class ParentPagination(PageNumberPagination):
-    page_size = 10
-    page_size_query_param = "page_size"
-    max_page_size = 100
-
-
-class ParentListCreateView(APIView):
+class ParentViewSet(viewsets.ModelViewSet):
+    queryset = Parent.objects.all()
+    serializer_class = ParentSerializer
     permission_classes = [permissions.IsAdminUser]
+    pagination_class = PageNumberPagination
+    
+    def get_pagination_class(self):
+        paginate = self.request.query_params.get('paginate', 'true').lower()
+        if paginate == 'false':
+            self.pagination_class = None
+            return None
+        return self.pagination_class
 
-    def get(self, request, *args, **kwargs):
-        parents = Parent.objects.all()
-        serializer = ParentSerializer(parents, many=True)
-        return Response(serializer.data)
-
-    def post(self, request, *args, **kwargs):
+    def list(self, request, *args, **kwargs):
+        self.pagination_class = self.get_pagination_class()
+        return super().list(request, *args, **kwargs)
+    
+    def create(self, request, *args, **kwargs):
         try:
             user_data = json.loads(request.data.get("user", "{}"))
+
             if "profile_image" in request.FILES:
                 user_data["profile_image"] = request.FILES["profile_image"]
 
@@ -432,30 +604,27 @@ class ParentListCreateView(APIView):
                 "occupation": request.data.get("occupation", ""),
             }
 
-            if "student_admission_numbers" in request.data:
-                admission_numbers = json.loads(
-                    request.data["student_admission_numbers"]
+            serlaizer = self.get_serializer(data=data)
+            serlaizer.is_valid(raise_exception=True)
+            parent = serlaizer.save()
+
+            try:
+                EmailService.send_welcome_email(
+                    user_type="parent",
+                    email=user_data["email"],
+                    username=user_data["username"],
+                    password=user_data["password"],
                 )
-                data["student_admission_numbers"] = admission_numbers
-        except json.JSONDecodeError:
+                print("Welcome email initiated for:", user_data["email"])
+            except Exception as email_error:
+                print(f"Failed to send welcome email: {str(email_error)}")
+
+            headers = self.get_success_headers(serlaizer.data)
             return Response(
-                {"error": "Invalid student_admission_numbers format"},
-                status=status.HTTP_400_BAD_REQUEST,
+                serlaizer.data, status=status.HTTP_201_CREATED, headers=headers
             )
-        print("this is the parent data : ", data)
-        serializers = ParentSerializer(data=data)
-        if serializers.is_valid():
-            parent = serializers.save()
-            send_welcome_main(
-                    user_type='parent',
-                    email = user_data['email'],
-                    username=user_data['username'],
-                    password=user_data['password']
-                )
-            return Response(
-                ParentSerializer(parent).data, status=status.HTTP_201_CREATED
-            )
-        return Response(serializers.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ParentDetailView(APIView):
@@ -467,7 +636,13 @@ class ParentDetailView(APIView):
 
     def get(self, request, pk):
         parent = self.get_object(pk)
-        serializer = ParentSerializer(parent)
+        student_relationship = StudentParentRelationship.objects.select_related(
+            "student"
+        ).filter(parent=parent)
+        print("This is the student parent relation", student_relationship)
+        serializer = ParentSerializer(
+            parent, context={"student_relationship": student_relationship}
+        )
         return Response(serializer.data)
 
     def put(self, request, pk):
@@ -485,7 +660,7 @@ class ParentDetailView(APIView):
                 parent,
                 data=data,
                 partial=True,
-                context={"request": request},  # Add request to context
+                context={"request": request},
             )
             if serializer.is_valid():
 
@@ -517,7 +692,7 @@ class ParentStudentManagementView(APIView):
     def post(self, request, pk):
         parent = get_object_or_404(Parent, pk=pk)
         action = request.data.get("action")
-        admission_numbers = request.data.get("admission_numbers", [])
+        relationships = request.data.get("relationships", [])
 
         if action not in ["add", "remove"]:
             return Response(
@@ -526,13 +701,38 @@ class ParentStudentManagementView(APIView):
             )
 
         try:
-            students = Student.objects.filter(admission_number__in=admission_numbers)
             if action == "add":
-                parent.students.add(*students)
-            else:
-                parent.students.remove(*students)
+                for rel in relationships:
+                    student = Student.objects.get(
+                        admission_number=rel["admission_number"]
+                    )
 
-            return Response(ParentSerializer(parent).data, status=status.HTTP_200_OK)
+                    StudentParentRelationship.objects.create(
+                        student=student,
+                        parent=parent,
+                        relationship_type=rel.get("relationship_type", "Guardian"),
+                    )
+            else:
+                admission_numbers = [rel["admission_number"] for rel in relationships]
+                students = Student.objects.filter(
+                    admission_number__in=admission_numbers
+                )
+
+                StudentParentRelationship.objects.filter(
+                    student__in=students, parent=parent
+                ).delete()
+
+            return Response(
+                ParentSerializer(parent, context={"request": request}).data,
+                status=status.HTTP_200_OK,
+            )
+
+        except Student.DoesNotExist:
+            return Response(
+                {"error": "One or more students not found."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -600,6 +800,14 @@ class ParentBlockUnblockView(APIView):
             )
 
 
+class GetStudentParentViewSet(viewsets.ModelViewSet):
+    permission_classes = [permissions.IsAdminUser]
+    queryset = StudentParentRelationship.objects.select_related(
+        "student__user", "parent__user"
+    )
+    serializer_class = StudentParentRelationshipSerlaizer
+
+
 # -----------------------------------------------------------------------------
 
 # Teacher management
@@ -607,64 +815,63 @@ class ParentBlockUnblockView(APIView):
 
 class TeacherListCreateView(APIView):
     permission_classes = [permissions.IsAdminUser]
+    parser_classes = (MultiPartParser, FormParser)
 
     def get(self, request, *args, **kwargs):
-        teacher = Teacher.objects.all()
-        serializer = TeacherSerializer(teacher, many=True)
+        teachers = Teacher.objects.all()
+        serializer = TeacherSerializer(teachers, many=True)
         return Response(serializer.data)
 
     def post(self, request, *args, **kwargs):
-
         user_data = json.loads(request.data.get("user", {}))
 
         if "profile_image" in request.FILES:
             user_data["profile_image"] = request.FILES["profile_image"]
 
-        data = {
-            "user": user_data,
-            "qualifications": request.data.get("qualifications", ""),
-        }
+        serializer = TeacherSerializer(
+            data={"user": user_data},
+            context={"request": request} 
+        )
 
-        serlaizer = TeacherSerializer(data=data)
-        print()
-        print("This is the teacher serlaizer", serlaizer)
-        if serlaizer.is_valid():
-            print("is valid")
-            teacher = serlaizer.save()
-            print("TEACHER", teacher)
-            send_welcome_main(
-                    user_type='teacher',
-                    email = user_data['email'],
-                    username=user_data['username'],
-                    password=user_data['password']
+        if serializer.is_valid():
+            teacher = serializer.save()
+            try:
+                EmailService.send_welcome_email(
+                    user_type="teacher",
+                    email=user_data["email"],
+                    username=user_data["username"],
+                    password=user_data["password"],
                 )
+                print("Welcome email initiated for:", user_data["email"])
+            except Exception as email_error:
+                print(f"Failed to send welcome email: {str(email_error)}")
+
             return Response(
                 TeacherSerializer(teacher).data, status=status.HTTP_201_CREATED
             )
-        return Response(serlaizer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class TeacherDetailView(APIView):
     permission_classes = [permissions.IsAdminUser]
+    parser_classes = (MultiPartParser, FormParser)
 
     def get_object(self, pk):
-        return get_object_or_404(Teacher, pk=pk)
+        try:
+            return Teacher.objects.get(pk=pk)
+        except Teacher.DoesNotExist:
+            raise Http404
 
     def get(self, request, pk):
         teacher = self.get_object(pk)
-        serlaizer = TeacherSerializer(teacher)
-        return Response(serlaizer.data)
+        serializer = TeacherSerializer(teacher)
+        return Response(serializer.data)
 
-    def put(self, request, pk):
+    def patch(self, request, pk):
         teacher = self.get_object(pk)
 
         try:
             data = json.loads(request.data.get("data", "{}"))
-
-            if "profile_image" in request.FILES:
-                if "user" not in data:
-                    data["user"] = {}
-                data["user"]["profile_image"] = request.FILES["profile_image"]
 
             serializer = TeacherSerializer(
                 teacher, data=data, partial=True, context={"request": request}
@@ -672,39 +879,39 @@ class TeacherDetailView(APIView):
 
             if serializer.is_valid():
                 teacher = serializer.save()
-                return Response(
-                    TeacherSerializer(teacher, context={"request": request}).data,
-                    status=status.HTTP_200_OK,
-                )
+                return Response(TeacherSerializer(teacher).data)
+
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        except json.JSONDecodeError:
-            return Response(
-                {"error": "Invalid JSON data"}, status=status.HTTP_400_BAD_REQUEST
-            )
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-    def patch(self, request, pk):
-        return self.put(request, pk)
-
+    
     def delete(self, request, pk):
+        teacher = self.get_object(pk = pk)
         try:
-            teacher = self.get_object(pk)
-
-            with transaction.atomic():
-                teacher.user.delete()
-                teacher.delete()
-
+            teacher.user.delete()
+            teacher.delete()
+            
             return Response(
-                {"message": "Teacher deleted successfully"},
+                {"message": "Teacher and associated data deleted successfully"},
                 status=status.HTTP_204_NO_CONTENT,
             )
         except Exception as e:
             return Response(
-                {"error": "Failed to delete teacher", "details": str(e)},
-                status=status.HTTP_400_BAD_REQUEST,
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+            
+
+class TeacherDocumentDeleteView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def delete(self, request, pk):
+        try:
+            document = TeacherDocument.objects.get(pk=pk)
+            document.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except TeacherDocument.DoesNotExist:
+            raise Http404
 
 
 class TeacherBlockUnblockView(APIView):
@@ -763,3 +970,155 @@ class TeacherBlockUnblockView(APIView):
                 {"message": f"Error blocking parent: {str(e)}"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+
+# --------------------------------------------------------------
+
+
+class AdminAttendanceView(generics.ListAPIView):
+    serializer_class = AttendanceHistorySerializer
+    permission_classes = [permissions.IsAdminUser]
+    pagination_class = None
+
+    def get_queryset(self):
+        class_id = self.request.query_params.get("class_id")
+        section_id = self.request.query_params.get("section_id")
+        month = self.request.query_params.get("month")
+        year = self.request.query_params.get("year")
+        status = self.request.query_params.get("status")
+        weekday = self.request.query_params.get("weekday")
+
+        queryset = (
+            Attendance.objects.all()
+            .select_related(
+                "student__user",
+                "section__school_class",
+            )
+            .order_by("-date", "student__roll_number")
+        )
+
+        if class_id:
+            queryset = queryset.filter(section__school_class_id=class_id)
+
+        if section_id:
+            queryset = queryset.filter(section_id=section_id)
+
+        if year and year != "all":
+            queryset = queryset.filter(date__year=int(year))
+
+        if month and month != "all":
+            queryset = queryset.filter(date__month=int(month))
+
+        if status and status != "all":
+            queryset = queryset.filter(status=status)
+
+        if weekday and weekday != "all":
+            weekday_map = {"1": 2, "2": 3, "3": 4, "4": 5, "5": 6, "6": 7, "7": 1}
+            queryset = queryset.filter(date__week_day=weekday_map[weekday])
+
+        return queryset
+
+
+class AdminMonthlyStatisticsView(generics.ListAPIView):
+    serializer_class = MonthlyStatisticsSerializer
+    permission_classes = [permissions.IsAdminUser]
+    pagination_class = None
+
+    def get_queryset(self):
+        class_id = self.request.query_params.get("class_id")
+        section_id = self.request.query_params.get("section_id")
+        year = self.request.query_params.get("year")
+        month = self.request.query_params.get("month")
+        weekday = self.request.query_params.get("weekday")
+
+        query = Attendance.objects.all()
+
+        if class_id:
+            query = query.filter(section__school_class_id=class_id)
+            total_students = Student.objects.filter(
+                class_assigned__school_class_id=class_id
+            ).count()
+
+        if section_id:
+            query = query.filter(section_id=section_id)
+            total_students = Student.objects.filter(
+                class_assigned_id=section_id
+            ).count()
+        else:
+            total_students = Student.objects.all().count()
+
+        if year and year != "all":
+            query = query.filter(date__year=int(year))
+
+        if month and month != "all":
+            query = query.filter(date__month=int(month))
+
+        if weekday and weekday != "all":
+            weekday_map = {"1": 2, "2": 3, "3": 4, "4": 5, "5": 6, "6": 7, "7": 1}
+            query = query.filter(date__week_day=weekday_map[weekday])
+
+        monthly_stats = (
+            query.annotate(month=TruncMonth("date"))
+            .values("month")
+            .annotate(
+                present_count=Count("id", filter=Q(status="present")),
+                absent_count=Count("id", filter=Q(status="absent")),
+                late_count=Count("id", filter=Q(status="late")),
+            )
+            .order_by("month")
+        )
+
+        for stat in monthly_stats:
+            stat["total_students"] = total_students
+            month = stat["month"].month
+            year = stat["month"].year
+            working_days = self.get_working_days(year, month, weekday)
+
+            if working_days > 0:
+                expected_attendance = working_days * total_students
+                actual_attendance = stat["present_count"] + stat["late_count"]
+                stat["attendance_percentage"] = (
+                    actual_attendance / expected_attendance
+                ) * 100
+            else:
+                stat["attendance_percentage"] = 0
+
+        return monthly_stats
+
+    def get_working_days(self, year, month, weekday=None):
+        total_days = calendar.monthrange(year, month)[1]
+        working_days = 0
+
+        for day in range(1, total_days + 1):
+            date = datetime(year, month, day)
+            if weekday:
+                if str(date.isoweekday()) == weekday:
+                    working_days += 1
+            elif date.weekday() < 5:  # Monday to Friday
+                working_days += 1
+
+        return working_days
+
+
+class AdminClassListView(generics.ListAPIView):
+    permission_classes = [permissions.IsAdminUser]
+    pagination_class = None
+    serializer_class = AttendanceSchoolClassSerializer
+
+    def get_queryset(self):
+        cache_key = "school_classes"
+        queryset = cache.get(cache_key)
+        if queryset is None:
+            queryset = SchoolClass.objects.all()
+            cache.set(cache_key, queryset, timeout=3600)
+        return queryset
+
+
+class AdminSectionListView(generics.ListAPIView):
+    serializer_class = AttendanceSectionSerializer
+    permission_classes = [permissions.IsAdminUser]
+    pagination_class = None
+
+    def get_queryset(self):
+        class_id = self.kwargs.get("class_id")
+        return Section.objects.filter(school_class_id=class_id)

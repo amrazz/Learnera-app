@@ -17,8 +17,8 @@ const App = () => {
         <Route path="/" element={<Landing_page />} />
         <Route path="/login" element={<Login />} />
         <Route path="/logout" element={<Logout />} />
-        {/* <Route path="/admin_dashboard/*" element={<ProtectedRoute><Admin /></ProtectedRoute>} /> */}
-        <Route path="/admin_dashboard/*" element={<RoleBasedProtectedRoute allowedRoles={["school_admin"]}><Admin /></RoleBasedProtectedRoute>} />
+        {/* <Route path="/admin/*" element={<ProtectedRoute><Admin /></ProtectedRoute>} /> */}
+        <Route path="/admin/*" element={<RoleBasedProtectedRoute allowedRoles={["school_admin"]}><Admin /></RoleBasedProtectedRoute>} />
         <Route path="/students/*" element={<RoleBasedProtectedRoute allowedRoles={["is_student"]}> <Students /> </RoleBasedProtectedRoute>} />
         <Route path="/teachers/*" element={<RoleBasedProtectedRoute allowedRoles={["is_teacher"]}> <Teachers /> </RoleBasedProtectedRoute>} />
         <Route path="/parents/*" element={<RoleBasedProtectedRoute allowedRoles={["is_parent"]} > <Parents /> </RoleBasedProtectedRoute>} />

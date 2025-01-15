@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import { ParentEditSchema, parentFormFields } from "./Constants";
 import api from "../../../api";
-import { UserCircle2, ArrowLeft, Search, X } from "lucide-react";
+import { UserCircle2, ArrowLeft } from "lucide-react";
 import { HashLoader } from "react-spinners";
 import { toast } from "react-toastify";
 
@@ -14,35 +14,18 @@ const EditParentInfo = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
-  const [students, setStudents] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filteredStudents, setFilteredStudents] = useState([]);
-  const [linkedStudents, setLinkedStudents] = useState([]);
 
-  // Fetch parent details and students
+  // Fetch parent details
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [parentResponse, studentsResponse] = await Promise.all([
-          api.get(`school_admin/parents/${parentId}`),
-          api.get("school_admin/students")
-        ]);
+        const parentResponse = await api.get(`school_admin/parents/${parentId}`);
 
         if (parentResponse.status === 200) {
           setParent(parentResponse.data);
-          setLinkedStudents(parentResponse.data.students.map(student => ({
-            admission_number: student.admission_number,
-            first_name: student.user.first_name,
-            last_name: student.user.last_name
-          })));
-          
           if (parentResponse.data.user.profile_image) {
             setPreviewImage(`http://127.0.0.1:8000/${parentResponse.data.user.profile_image}`);
           }
-        }
-
-        if (studentsResponse.status === 200) {
-          setStudents(studentsResponse.data);
         }
       } catch (error) {
         setError(error.response?.data?.error || "Failed to fetch data");
@@ -54,86 +37,35 @@ const EditParentInfo = () => {
     fetchData();
   }, [parentId]);
 
-  // Filter students based on search term
-  useEffect(() => {
-    const filtered = students.filter(
-      (student) =>
-        !linkedStudents.some(linked => linked.admission_number === student.admission_number) &&
-        (
-          student.admission_number?.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
-          student.user?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          student.user?.last_name?.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-    );
-    setFilteredStudents(filtered);
-  }, [searchTerm, students, linkedStudents]);
-
-  const handleStudentSelect = async (student) => {
-    try {
-      const response = await api.post(`school_admin/parents/${parentId}/students/`, {
-        action: 'add',
-        admission_numbers: [student.admission_number]
-      });
-
-      if (response.status === 200) {
-        setLinkedStudents([...linkedStudents, {
-          admission_number: student.admission_number,
-          first_name: student.user.first_name,
-          last_name: student.user.last_name
-        }]);
-        setSearchTerm("");
-        toast.success("Student linked successfully!");
-      }
-    } catch (error) {
-      toast.error("Failed to link student");
-    }
-  };
-
-  const handleStudentRemove = async (admissionNumber) => {
-    try {
-      const response = await api.post(`school_admin/parents/${parentId}/students/`, {
-        action: 'remove',
-        admission_numbers: [admissionNumber]
-      });
-
-      if (response.status === 200) {
-        setLinkedStudents(linkedStudents.filter(
-          student => student.admission_number !== admissionNumber
-        ));
-        toast.success("Student unlinked successfully!");
-      }
-    } catch (error) {
-      toast.error("Failed to unlink student");
-    }
-  };
-
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
       const formData = new FormData();
-      
+
       // Prepare the request data
       const requestData = {
         user: {},
         occupation: values.occupation !== parent.occupation ? values.occupation : undefined
       };
-  
+
       // Add changed user fields
       Object.keys(values).forEach(key => {
-        if (key !== 'occupation' && 
-            key !== 'profile_image' && 
-            values[key] !== parent.user[key]) {
+        if (
+          key !== 'occupation' && 
+          key !== 'profile_image' && 
+          values[key] !== parent.user[key]
+        ) {
           requestData.user[key] = values[key];
         }
       });
-  
+
       // Append the JSON data
       formData.append('data', JSON.stringify(requestData));
-  
+
       // Append the profile image if it exists
       if (values.profile_image) {
         formData.append('profile_image', values.profile_image);
       }
-  
+
       const response = await api.put(
         `school_admin/parents/${parentId}/`,
         formData,
@@ -143,10 +75,10 @@ const EditParentInfo = () => {
           },
         }
       );
-  
+
       if (response.status === 200) {
         toast.success("Parent information updated successfully!");
-        navigate(`/admin_dashboard/parent_info/${parentId}`);
+        navigate(`/admin/parent_info/${parentId}`);
       }
     } catch (error) {
       toast.error(error.response?.data?.error || "Failed to update parent");
@@ -155,7 +87,6 @@ const EditParentInfo = () => {
     }
   };
 
-  
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -189,7 +120,7 @@ const EditParentInfo = () => {
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="mb-6">
         <button
-          onClick={() => navigate(`/admin_dashboard/parent_info/${parentId}`)}
+          onClick={() => navigate(`/admin/parent_info/${parentId}`)}
           className="flex items-center text-gray-600 hover:text-gray-800"
         >
           <ArrowLeft className="h-5 w-5 mr-2" />
@@ -300,72 +231,12 @@ const EditParentInfo = () => {
                   </div>
                 </div>
               ))}
-              <div className="space-y-6">
-                <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">
-                  Linked Students
-                </h3>
-                
-                <div className="relative">
-                  <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search students by name or admission number..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 pr-4 py-2 w-full border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-
-                {searchTerm && filteredStudents.length > 0 && (
-                  <div className="border rounded-lg shadow-sm max-h-48 overflow-y-auto">
-                    {filteredStudents.map((student) => (
-                      <div
-                        key={student.admission_number}
-                        className="p-3 hover:bg-gray-50 cursor-pointer flex justify-between items-center"
-                        onClick={() => handleStudentSelect(student)}
-                      >
-                        <span>
-                          {student.user.first_name} {student.user.last_name} ({student.admission_number})
-                        </span>
-                        <button type="button" className="text-blue-600 hover:text-blue-800">
-                          Link
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <div className="space-y-3 mt-4">
-                  {linkedStudents.map((student) => (
-                    <div
-                      key={student.admission_number}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                    >
-                      <span>
-                        {student.first_name} {student.last_name} ({student.admission_number})
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleStudentRemove(student.admission_number)}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        <X className="h-5 w-5" />
-                      </button>
-                    </div>
-                  ))}
-                  {linkedStudents.length === 0 && (
-                    <div className="text-center p-4 bg-gray-50 rounded-lg text-gray-500">
-                      No students linked
-                    </div>
-                  )}
-                </div>
-              </div>
 
               {/* Form Actions */}
               <div className="flex items-center justify-end space-x-4 pt-6">
                 <button
                   type="button"
-                  onClick={() => navigate(`/admin_dashboard/parent_info/${parentId}`)}
+                  onClick={() => navigate(`/admin/parent_info/${parentId}`)}
                   className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
                 >
                   Cancel

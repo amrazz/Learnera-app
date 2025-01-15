@@ -2,32 +2,45 @@ import React, { useEffect, useState } from "react";
 import api from "../../../api";
 import { useNavigate } from "react-router-dom";
 import { HashLoader } from "react-spinners";
+import { ChevronLeft, ChevronLeftCircle, ChevronRight } from "lucide-react";
 
 const ShowStudents = () => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [nextpage, setNextPage] = useState(null);
+  const [prevPage, setPrevPage] = useState(null)
+  const [currentPage, setCurrentPage] = useState(1)
 
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchStudents = async () => {
-      try {
-        const response = await api.get("school_admin/students");
-        if (response.status === 200) {
-          setStudents(response.data);
-        } else {
-          setError("Failed to fetch students. Please try again.");
-        }
-      } catch (error) {
-        setError(error.response?.data?.error || "Failed to fetch students");
-      } finally {
-        setLoading(false);
-      }
-    };
 
+  const fetchStudents = async (url = 'school_admin/students') => {
+    try {
+      const response = await api.get(url);
+      if (response.status === 200) {
+        setStudents(response.data.results);
+        setNextPage(response.data.next);
+        setPrevPage(response.data.previous);
+        
+      } else {
+        setError("Failed to fetch students. Please try again.");
+      }
+    } catch (error) {
+      setError(error.response?.data?.error || "Failed to fetch students");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchStudents();
   }, []);
+
+  const handleChangePage = (url, direction) => {
+    fetchStudents(url);
+    setCurrentPage((prev) => (direction === 'next' ? prev + 1 : prev - 1));
+  }
 
   if (loading) {
     return (
@@ -56,26 +69,27 @@ const ShowStudents = () => {
           <p className="text-gray-600 text-xl">No students found.</p>
         </div>
       ) : (
-        <div className="overflow-x-auto bg-white rounded-lg shadow">
+        <div>
+          <div className="overflow-x-auto bg-white rounded-lg shadow">
           <table className="w-full table-auto text-center">
             <thead className="bg-gradient-to-r from-[#0D2E76] to-[#1842DC] text-white font-montserrat">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+                <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider">
                   Student Name
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+                <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider">
                   Admission No
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+                <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider">
                   Class & Section
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+                <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider">
                   Parent Name
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+                <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider">
                   Email
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+                <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider">
                   Status
                 </th>
               </tr>
@@ -85,7 +99,7 @@ const ShowStudents = () => {
                 <tr
                   key={student.user.id}
                   className="hover:bg-gray-50 cursor-pointer transition-colors duration-200"
-                  onClick={() => navigate(`/admin_dashboard/student_info/${student.user.id}`)}
+                  onClick={() => navigate(`/admin/student_info/${student.user.id}`)}
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
@@ -93,7 +107,7 @@ const ShowStudents = () => {
                         {student.user.profile_image ? (
                           <img
                             className="h-10 w-10 rounded-full object-cover"
-                            src={`http://127.0.0.1:8000/${student.user.profile_image}`}
+                            src={student.user.profile_image}
                             alt=""
                           />
                         ) : (
@@ -119,8 +133,17 @@ const ShowStudents = () => {
                     {student.class_assigned.class_name} - {student.class_assigned.section_name}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {student.parent_name}
-                  </td>
+                  {student.parents.length > 0 ? (
+                        <ul>
+                          {student.parents.map((parent, index) => (
+                            <li key={index}>
+                              {parent.parent_name} ({parent.relationship_type})
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        "No parents found"
+                      )}                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600">
                     {student.user.email}
                   </td>
@@ -138,6 +161,28 @@ const ShowStudents = () => {
             </tbody>
           </table>
         </div>
+        <div className="flex justify-center items-center mt-12 gap-2">
+          <button
+          onClick={() => handleChangePage(prevPage, "prev")}
+          disabled={!prevPage}
+          className=" border border-blue-600 p-2 cursor-pointer disabled:cursor-not-allowed"
+          >
+            <ChevronLeft className="" />
+          </button>
+          <span className="bg-gradient-to-tr from-[#0D2E76] to-[#1842DC] text-center text-white px-[20px] py-[9px] font-montserrat">
+              {currentPage}
+          </span>
+
+          <button
+          onClick={() => handleChangePage(nextpage, "next")}
+          disabled={!nextpage}
+          className=" border border-blue-600 p-2 cursor-pointer disabled:cursor-not-allowed"
+          >
+            <ChevronRight className="" />
+          </button>
+        </div>
+        </div>
+        
       )}
     </div>
   );

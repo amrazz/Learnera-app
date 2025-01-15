@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom"; 
+import { menu, subMenus } from "./constants";
+import { Link } from "react-router-dom";
 import { BiMenuAltLeft } from "react-icons/bi";
 import { FaArrowRight, FaChevronDown, FaChevronUp } from "react-icons/fa";
-import { menu, subMenus } from "./constants";
 
 const Sidebar = ({ activeMenu, setActiveMenu }) => {
   const [isToggled, setIsToggled] = useState(false);
@@ -11,7 +11,7 @@ const Sidebar = ({ activeMenu, setActiveMenu }) => {
 
   useEffect(() => {
     const handleSize = () => {
-      setIsMobile(window.innerWidth <= 768); 
+      setIsMobile(window.innerWidth <= 768);
     };
 
     handleSize();
@@ -65,55 +65,72 @@ const Sidebar = ({ activeMenu, setActiveMenu }) => {
 
           return (
             <li key={item.id} className="relative">
-              <div
-                className={`flex items-center gap-4 p-3 ${
-                  isToggled && "justify-center"
-                } rounded-lg cursor-pointer transition-all duration-200 hover:bg-[#1F4BA5] hover:scale-105`}
-                onClick={() => hasSubMenu && toggleDropdown(item.id)}
-              >
-                <span
-                  className="bg-white/20 p-2 rounded-lg text-center transition-all hover:bg-white/30"
-                  style={{ width: isToggled ? "40px" : "auto" }}
-                >
-                  <Icon size={22} />
-                </span>
-                {!isToggled && (
-                  <div className="flex justify-between w-full">
-                    <span className="text-md font-medium">{item.name}</span>
-                    {hasSubMenu && (
-                      <span>
-                        {activeDropdown === item.id ? (
-                          <FaChevronUp size={14} />
-                        ) : (
-                          <FaChevronDown size={14} />
-                        )}
-                      </span>
+              {hasSubMenu ? (
+                <>
+                  <div
+                    className={`flex items-center gap-4 p-3 ${
+                      isToggled && "justify-center"
+                    } rounded-lg cursor-pointer transition-all duration-200 hover:bg-[#1F4BA5] hover:scale-105`}
+                    onClick={() => toggleDropdown(item.id)}
+                  >
+                    <span
+                      className="bg-white/20 p-2 rounded-lg text-center transition-all hover:bg-white/30"
+                      style={{ width: isToggled ? "40px" : "auto" }}
+                    >
+                      <Icon size={22} />
+                    </span>
+                    {!isToggled && (
+                      <div className="flex justify-between w-full">
+                        <span className="text-md font-medium">{item.name}</span>
+                        <span>
+                          {activeDropdown === item.id ? (
+                            <FaChevronUp size={14} />
+                          ) : (
+                            <FaChevronDown size={14} />
+                          )}
+                        </span>
+                      </div>
                     )}
                   </div>
-                )}
-              </div>
 
-              {hasSubMenu && (
-                <ul
-                  className={`ml-6 mt-2 space-y-2 overflow-hidden transition-all cursor-pointer duration-300 ${
-                    activeDropdown === item.id
-                      ? "max-h-screen opacity-100"
-                      : "max-h-0 opacity-0"
-                  }`}
+                  <ul
+                    className={`ml-6 mt-2 space-y-2 overflow-hidden transition-all cursor-pointer duration-300 ${
+                      activeDropdown === item.id
+                        ? "max-h-screen opacity-100"
+                        : "max-h-0 opacity-0"
+                    }`}
+                  >
+                    {subMenus[item.id].map((subItem, idx) => (
+                      <li key={idx}>
+                        <Link
+                          to={`/teachers/${subItem
+                            .toLowerCase()
+                            .replace(" ", "-")}`}
+                          className="p-2 block bg-white/10 hover:bg-white/20 rounded-lg text-gray-300 hover:text-white"
+                        >
+                          {subItem}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <Link
+                  to={`/teachers/${item.link === 'dashboard' ? '' : item.link}`}
+                  className={`flex items-center gap-4 p-3 ${
+                    isToggled && "justify-center"
+                  } rounded-lg cursor-pointer transition-all duration-200 hover:bg-[#1F4BA5] hover:scale-105`}
                 >
-                  {subMenus[item.id].map((subItem, idx) => (
-                    <li key={idx}>
-                      <Link
-                        to={`/admin_dashboard/${subItem
-                          .toLowerCase()
-                          .replace(" ", "_")}`}
-                        className="p-2 block bg-white/10 hover:bg-white/20 rounded-lg text-gray-300 hover:text-white"
-                      >
-                        {subItem}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
+                  <span
+                    className="bg-white/20 p-2 rounded-lg text-center transition-all hover:bg-white/30"
+                    style={{ width: isToggled ? "40px" : "auto" }}
+                  >
+                    <Icon size={22} />
+                  </span>
+                  {!isToggled && (
+                    <span className="text-md font-medium">{item.name}</span>
+                  )}
+                </Link>
               )}
             </li>
           );

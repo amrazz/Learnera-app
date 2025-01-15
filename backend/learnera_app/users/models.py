@@ -20,7 +20,7 @@ class CustomUser(AbstractUser):
     country = models.CharField(max_length=100, blank=True, null=True) 
     created_at = models.DateTimeField(default=timezone.now) 
     updated_at = models.DateTimeField(auto_now=True)
-    reset_password = models.BooleanField(default = True, null=True)
+    reset_password = models.BooleanField(default = False, null=True)
 
     # Role-based Booleans
     is_schooladmin = models.BooleanField(default=False)

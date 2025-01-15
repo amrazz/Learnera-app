@@ -1,23 +1,41 @@
-import React, { useEffect, useRef } from 'react'
-import Navbar from './navbar'
-import Hero from './hero'
-import About from './About'
+import React, { useEffect, useRef } from 'react';
+import Navbar from './navbar';
+import Hero from './Hero';
+import About from './About';
+import Features from './Features';
+import Testimonials from './Testimonials';
+import Stats from './Stats';
+import Contact from './Contact';
+import Footer from './Footer';
 
 const Landing_page = () => {
   const aboutRef = useRef(null);
-    const scrollToSection = (ref) => {
-      if(ref.current) {
-        ref.current.scrollIntoView({behaviour : "smooth"})
-      }
+  const featuresRef = useRef(null);
+  const contactRef = useRef(null);
 
-  }
+  const scrollToSection = (ref) => {
+    if(ref.current) {
+      ref.current.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   return (
-    <div>
-      <Navbar scrollToSection={scrollToSection}  aboutRef={aboutRef} />
-      <Hero  />
+    <div className="overflow-x-hidden">
+      <Navbar 
+        scrollToSection={scrollToSection} 
+        aboutRef={aboutRef}
+        featuresRef={featuresRef}
+        contactRef={contactRef}
+      />
+      <Hero />
+      <Stats />
       <About aboutRef={aboutRef} />
+      <Features featuresRef={featuresRef} />
+      <Testimonials />
+      <Contact contactRef={contactRef} />
+      <Footer />
     </div>
-  )
-}
+  );
+};
 
-export default Landing_page
+export default Landing_page;

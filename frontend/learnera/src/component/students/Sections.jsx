@@ -1,6 +1,7 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 import StudentDashboard from "./StudentDashboard";
+import MyStudentsList from "../teachers/MyStudentsList";
 
 const Sections = () => {
   return (

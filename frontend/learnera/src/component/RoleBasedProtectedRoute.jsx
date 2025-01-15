@@ -80,11 +80,7 @@ const RoleBasedProtectedRoute =  ({ children, allowedRoles })  => {
   }, [dispatch, isAuthenticated]);
 
   if (isValidating) {
-    return (
-        <div className="flex justify-center items-center min-h-screen">
-          <HashLoader color="#4F46E5" />
-        </div>
-      );
+
   }
 
   if (!isAuthenticated) {

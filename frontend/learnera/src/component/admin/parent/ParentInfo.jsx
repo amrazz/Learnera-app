@@ -18,7 +18,8 @@ import {
   Unlock,
   Lock,
   Cake,
-  Dna
+  Dna,
+  Heart
 } from "lucide-react";
 import { HashLoader } from "react-spinners";
 import Modal from "../../Modal";
@@ -26,6 +27,7 @@ import Modal from "../../Modal";
 const ParentInfo = () => {
   const { parentId } = useParams();
   const [parent, setParent] = useState(null);
+  const [students, setStudents] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showBlockModal, setShowBlockModal] = useState(false);
@@ -39,6 +41,7 @@ const ParentInfo = () => {
         const response = await api.get(`school_admin/parents/${parentId}`);
         if (response.status === 200) {
           setParent(response.data);
+          setStudents(response.data.student_relationship)
         } else {
           setError("Failed to fetch parent details. Please try again.");
         }
@@ -55,7 +58,7 @@ const ParentInfo = () => {
   const handleDelete = async () => {
     try {
       await api.delete(`school_admin/parent_info/${parentId}`);
-      navigate("/admin_dashboard/show_parents");
+      navigate("/admin/show_parents");
       toast.success("Parent deleted successfully!");
     } catch (error) {
       toast.error("Error deleting parent");
@@ -136,7 +139,7 @@ const ParentInfo = () => {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center">
           <Link
-            to="/admin_dashboard/show_parents"
+            to="/admin/show_parents"
             className="mr-4 text-gray-600 hover:text-gray-800 transition-colors"
           >
             <ArrowLeft className="h-6 w-6" />
@@ -145,7 +148,7 @@ const ParentInfo = () => {
         </div>
         <div className="flex items-center gap-4">
           <Link
-            to={`/admin_dashboard/parent_info/${parentId}/edit`}
+            to={`/admin/parent_info/${parentId}/edit`}
             className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-600 flex items-center transition-all duration-300"
           >
             <Edit className="mr-2 h-5 w-5" />
@@ -270,15 +273,15 @@ const ParentInfo = () => {
             Associated Students
           </h3>
           <div className="grid gap-4">
-            {parent.students && parent.students.length > 0 ? (
-              parent.students.map((student) => (
-                <div key={student.id} className="bg-gray-50 p-4 rounded-lg">
+            {students && students.length > 0 ? (
+              students.map((student) => (
+                <div key={student.student_id} className="bg-gray-50 p-4 rounded-lg">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
                       <Users className="h-5 w-5 text-blue-500 mr-3" />
                       <div>
                         <p className="font-medium text-gray-800">
-                          {student.user.full_name}
+                          {student.student_name}
                         </p>
                         <div className="flex gap-4 text-sm text-gray-500">
                           <span className="flex items-center">
@@ -286,14 +289,14 @@ const ParentInfo = () => {
                             {student.admission_number}
                           </span>
                           <span className="flex items-center">
-                            <GraduationCap className="h-4 w-4 mr-1" />
-                            {student.class_name}
+                            <Heart className="h-4 w-4 mr-1" />
+                            {student.relationship_type}
                           </span>
                         </div>
                       </div>
                     </div>
                     <Link
-                      to={`/admin_dashboard/student_info/${student.user.id}`}
+                      to={`/admin/student_info/${student.student_id}`}
                       className="text-blue-500 hover:text-blue-600"
                     >
                       View Details

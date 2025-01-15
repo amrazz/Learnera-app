@@ -8,13 +8,6 @@ const validationSchema = Yup.object({
   email: Yup.string()
       .email("Invalid email format")
       .required("Email is required"),
-  password: Yup.string()
-      .min(8, "Password must be at least 8 characters")
-      .matches(/[A-Z]/, "Password must contain at least one uppercase letter")
-      .matches(/[a-z]/, "Password must contain at least one lowercase letter")
-      .matches(/\d/, "Password must contain at least one number")
-      .matches(/[@$!%*?&#]/, "Password must contain at least one special character")
-      .required("Password is required"),
   firstName: Yup.string()
       .trim()
       .matches(/^(?!\s{2,})/, "First name cannot start with two spaces")
@@ -91,9 +84,6 @@ const validationSchema = Yup.object({
               return value.size <= maxSize;
           }
       ),
-  confirmPassword: Yup.string()
-    .oneOf([Yup.ref("password"), null], "Passwords must match")
-    .required("Confirm Password is required"),
 
 });
 
@@ -122,8 +112,6 @@ const inputs = [
   { name: "email", label: "Email", type: "email" },
   { name: "occupation", label: "Occupation" },
   { name: "phoneNumber", label: "Phone Number", type: "tel" },
-  { name: "password", label: "Password", type: "password" },
-  { name: "confirmPassword", label: "Confirm Password", type: "password" },
   { name: "dateOfBirth", label: "Date Of Birth", type : 'date'},
   { name: "gender", label: "Gender", type : 'radio'},
   { name: "address", label: "Address", type: "textarea" },

@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Formik, Form, Field, ErrorMessage } from "formik";
+import { Formik } from "formik";
 import * as Yup from "yup";
-import { EditForm } from "./constants";
+import {EditForm} from './constants'
 import api from "../../../api";
 import { UserCircle2 } from "lucide-react";
-import { HashLoader } from "react-spinners";
 import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { HashLoader } from "react-spinners";
 
 const StudentInfoSchema = Yup.object().shape({
   first_name: Yup.string()
@@ -24,12 +25,15 @@ const StudentInfoSchema = Yup.object().shape({
   date_of_birth: Yup.date()
     .max(new Date(), "Birth date cannot be in the future")
     .required("Birth date is required"),
+  gender: Yup.string().required("Gender is required"),
+  address: Yup.string().required("Address is required"),
+  city: Yup.string().required("City is required"),
+  state: Yup.string().required("State is required"),
+  country: Yup.string().required("Country is required"),
+  emergency_contact_number: Yup.string()
+    .matches(/^[0-9]{10}$/, "Emergency contact number must be 10 digits"),
   admission_number: Yup.string().required("Admission number is required"),
-  roll_number: Yup.string().required("Roll number is required"),
-  parent_name: Yup.string().required("Parent name is required"),
-  parent_email: Yup.string()
-    .email("Invalid parent email address")
-    .required("Parent email is required"),
+  roll_number: Yup.string().required("Roll number is required")
 });
 
 const EditStudentInfo = () => {
@@ -39,63 +43,43 @@ const EditStudentInfo = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch student data
   useEffect(() => {
-    const fetchStudentDetails = async () => {
+    const fetchStudent = async () => {
       try {
-        const response = await api.get(
-          `school_admin/student_info/${studentId}`
-        );
-
-        if (response.status === 200) {
-          setStudent(response.data);
-        }
+        const response = await api.get(`school_admin/student_info/${studentId}`);
+        setStudent(response.data);
       } catch (error) {
-        setError(
-          error.response?.data?.error || "Failed to fetch student details"
-        );
+        setError("Failed to fetch student details");
+        toast.error("Failed to fetch student details");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchStudentDetails();
+    fetchStudent();
   }, [studentId]);
 
   const handleSubmit = async (values, { setSubmitting }) => {
-    console.log(values);
-
     try {
-      const response = await api.put(
-        `school_admin/student_update/${studentId}/`,
-        {
-          ...values,
-          class_assigned: student.class_assigned.id,
-        }
-      );
-
-      if (response.status === 200) {
-
-        toast.success("Student has been updated successfully")
-        setTimeout(() => {
-          navigate(`/admin_dashboard/student_info/${studentId}`);
-        }, 2000)
-      }
+      await api.put(`school_admin/student_update/${student.user.id}/`, values);
+      toast.success("Student information updated successfully");
+      navigate(`/admin/student_info/${studentId}`);
     } catch (error) {
-      toast.error(error.response?.data?.error || "Failed to update student")
-      setError(error.response?.data?.error || "Failed to update student");
+      toast.error("Failed to update student information");
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loading)
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <HashLoader color="#0b43ff" size={50} speedMultiplier={2} />
       </div>
     );
-  if (error) return <div>Error: {error}</div>;
+  }
+
+  if (error) return <div className="text-red-500">{error}</div>;
   if (!student) return <div>No student found</div>;
 
   const initialValues = {
@@ -103,17 +87,15 @@ const EditStudentInfo = () => {
     last_name: student.user.last_name,
     email: student.user.email,
     phone_number: student.user.phone_number,
-    address: student.user.address,
-    city: student.user.city,
-    state: student.user.state,
-    country: student.user.country,
+    address: student.user.address || "",
+    city: student.user.city || "",
+    state: student.user.state || "",
+    country: student.user.country || "",
     date_of_birth: student.user.date_of_birth,
     gender: student.user.gender,
-    emergency_contact_number: student.user.emergency_contact_number,
+    emergency_contact_number: student.user.emergency_contact_number || "",
     admission_number: student.admission_number,
-    roll_number: student.roll_number,
-    parent_name: student.parent_name,
-    parent_email: student.parent_email,
+    roll_number: student.roll_number
   };
 
   return (
@@ -132,12 +114,12 @@ const EditStudentInfo = () => {
           validationSchema={StudentInfoSchema}
           onSubmit={handleSubmit}
         >
-          {({ isSubmitting, errors, touched, studentId }) => (
+          {({ isSubmitting, errors, touched }) => (
             <EditForm
               isSubmitting={isSubmitting}
               errors={errors}
               touched={touched}
-              studentId={studentId}
+              student={student}
             />
           )}
         </Formik>

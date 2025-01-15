@@ -6,7 +6,8 @@ import {
   hoveredLogo,
 } from "../../assets/landing_page/index";
 import { navLinks, navLinks2 } from "./constants";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+
 
 const Navbar = ({scrollToSection, aboutRef,}) => {
   const [active, setActive] = useState("");

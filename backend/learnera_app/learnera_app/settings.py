@@ -35,7 +35,9 @@ ALLOWED_HOSTS = []
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
-    )
+    ),
+    'DEFAULT_PAGINATION_CLASS' : 'rest_framework.pagination.PageNumberPagination',
+     'PAGE_SIZE' : 10,
 }
 
 SIMPLE_JWT = {
@@ -47,6 +49,7 @@ SIMPLE_JWT = {
 
 
 # Application definition
+
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -100,6 +103,7 @@ WSGI_APPLICATION = "learnera_app.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
+
 
 DATABASES = {
     "default": {
@@ -172,5 +176,5 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'learnerapp999@gmail.com' 
-EMAIL_HOST_PASSWORD = 'aefo gizd jepp lweo' 
-DEFAULT_FROM_EMAIL = 'Learnera <your.email@gmail.com>'
+EMAIL_HOST_PASSWORD = 'tawm jvtc meyv mehj'
+DEFAULT_FROM_EMAIL = 'Learnera <learnerapp999@gmail.com>'

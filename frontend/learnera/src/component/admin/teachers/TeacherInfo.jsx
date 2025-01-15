@@ -18,7 +18,8 @@ import {
   Dna,
   Phone,
   School,
-  BookOpen
+  BookOpen,
+  FileText
 } from "lucide-react";
 import { HashLoader } from "react-spinners";
 import Modal from "../../Modal";
@@ -53,8 +54,8 @@ const TeacherInfo = () => {
 
   const handleDelete = async () => {
     try {
-      await api.delete(`school_admin/teacher_info/${teacherId}`);
-      navigate("/admin_dashboard/show_teachers");
+      await api.delete(`school_admin/teachers/${teacherId}`);
+      navigate("/admin/show_teachers");
       toast.success("Teacher deleted successfully!");
     } catch (error) {
       toast.error("Error deleting teacher");
@@ -133,7 +134,7 @@ const TeacherInfo = () => {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center">
           <Link
-            to="/admin_dashboard/show_teachers"
+            to="/admin/show_teachers"
             className="mr-4 text-gray-600 hover:text-gray-800 transition-colors"
           >
             <ArrowLeft className="h-6 w-6" />
@@ -142,7 +143,7 @@ const TeacherInfo = () => {
         </div>
         <div className="flex items-center gap-4">
           <Link
-            to={`/admin_dashboard/teacher_info/${teacherId}/edit`}
+            to={`/admin/teacher_info/${teacherId}/edit`}
             className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-600 flex items-center transition-all duration-300"
           >
             <Edit className="mr-2 h-5 w-5" />
@@ -199,11 +200,8 @@ const TeacherInfo = () => {
             </h2>
             <p className="text-gray-500">{teacher.user.email}</p>
             <div className="mt-2 text-center">
-              <p className="text-gray-500">
-                <span className="font-semibold">Qualifications:</span>
-                <br />
-                {teacher.qualifications || "Not specified"}
-              </p>
+              
+                
             </div>
           </div>
         </div>
@@ -267,6 +265,34 @@ const TeacherInfo = () => {
                 value={teacher.user.gender === "M" ? "Male" : "Female"}
               />
             </div>
+            
+          </div>
+          <div className="mt-6">
+            <h3 className="text-xl font-semibold text-gray-800 mb-4 border-b pb-2">
+              {teacher.user.first_name} {teacher.user.last_name} Qualifications 
+            </h3>
+            {teacher.documents && teacher.documents.length > 0 ? (
+              <ul>
+                {teacher.documents.map((doc, index) => (
+                  <li
+                  key={doc.id}
+                  className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg mb-2"
+                >
+                  <FileText className="h-5 w-5 text-blue-500" />
+                  <a
+                    href={`http://127.0.0.1:8000/${doc.document}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    {`${index + 1}. ${doc.title}`}
+                  </a>
+                </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-gray-500">No documents available.</p>
+            )}
           </div>
         </div>
       </div>

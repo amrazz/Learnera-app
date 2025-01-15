@@ -1,15 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Formik, Form, Field, ErrorMessage } from "formik";
-import * as Yup from "yup";
-import api from "../../../api";
-import { TeacherEditSchema, teacherFormFields } from "./Constants";
 import { UserCircle2, ArrowLeft } from "lucide-react";
 import { HashLoader } from "react-spinners";
 import { toast, ToastContainer } from "react-toastify";
-
-// Validation schema for teacher form
-
+import api from "../../../api";
+import { TeacherEditSchema, teacherFormFields } from "./Constants";
 
 const EditTeacher = () => {
   const { teacherId } = useParams();
@@ -18,8 +14,10 @@ const EditTeacher = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
+  const [documents, setDocuments] = useState([]);
+  const [documentTitles, setDocumentTitles] = useState([]);
+  const [existingDocuments, setExistingDocuments] = useState([]);
 
-  // Fetch teacher details
   useEffect(() => {
     const fetchTeacher = async () => {
       try {
@@ -27,7 +25,12 @@ const EditTeacher = () => {
         if (response.status === 200) {
           setTeacher(response.data);
           if (response.data.user.profile_image) {
-            setPreviewImage(`http://127.0.0.1:8000/${response.data.user.profile_image}`);
+            setPreviewImage(
+              `http://127.0.0.1:8000/${response.data.user.profile_image}`
+            );
+          }
+          if (response.data.documents) {
+            setExistingDocuments(response.data.documents);
           }
         }
       } catch (error) {
@@ -43,50 +46,95 @@ const EditTeacher = () => {
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
       const formData = new FormData();
-      
-      // Prepare the request data
+
       const requestData = {
         user: {},
-        qualifications: values.qualifications !== teacher.qualifications ? values.qualifications : undefined
+        qualifications:
+          values.qualifications !== teacher.qualifications
+            ? values.qualifications
+            : undefined,
       };
-  
-      // Add changed user fields
-      Object.keys(values).forEach(key => {
-        if (key !== 'qualifications' && 
-            key !== 'profile_image' && 
-            values[key] !== teacher.user[key]) {
+
+      Object.keys(values).forEach((key) => {
+        if (
+          key !== "profile_image" &&
+          key !== "documents" &&
+          key !== "documentTitles" &&
+          values[key] !== teacher.user[key]
+        ) {
           requestData.user[key] = values[key];
         }
       });
-  
-      // Append the JSON data
-      formData.append('data', JSON.stringify(requestData));
-  
-      // Append the profile image if it exists
+
+      formData.append("data", JSON.stringify(requestData));
+
       if (values.profile_image) {
-        formData.append('profile_image', values.profile_image);
+        formData.append("profile_image", values.profile_image);
       }
-  
+
+      documents.forEach((doc, index) => {
+        if (doc) {
+          formData.append("documents", doc);
+          formData.append("document_titles", documentTitles[index]);
+        }
+      });
+
       const response = await api.patch(
         `school_admin/teachers/${teacherId}/`,
         formData,
         {
           headers: {
-            'Content-Type': 'multipart/form-data',
+            "Content-Type": "multipart/form-data",
           },
         }
       );
-  
+
       if (response.status === 200) {
         toast.success("Teacher information updated successfully!");
         setTimeout(() => {
-            navigate(`/admin_dashboard/teacher_info/${teacherId}`);
-        }, 2000)
+          navigate(`/admin/teacher_info/${teacherId}`);
+        }, 2000);
       }
     } catch (error) {
       toast.error(error.response?.data?.error || "Failed to update teacher");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDocumentChange = (event, index) => {
+    const newDocuments = [...documents];
+    newDocuments[index] = event.target.files[0];
+    setDocuments(newDocuments);
+  };
+
+  const handleTitleChange = (event, index) => {
+    const newTitles = [...documentTitles];
+    newTitles[index] = event.target.value;
+    setDocumentTitles(newTitles);
+  };
+
+  const addDocumentField = () => {
+    setDocuments([...documents, null]);
+    setDocumentTitles([...documentTitles, ""]);
+  };
+
+  const removeDocumentField = (index) => {
+    const newDocuments = documents.filter((_, i) => i !== index);
+    const newTitles = documentTitles.filter((_, i) => i !== index);
+    setDocuments(newDocuments);
+    setDocumentTitles(newTitles);
+  };
+
+  const removeExistingDocument = async (documentId) => {
+    try {
+      await api.delete(`school_admin/teacher-documents/${documentId}/`);
+      setExistingDocuments(
+        existingDocuments.filter((doc) => doc.id !== documentId)
+      );
+      toast.success("Document removed successfully");
+    } catch (error) {
+      toast.error("Failed to remove document");
     }
   };
 
@@ -98,7 +146,8 @@ const EditTeacher = () => {
     );
   }
 
-  if (error) return <div className="text-red-500 text-center py-4">Error: {error}</div>;
+  if (error)
+    return <div className="text-red-500 text-center py-4">Error: {error}</div>;
   if (!teacher) return <div className="text-center py-4">No teacher found</div>;
 
   const initialValues = {
@@ -116,15 +165,15 @@ const EditTeacher = () => {
     emergency_contact_number: teacher.user.emergency_contact_number || "",
     date_of_birth: teacher.user.date_of_birth || "",
     gender: teacher.user.gender || "",
-    profile_image: null
+    profile_image: null,
   };
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <ToastContainer />
+      <ToastContainer />
       <div className="mb-6">
         <button
-          onClick={() => navigate(`/admin_dashboard/teacher_info/${teacherId}`)}
+          onClick={() => navigate(`/admin/teacher_info/${teacherId}`)}
           className="flex items-center text-gray-600 hover:text-gray-800"
         >
           <ArrowLeft className="h-5 w-5 mr-2" />
@@ -182,7 +231,6 @@ const EditTeacher = () => {
                 </label>
               </div>
 
-              {/* Form Fields */}
               {teacherFormFields.map((section, index) => (
                 <div key={index} className="space-y-6">
                   <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">
@@ -200,7 +248,10 @@ const EditTeacher = () => {
                         {field.type === "radio" ? (
                           <div className="flex space-x-4">
                             {field.options.map((option) => (
-                              <label key={option.value} className="flex items-center">
+                              <label
+                                key={option.value}
+                                className="flex items-center"
+                              >
                                 <Field
                                   type="radio"
                                   name={field.name}
@@ -236,11 +287,80 @@ const EditTeacher = () => {
                 </div>
               ))}
 
-              {/* Form Actions */}
+              <div className="space-y-6">
+            {existingDocuments.length > 0 && (
+                  <div className="mb-4">
+                    <h4 className="text-md font-medium mb-2">
+                      Current Documents:
+                    </h4>
+                    {existingDocuments.map((doc) => (
+                      <div
+                        key={doc.id}
+                        className="flex items-center justify-between p-2 border rounded mb-2"
+                      >
+                        <span>{doc.title}</span>
+                        <div className="flex space-x-2">
+                        <a
+                    href={`http://127.0.0.1:8000/${doc.document}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    View
+                  </a>
+                          <button
+                            type="button"
+                            onClick={() => removeExistingDocument(doc.id)}
+                            className="text-red-600 hover:text-red-800"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {documents.map((doc, index) => (
+                  <div key={index} className="flex gap-4 mb-4">
+                    <div className="flex-1">
+                      <input
+                        type="text"
+                        placeholder="Document Title"
+                        value={documentTitles[index]}
+                        onChange={(e) => handleTitleChange(e, index)}
+                        className="border p-2 w-full rounded mb-2"
+                      />
+                      <input
+                        type="file"
+                        accept=".pdf"
+                        onChange={(e) => handleDocumentChange(e, index)}
+                        className="w-full"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeDocumentField(index)}
+                      className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={addDocumentField}
+                  className="mt-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                >
+                  Add New Document
+                </button>
+              </div>
+
               <div className="flex items-center justify-end space-x-4 pt-6">
                 <button
                   type="button"
-                  onClick={() => navigate(`/admin_dashboard/teacher_info/${teacherId}`)}
+                  onClick={() => navigate(`/admin/teacher_info/${teacherId}`)}
                   className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
                 >
                   Cancel

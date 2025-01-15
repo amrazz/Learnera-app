@@ -3,7 +3,7 @@ import Sidebar from './layout/sidebar/SideBar'
 import Nav from './layout/header/Nav'
 import Sections from './Sections';
 import BackToTop from '../BackToTop';
-
+import PasswordResetModal from '../passwordResetModal';
 
 const Parents = () => {
     const [activeMenu, setActiveMenu] = useState(false);
@@ -18,12 +18,12 @@ const Parents = () => {
             <Nav setActiveMenu={setActiveMenu} />
           </div>
   
-  
           <div className="p-5 bg-gray-100 h-full">
             <Sections />
             <BackToTop />
           </div>
         </div>
+        <PasswordResetModal />
       </div>
     );
   };
