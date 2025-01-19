@@ -16,7 +16,23 @@ const EditTeacher = () => {
   const [previewImage, setPreviewImage] = useState(null);
   const [documents, setDocuments] = useState([]);
   const [documentTitles, setDocumentTitles] = useState([]);
+  const [subjects, setSubjects] = useState([]);
   const [existingDocuments, setExistingDocuments] = useState([]);
+
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      try {
+        const response = await api.get("school_admin/subjects/");
+        if (response.status === 200) {
+          setSubjects(response.data);
+        }
+      } catch (error) {
+        toast.error("Failed to fetch subjects");
+      }
+    };
+
+    fetchSubjects();
+  }, []);
 
   useEffect(() => {
     const fetchTeacher = async () => {
@@ -53,6 +69,8 @@ const EditTeacher = () => {
           values.qualifications !== teacher.qualifications
             ? values.qualifications
             : undefined,
+        subject:
+          values.subject !== teacher.subject ? values.subject : undefined,
       };
 
       Object.keys(values).forEach((key) => {
@@ -165,6 +183,7 @@ const EditTeacher = () => {
     emergency_contact_number: teacher.user.emergency_contact_number || "",
     date_of_birth: teacher.user.date_of_birth || "",
     gender: teacher.user.gender || "",
+    subject: teacher.subject_name || "",
     profile_image: null,
   };
 
@@ -269,6 +288,19 @@ const EditTeacher = () => {
                             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                             rows={3}
                           />
+                        ) : field.type === "select" ? (
+                          <Field
+                            as="select"
+                            name={field.name}
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2"
+                          >
+                            <option value="">Select a subject</option>
+                            {subjects.map((subject) => (
+                              <option key={subject.id} value={subject.id}>
+                                {subject.subject_name}
+                              </option>
+                            ))}
+                          </Field>
                         ) : (
                           <Field
                             type={field.type}
@@ -288,7 +320,7 @@ const EditTeacher = () => {
               ))}
 
               <div className="space-y-6">
-            {existingDocuments.length > 0 && (
+                {existingDocuments.length > 0 && (
                   <div className="mb-4">
                     <h4 className="text-md font-medium mb-2">
                       Current Documents:
@@ -300,14 +332,14 @@ const EditTeacher = () => {
                       >
                         <span>{doc.title}</span>
                         <div className="flex space-x-2">
-                        <a
-                    href={`http://127.0.0.1:8000/${doc.document}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline"
-                  >
-                    View
-                  </a>
+                          <a
+                            href={`http://127.0.0.1:8000/${doc.document}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline"
+                          >
+                            View
+                          </a>
                           <button
                             type="button"
                             onClick={() => removeExistingDocument(doc.id)}

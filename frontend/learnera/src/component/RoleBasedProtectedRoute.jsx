@@ -80,7 +80,6 @@ const RoleBasedProtectedRoute =  ({ children, allowedRoles })  => {
   }, [dispatch, isAuthenticated]);
 
   if (isValidating) {
-
   }
 
   if (!isAuthenticated) {

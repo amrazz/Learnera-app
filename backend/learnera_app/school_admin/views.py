@@ -23,6 +23,7 @@ from .serializers import (
     SchoolClassCreateSerializer,
     SchoolAdminStudentSerializers,
     StudentParentRelationshipSerlaizer,
+    SubjectSerializer,
     TeacherSerializer,
     AttendanceHistorySerializer,
     AttendanceSchoolClassSerializer,
@@ -43,6 +44,7 @@ from teachers.models import (
     Attendance,
     SchoolClass,
     Section,
+    Subject,
     Teacher,
     TeacherDocument,
 )
@@ -488,6 +490,7 @@ class SchoolClassListView(generics.ListAPIView):
         "sections", "sections__class_teacher", "sections__class_teacher__user"
     )
     serializer_class = ClassListSerializer
+    permission_classes = [permissions.IsAdminUser]
 
 
 class SchoolClassSectionUpdateView(generics.UpdateAPIView):
@@ -812,6 +815,11 @@ class GetStudentParentViewSet(viewsets.ModelViewSet):
 
 # Teacher management
 
+class SubjectListView(generics.ListCreateAPIView):
+    queryset = Subject.objects.all()
+    permission_classes = [permissions.IsAdminUser]
+    serializer_class = SubjectSerializer
+    pagination_class = None
 
 class TeacherListCreateView(APIView):
     permission_classes = [permissions.IsAdminUser]
@@ -824,15 +832,21 @@ class TeacherListCreateView(APIView):
 
     def post(self, request, *args, **kwargs):
         user_data = json.loads(request.data.get("user", {}))
+        subject_id = request.data.get("subject_id", None)
+        new_subject_name = request.data.get("new_subject_name", None)
 
         if "profile_image" in request.FILES:
             user_data["profile_image"] = request.FILES["profile_image"]
 
+        subject = None  
+        if subject_id:
+            subject = Subject.objects.get(pk = subject_id)
+        elif new_subject_name:
+            subject, created = Subject.objects.get_or_create(subject_name = new_subject_name)
         serializer = TeacherSerializer(
-            data={"user": user_data},
+            data={"user": user_data, "subject": subject.id if subject else None},
             context={"request": request} 
         )
-
         if serializer.is_valid():
             teacher = serializer.save()
             try:
@@ -872,14 +886,27 @@ class TeacherDetailView(APIView):
 
         try:
             data = json.loads(request.data.get("data", "{}"))
+            print("This is the teacher data to patch", data)
+            # Handle profile image upload
+            if "profile_image" in request.FILES:
+                data["user"] = data.get("user", {})
+                data["user"]["profile_image"] = request.FILES["profile_image"]
 
+            # Handle document uploads
+            if "documents" in request.FILES:
+                documents = request.FILES.getlist("documents")
+                document_titles = request.POST.getlist("document_titles")
+                data["documents"] = documents
+                data["document_titles"] = document_titles
+
+            # Update the teacher instance
             serializer = TeacherSerializer(
                 teacher, data=data, partial=True, context={"request": request}
             )
 
             if serializer.is_valid():
-                teacher = serializer.save()
-                return Response(TeacherSerializer(teacher).data)
+                serializer.save()
+                return Response(serializer.data)
 
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

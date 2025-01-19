@@ -59,11 +59,11 @@ class Teacher(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE) 
     classes = models.ManyToManyField(SchoolClass, related_name='teachers') 
     sections = models.ManyToManyField(Section, related_name='teachers')
-    subjects = models.ManyToManyField(Subject, related_name='teachers') 
-    
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='teachers', null=True, blank=True)    
     
     def __str__(self): 
-        return f"{self.user.username}"
+        subject_name = self.subject.subject_name if self.subject else "No Subject currently."
+        return f"{self.user.first_name} {self.user.last_name} - {subject_name}"
     
 
 class TeacherDocument(models.Model):
@@ -118,3 +118,4 @@ class Attendance(models.Model):
     
     def __str__(self):
         return f"{self.student.user.first_name} - {self.date} - {self.status}"
+    

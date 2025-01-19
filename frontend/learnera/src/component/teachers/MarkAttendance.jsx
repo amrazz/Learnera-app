@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { PieChart, Pie, Cell, Legend } from 'recharts';
 import { HashLoader } from 'react-spinners';
 import { format, isToday } from 'date-fns';
 import api from '../../api';
@@ -59,7 +58,6 @@ const MarkAttendance = () => {
       ...prev,
       [studentId]: status,
     }));
-    // Clear validation error when attendance is marked
     if (validationError) setValidationError('');
   };
 

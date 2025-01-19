@@ -69,7 +69,7 @@ const AddParents = () => {
       } catch (error) {
         console.error("Error adding parent:", error);
         setError(
-          error.response?.data?.message ||
+          error.response?.data?.message?.error ||
             "Failed to add parent. Please try again."
         );
       } finally {

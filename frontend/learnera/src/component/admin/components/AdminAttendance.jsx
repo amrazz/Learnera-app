@@ -281,7 +281,7 @@ const AdminAttendance = () => {
               <h3 className="text-lg font-semibold mb-4">Attendance Trend</h3>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={statistics}>
-                  <CartesianGrid strokeDasharray="3 3" />
+                  <CartesianGrid strokeDasharray="2 2" />
                   <XAxis
                     dataKey="month"
                     tickFormatter={(value) =>
@@ -335,29 +335,29 @@ const AdminAttendance = () => {
             <table className="w-full border-collapse">
               <thead className="bg-gradient-to-r from-[#0D2E76] to-[#1842DC] text-white">
                 <tr>
-                  <th className="p-4 text-left">Date</th>
-                  <th className="p-4 text-left">Class</th>
-                  <th className="p-4 text-left">Section</th>
-                  <th className="p-4 text-left">Roll No</th>
-                  <th className="p-4 text-left">Student Name</th>
+                  <th className="p-4 text-center">Date</th>
+                  <th className="p-4 text-center">Class</th>
+                  <th className="p-4 text-center">Section</th>
+                  <th className="p-4 text-center">Roll No</th>
+                  <th className="p-4 text-center">Student Name</th>
                   <th className="p-4 text-center">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {attendanceData.map((record) => (
                   <tr key={record.id} className="border-b hover:bg-gray-50">
-                    <td className="p-4">
+                    <td className="p-4 text-center">
                       {format(new Date(record.date), "dd MMM yyyy")}
                     </td>
-                    <td className="p-4">
+                    <td className="p-4 text-center">
                       {record.section?.school_class?.class_name}
                     </td>
-                    <td className="p-4">{record.section?.section_name}</td>
-                    <td className="p-4">{record.roll_number}</td>
-                    <td className="p-4">{record.student_name}</td>
-                    <td className="p-4">
+                    <td className="p-4 text-center">{record.section?.section_name}</td>
+                    <td className="p-4 text-center">{record.roll_number}</td>
+                    <td className="p-4 text-center">{record.student_name}</td>
+                    <td className="p-4 text-center">
                       <span
-                        className={`px-3 py-1 rounded-full text-sm ${
+                        className={`px-3 py-1 rounded-sm text-sm ${
                           record.status === "present"
                             ? "bg-green-100 text-green-800"
                             : record.status === "absent"

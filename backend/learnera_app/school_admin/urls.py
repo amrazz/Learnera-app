@@ -5,6 +5,7 @@ from .views import (
     AdminClassListView,
     AdminMonthlyStatisticsView,
     AdminSectionListView,
+    SubjectListView,
     AssignClassTeacherViewSet,
     CreateSchoolClassViewSet,
     DeleteClassSectionView,
@@ -64,15 +65,14 @@ urlpatterns = [
     path('teacher-documents/<int:pk>/', TeacherDocumentDeleteView.as_view(), name='teacher-document-delete'),
     path('teachers/<int:pk>/block/', TeacherBlockUnblockView.as_view(), name="teacher-block-unblock-view"),
     
+    path('subjects/', SubjectListView.as_view(), name="subjects"),
+    
     path('student-attendance-history/', AdminAttendanceView.as_view(), name='admin-attendance-history'),
     path('student-statistics/', AdminMonthlyStatisticsView.as_view(), name='admin-monthly-statistics'),
     path('school-classes/', AdminClassListView.as_view(), name='admin-classes'),
     path('school-classes/<int:class_id>/sections/', AdminSectionListView.as_view(), name='admin-sections')
 
-
-    
 ]
-
 
 urlpatterns += [
     path("", include(router.urls)),

@@ -6,7 +6,7 @@ from students.models import Student
 from datetime import datetime
 from rest_framework import serializers
 from django.contrib.auth import authenticate
-from teachers.models import Attendance, SchoolClass, Section, Teacher, TeacherDocument
+from teachers.models import Attendance, SchoolClass, Section, Subject, Teacher, TeacherDocument
 
 
 class SchoolAdminLoginSerializers(serializers.Serializer):
@@ -531,6 +531,16 @@ class ParentSerializer(serializers.ModelSerializer):
 # Teacher Serlaizers
 # -------------------------------------------------------------------------------------------------
 
+class SubjectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subject
+        fields = ['id', 'subject_name']
+        
+    def create(self, validated_data):
+        subject_name = validated_data.pop("subject_name")
+        subject = Subject.objects.create(subject_name = subject_name)
+        return subject
+            
 
 class TeacherDocumentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -540,14 +550,25 @@ class TeacherDocumentSerializer(serializers.ModelSerializer):
 class TeacherSerializer(serializers.ModelSerializer):
     user = CustomUserSerializer()
     documents = TeacherDocumentSerializer(many=True,source="docs", read_only=True)
+    subject = serializers.PrimaryKeyRelatedField(queryset = Subject.objects.all(), required = False)
+    subject_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Teacher
         fields = [
             "id",
             "user",
-            "documents"
+            "documents",
+            "subject",
+            "subject_name",
         ]
+    
+    
+    def get_subject_name(self, obj):
+        if obj.subject:
+            return obj.subject.subject_name
+        return "No subject Assigned"
+        
 
     @transaction.atomic
     def create(self, validated_data):
@@ -557,44 +578,48 @@ class TeacherSerializer(serializers.ModelSerializer):
         user_serializer = CustomUserSerializer(data=user_data)
         user_serializer.is_valid(raise_exception=True)
         user = user_serializer.save()
-
-        teacher = Teacher.objects.create(user=user)
-
+        
+        subject = validated_data.pop('subject', None)
+        teacher = Teacher.objects.create(user=user, subject = subject)
+        
+    
         # Handle document uploads if present in request
         request = self.context.get('request')
         if request and request.FILES:
             documents = request.FILES.getlist('documents') 
             document_titles = request.POST.getlist('document_titles')
             
+                    
             for doc, title in zip(documents, document_titles):
                 TeacherDocument.objects.create(
                     teacher=teacher,
                     document=doc,
                     title=title
                 )
+            
 
         return teacher
 
     def update(self, instance, validated_data):
         try:
             user_data = validated_data.pop("user", None)
-
-            if "profile_image" in validated_data:
-                user_data["profile_image"] = validated_data.get("profile_image")
-
             if user_data:
                 user_serializer = CustomUserSerializer(
                     instance.user, data=user_data, partial=True
                 )
                 user_serializer.is_valid(raise_exception=True)
                 user_serializer.save()
+            
+            subject = validated_data.pop("subject", None)
+            if subject:
+                instance.subject = subject
 
             # Handle document uploads if present in request
-            request = self.context.get('request')
-            if request and request.FILES:
-                documents = request.FILES.getlist('documents')
-                document_titles = request.POST.getlist('document_titles')
-                
+            request = self.context.get("request")
+            if request and "documents" in request.FILES:
+                documents = request.FILES.getlist("documents")
+                document_titles = request.POST.getlist("document_titles")
+
                 for doc, title in zip(documents, document_titles):
                     TeacherDocument.objects.create(
                         teacher=instance,

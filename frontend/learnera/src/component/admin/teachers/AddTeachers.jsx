@@ -1,22 +1,44 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../../../api";
 import { validationSchema, inputs, initialValues } from "./Constants";
 import { useFormik } from "formik";
 import { toast } from "react-toastify";
 import { HashLoader } from "react-spinners";
+import api from "../../../api";
 
 const AddTeachers = () => {
   const [profile, setProfile] = useState(null);
   const [documents, setDocuments] = useState([]);
   const [documentTitles, setDocumentTitles] = useState([]);
+  const [subjects, setSubjects] = useState([]);
   const [submitting, setSubmitting] = useState(false);
+  const [isNewSubject, setIsNewSubject] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetch_subject = async () => {
+      try {
+        const response = await api.get("school_admin/subjects/");
+        if (response.status === 200) {
+          setSubjects(response.data);
+        } else {
+          console.error("Error fetching subjects:", response.error);
+        }
+      } catch (error) {
+        toast.error(
+          error || error?.error || "cannot able to fetch subject right now."
+        );
+      }
+    };
+    fetch_subject();
+  }, []);
 
   const teacherFormik = useFormik({
     initialValues: {
       ...initialValues,
       sections: [],
+      subject: "",
+      newSubjectName: "",
     },
     validationSchema,
     onSubmit: async (values, { resetForm }) => {
@@ -56,9 +78,13 @@ const AddTeachers = () => {
       const payload = {
         user: userData,
         qualifications: values.qualifications,
+        subject_id: values.subject,
+        new_subject_name: isNewSubject ? values.newSubjectName : null,
       };
 
       formData.append("user", JSON.stringify(userData));
+      formData.append("subject_id", payload.subject_id || "");
+      formData.append("new_subject_name", payload.new_subject_name || "");
 
       if (profile) {
         formData.append("profile_image", profile);
@@ -78,7 +104,7 @@ const AddTeachers = () => {
 
         if (response.status === 201) {
           toast.success("Teacher Created successfully");
-            navigate("/admin/show_teachers");
+          navigate("/admin/show_teachers");
           resetForm();
         }
       } catch (error) {
@@ -226,7 +252,6 @@ const AddTeachers = () => {
           ))}
         </div>
 
-
         <div className="mt-6">
           <label className="block font-medium text-gray-700 mb-2">
             Qualification Documents
@@ -265,6 +290,59 @@ const AddTeachers = () => {
             Add Document
           </button>
         </div>
+
+        <div className="mt-6">
+  <div>
+    <label className="font-medium text-gray-700">Subject</label>
+    <select
+      name="subject"
+      className="border p-2 w-full"
+      value={teacherFormik.values.subject}
+      onChange={(e) => {
+        teacherFormik.handleChange(e);
+        setIsNewSubject(false);
+      }}
+    >
+      <option value="">Select a Subject</option>
+      {subjects.map((subject) => (
+        <option key={subject.id} value={subject.id}>
+          {subject.subject_name}
+        </option>
+      ))}
+    </select>
+    {teacherFormik.touched.subject && teacherFormik.errors.subject && (
+      <p className="text-red-500 text-sm">{teacherFormik.errors.subject}</p>
+    )}
+  </div>
+</div>
+
+<h1 className="mt-6 text-center font-montserrat font-bold">OR</h1>
+
+<div className="mt-6">
+  <div>
+    <label className="block font-medium text-gray-700 mb-1">
+      Add new subject
+    </label>
+    <input
+      type="text"
+      id="subject"
+      name="newSubjectName"
+      placeholder="Enter new subject name.."
+      value={teacherFormik.values.newSubjectName}
+      onChange={(e) => {
+        teacherFormik.handleChange(e);
+        setIsNewSubject(true);
+      }}
+      className="border p-2 w-full rounded"
+    />
+    {teacherFormik.touched.newSubjectName &&
+      teacherFormik.errors.newSubjectName && (
+        <p className="text-red-500 text-sm">
+          {teacherFormik.errors.newSubjectName}
+        </p>
+      )}
+  </div>
+</div>
 
         <div className="mt-6 text-end">
           <button

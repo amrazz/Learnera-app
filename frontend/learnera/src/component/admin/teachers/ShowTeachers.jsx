@@ -63,11 +63,14 @@ const ShowTeachers = () => {
           <table className="w-full table-auto text-center">
             <thead className="bg-gradient-to-r from-[#0D2E76] to-[#1842DC] text-white font-montserrat text-center ">
               <tr>
-                <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider">
+                <th className="px-6 py-3 text-xs font-medium uppercase tracking-wider">
                   Teacher Name
                 </th>
                 <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider">
                   Email
+                </th>
+                <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider">
+                  Subject
                 </th>
                 <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider">
                   Phone Number
@@ -105,7 +108,7 @@ const ShowTeachers = () => {
                           </div>
                         )}
                       </div>
-                      <div className="ml-4">
+                      <div className="ml-4 ">
                         <div className="text-sm font-medium text-gray-900">
                           {teacher.user.first_name} {teacher.user.last_name}
                         </div>
@@ -116,8 +119,11 @@ const ShowTeachers = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600">
                     {teacher.user.email}
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    {teacher.subject_name}
+                  </td>
 
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
                     {teacher.user.phone_number || "Not provided"}
                   </td>
 

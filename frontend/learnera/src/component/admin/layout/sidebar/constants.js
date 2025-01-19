@@ -12,12 +12,12 @@
         { id: "parents", name: "Parents", logo: MdFamilyRestroom },
         { id: "students", name: "Students", logo: PiStudentDuotone },
         { id: "teachers", name: "Teachers", logo: FaChalkboardTeacher },
+        { id: "subjects", name: "Subjects", logo: FaBook, link : "subjects" },
         { id: "classes", name: "Classes", logo: SiGoogleclassroom },
         { id: "attendance", name: "Attendance", logo: FaUserCheck , link : "attendance"},
         { id: "leave-management", name: "Leave Management", logo: FaUserTimes },
         { id: "events", name: "Events", logo: MdEventNote },
         { id: "accounts", name: "Accounts", logo: MdAccountBalance },
-        { id: "subjects", name: "Subjects", logo: FaBook },
         { id: "payment", name: "Payment", logo: MdAccountBalanceWallet },
         { id: "settings", name: "Settings", logo: CiSettings },
     ];

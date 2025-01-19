@@ -1,7 +1,6 @@
 import React from "react";
 import { hero_video, poster } from "../../assets/landing_page";
 import { CustomButton } from "./CustomBtn";
-
 const Hero = () => {
   return (
     <section className="h-auto w-full bg-black">
@@ -26,10 +25,11 @@ const Hero = () => {
           <span className="text-yellow-500">Simplifying School Life</span>
         </h1>
         <div className="font-montserrat md:mx-20 max-md:text-center">
-          <p className="text-base md:text-xl animate-fade-left text-gray-300 tracking-wide max-w-xl font-medium leading-relaxed">
+          {/* <p className="text-base md:text-xl animate-fade-left text-gray-300 tracking-wide max-w-xl font-medium leading-relaxed">
             Redefining School Management with Smart,
             <br /> Integrated Solutions
-          </p>
+          </p> */}
+          <ShinyText text="" />
         </div>
         <div className="flex flex-col md:flex-row gap-3 animate-fade animate-delay-300 justify-center items-center py-10 md:space-y-0 md:space-x-10">
             <CustomButton title="I'm a Student" />

@@ -18,6 +18,7 @@ import ShowTeachers from "./teachers/ShowTeachers";
 import TeacherInfo from "./teachers/TeacherInfo";
 import EditTeacher from "./teachers/EditTeacher";
 import AdminAttendance from "./components/AdminAttendance";
+import Subjects from "./teachers/Subjects";
 
 const Sections = () => {
   return (
@@ -44,6 +45,8 @@ const Sections = () => {
       <Route path="show_teachers" element={<ShowTeachers />} />
       <Route path="teacher_info/:teacherId/" element={<TeacherInfo />} />
       <Route path="teacher_info/:teacherId/edit" element={<EditTeacher />} />
+      <Route path="subjects" element={<Subjects />} />
+
 
       <Route path="attendance" element={<AdminAttendance />} />
     </Routes>

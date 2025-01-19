@@ -19,7 +19,8 @@ import {
   Phone,
   School,
   BookOpen,
-  FileText
+  FileText,
+  Book
 } from "lucide-react";
 import { HashLoader } from "react-spinners";
 import Modal from "../../Modal";
@@ -236,6 +237,11 @@ const TeacherInfo = () => {
                 icon={<Cake className="h-5 w-5 text-purple-500" />}
                 label="Date of Birth"
                 value={teacher.user.date_of_birth}
+              />
+              <ConditionalDetailRow
+                icon={<Book className="h-5 w-5 text-purple-500" />}
+                label="Subject"
+                value={teacher.subject_name}
               />
             </div>
             <div className="space-y-3">
