@@ -119,3 +119,46 @@ class Attendance(models.Model):
     def __str__(self):
         return f"{self.student.user.first_name} - {self.date} - {self.status}"
     
+
+class Assignment(models.Model):
+    STATUS_CHOICES = [
+        ('published', 'Published'),
+        ('closed', 'Closed')
+    ]
+    title = models.CharField(max_length=250)
+    description = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="subject_assignments")
+    class_section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name="class_assignments")
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name="teacher_assignments")
+    created_date = models.DateTimeField(auto_now_add=True)
+    last_date = models.DateTimeField()
+    is_active = models.BooleanField(default=True)
+    
+    def __str__(self):
+        class_section = f"{self.class_section.school_class.class_name} - {self.class_section.section_name}"
+        return f"{self.title} - {class_section} - {self.subject.subject_name}"
+    
+    def clean(self):
+        if self.last_date <= self.created_date:
+            raise ValueError("The last date must be after the created date.")
+        return super().clean()
+    
+    
+class AssignmentSubmission(models.Model):
+    
+    is_submitted = models.BooleanField(default=False)
+    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name="assignment_submissions")
+    student = models.ForeignKey('students.Student', on_delete=models.CASCADE, related_name='student_submissions')
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    work_file = models.FileField(
+        upload_to="student_assignments/",
+        validators=[FileExtensionValidator(allowed_extensions=['pdf'])]
+    )
+    grade = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    feedback  = models.TextField(null=True, blank=True)
+    
+    
+    def __str__(self):
+        submitted = "Submitted" if self.is_submitted else "Not Submitted"
+        return f"{self.student.user.first_name} {self.student.user.last_name} - {self.assignment.title} : {submitted}"    

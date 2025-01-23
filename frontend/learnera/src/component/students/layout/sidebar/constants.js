@@ -13,7 +13,7 @@ export const menu = [
     { id: "dashboard", name: "Dashboard", logo: LuLayoutDashboard },
     { id: "home-work", name: "Homework", logo: FaBook },
     { id: "my-attendance", name: "My Attendance", logo: FaUserCheck },
-    { id: "assignments", name: "Assignments", logo: FaClipboardList },
+    { id: "assignments", name: "Assignments", logo: FaClipboardList, link : 'student-assignments'},
     { id: "exams", name: "Exams", logo: FaRegEdit },
     { id: "results", name: "Results", logo: FaChartLine },
     { id: "apply-leave", name: "Apply Leave", logo: FaUserTimes },

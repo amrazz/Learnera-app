@@ -12,16 +12,9 @@ class Student(models.Model):
     )
     academic_year = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, default=1)
 
-
-
     class Meta:
-        unique_together = ('roll_number', 'class_assigned', 'academic_year')
-        ordering = ['roll_number']
-
+        unique_together = ("roll_number", "class_assigned", "academic_year")
+        ordering = ["roll_number"]
 
     def __str__(self):
         return f"{self.user.username} (Admission Number: {self.admission_number})"
-    
-    
-   
-    

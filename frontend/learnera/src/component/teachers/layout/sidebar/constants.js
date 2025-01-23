@@ -13,12 +13,12 @@ export const menu = [
   { id: "mark-entry", name: "Mark Entry", logo: FaChartLine },
   { id: "assignments", name: "Assignments", logo: FaClipboardList }, 
   { id: "online-class", name: "Online Classes", logo: FaCalendarAlt },
-  { id: "attendance-report", name: "Attendance Report", logo: FaUserCheck }, 
   { id: "notification", name: "Notifications", logo: MegaphoneIcon }, 
   { id: "settings", name: "Settings", logo: CiSettings }, 
 ];
 
 export const subMenus = {
   attendance: ["Mark Attendance", "Attendance History"],
+  assignments : ["show-assignment", "create-assignment"]
 };
 

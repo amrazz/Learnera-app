@@ -1,8 +1,8 @@
-import datetime
+from django.utils import timezone
 from rest_framework import serializers
 from parents.models import Parent, StudentParentRelationship
 from users.models import CustomUser
-from .models import Attendance, Section, Teacher, SchoolClass, Subject
+from .models import Assignment, AssignmentSubmission, Attendance, Section, Teacher, SchoolClass, Subject
 from students.models import Student
 
 
@@ -126,3 +126,85 @@ class MonthlyStatisticsSerializer(serializers.Serializer):
     late_count = serializers.IntegerField()
     total_students = serializers.IntegerField()
     attendance_percentage = serializers.FloatField()
+    
+
+# ----------------------------------------------------------
+
+class SchoolClassSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SchoolClass
+        fields = ['id', 'class_name']
+        
+class SectionSerializer(serializers.ModelSerializer):
+    class_name = serializers.CharField(source = 'school_class.class_name')
+    class Meta:
+        model = Section
+        fields = ['id', 'section_name', 'class_name', 'school_class']
+        
+class SubjectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subject
+        fields = ['id', 'subject_name']
+
+class AssignmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Assignment
+        fields = ['id', 'title', 'description', 'status', 'subject', 'class_section', 'last_date']
+        
+    def validate_last_date(self, value):
+        if value <= timezone.now():
+            raise serializers.ValidationError(
+                "Last date must be in the future."
+            )
+        return value
+    def create(self, validated_data):
+        teacher = self.context['request'].user.teacher
+        validated_data['teacher'] = teacher
+        validated_data['is_active'] = True
+        
+        return super().create(validated_data)
+    
+class AssignmentListSerializer(serializers.ModelSerializer):
+    class_section = SectionSerializer()
+    subject = SubjectSerializer()
+    submission_count = serializers.SerializerMethodField()
+    student_count = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Assignment
+        fields = ['id', 'title', 'description', 'status', 'subject', 'class_section', 'teacher', 'created_date', 'last_date', 'is_active', 'submission_count', 'student_count']
+        
+    def get_submission_count(self, obj):
+        return obj.assignment_submissions.count()
+    
+    def get_student_count(self, obj):
+        return obj.class_section.available_students
+        
+
+class StudentBasicSerializer(serializers.ModelSerializer):
+    first_name = serializers.CharField(source = 'user.first_name')
+    last_name = serializers.CharField(source = 'user.last_name')
+    
+    class Meta:
+        model = Student
+        fields = ['id', 'first_name', 'last_name', 'admission_number', 'roll_number']
+        
+
+class AssignmentSubmissionListSerializer(serializers.ModelSerializer):
+    student = StudentBasicSerializer()
+    submission_date = serializers.DateTimeField(source = 'submitted_at')
+    class Meta:
+        model = AssignmentSubmission
+        fields = ['id', 'student', 'submission_date', 'work_file', 'grade', 'feedback']
+        
+
+class AssignmentGradeSubmissionSerlaizer(serializers.ModelSerializer):
+    class Meta:
+        model = AssignmentSubmission
+        fields = ['grade', 'feedback']
+        
+    def validate_grade(self, value):
+        if value < 0 or value > 100:
+            return serializers.ValidationError("Grade must be between 0 & 100")
+        return value
+    

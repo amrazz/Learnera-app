@@ -4,9 +4,6 @@ from django.db.models.functions import TruncMonth
 from django.db.models import Count, Q
 import calendar
 from django.http import Http404
-from jsonschema import ValidationError
-from django.db.models import Prefetch
-
 from django.core.cache import cache
 
 from .services import RollNumberService
@@ -30,6 +27,7 @@ from .serializers import (
     AttendanceSectionSerializer,
     MonthlyStatisticsSerializer,
 )
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from parents.models import Parent, StudentParentRelationship
 from .models import AdmissionNumber
@@ -174,7 +172,7 @@ class CreateStudentView(APIView):
                     student, student.class_assigned, student.academic_year
                 )
                 RollNumberService.reorder_by_name(student.class_assigned, student.academic_year)
-            except ValidationError as e:
+            except Exception as e:
                 transaction.set_rollback(True)
                 return Response(e.detail, status=status.HTTP_400_BAD_REQUEST)
 

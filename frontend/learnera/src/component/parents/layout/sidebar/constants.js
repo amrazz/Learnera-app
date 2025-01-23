@@ -1,13 +1,12 @@
 import { LuLayoutDashboard } from "react-icons/lu";
-import { FaTasks, FaUserCheck, FaChalkboardTeacher, FaMoneyBillWave, FaChartLine } from "react-icons/fa";
-import { MdEventAvailable, MdPeopleAlt } from "react-icons/md";
+import { FaUserCheck, FaChalkboardTeacher, FaMoneyBillWave, FaChartLine } from "react-icons/fa";
+import { MdPeopleAlt } from "react-icons/md";
 import { CiSettings } from "react-icons/ci";
-import { MegaphoneIcon, PiggyBank } from "lucide-react";
-import { RiBookOpenLine } from "react-icons/ri";
+import { MegaphoneIcon, PiggyBank, User } from "lucide-react";
 
 export const menu = [
   { id: "dashboard", name: "Dashboard", logo: LuLayoutDashboard }, 
-  { id: "student-progress", name: "Student Progress", logo: RiBookOpenLine }, 
+  { id: "student-details", name: "Student Details", logo: User }, 
   { id: "student-attendance", name: "Student Attendance", logo: FaUserCheck }, 
   { id: "class-details", name: "Class Details", logo: FaChalkboardTeacher }, 
   { id: "accounts", name: "Accounts", logo: PiggyBank }, 

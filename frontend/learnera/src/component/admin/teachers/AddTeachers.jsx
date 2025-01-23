@@ -5,6 +5,7 @@ import { useFormik } from "formik";
 import { toast } from "react-toastify";
 import { HashLoader } from "react-spinners";
 import api from "../../../api";
+import { User } from "lucide-react";
 
 const AddTeachers = () => {
   const [profile, setProfile] = useState(null);
@@ -162,15 +163,19 @@ const AddTeachers = () => {
         encType="multipart/form-data"
       >
         <div className="my-5">
-          <img
-            className="rounded-full w-40 h-40 border-2 border-black object-cover"
-            src={
-              profile
-                ? URL.createObjectURL(profile)
-                : "https://plus.unsplash.com/premium_photo-1671656349322-41de944d259b?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8dXNlcnxlbnwwfHwwfHx8MA%3D%3D"
-            }
-            alt="Profile Preview"
-          />
+        <div className="my-5">
+  {profile ? (
+    <img
+      className="rounded-full w-40 h-40 border-2 border-black object-contain p-1"
+      src={URL.createObjectURL(profile)} 
+      alt="Profile Preview"
+    />
+  ) : (
+    <div className="rounded-full w-40 h-40 border-2 border-black flex items-center justify-center bg-gray-100">
+      <User className="w-32 h-32 text-gray-600 " />
+    </div>
+  )}
+</div>
         </div>
 
         <div className="mb-4">

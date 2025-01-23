@@ -5,6 +5,9 @@ import MyStudentsList from "./MyStudentsList";
 import TeacherStudent from "./TeacherStudent";
 import MarkAttendance from "./MarkAttendance";
 import AttendanceHistory from "./AttendanceHistory";
+import CreateAssignment from "./CreateAssignment";
+import ShowAssignment from "./ShowAssignment";
+import AssignmentSubmissions from "./AssignmentSubmissions";
 
 
 const Sections = () => {
@@ -15,6 +18,9 @@ const Sections = () => {
       <Route path="student-info/:studentId" element={<TeacherStudent />} />
       <Route path="mark-attendance" element={<MarkAttendance />} />
       <Route path="attendance-history" element={<AttendanceHistory />} />
+      <Route path="create-assignment" element={<CreateAssignment />} />
+      <Route path="show-assignment" element={<ShowAssignment />} />
+      <Route path="assignment-submissions/:assignment_id/submissions" element={<AssignmentSubmissions />} />
     </Routes>
   );
 };

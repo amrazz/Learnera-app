@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom"; 
+import { Link } from "react-router-dom";
 import { BiMenuAltLeft } from "react-icons/bi";
 import { FaArrowRight, FaChevronDown, FaChevronUp } from "react-icons/fa";
 import { menu, subMenus } from "./constants";
@@ -11,7 +11,7 @@ const Sidebar = ({ activeMenu, setActiveMenu }) => {
 
   useEffect(() => {
     const handleSize = () => {
-      setIsMobile(window.innerWidth <= 768); 
+      setIsMobile(window.innerWidth <= 768);
     };
 
     handleSize();
@@ -65,7 +65,8 @@ const Sidebar = ({ activeMenu, setActiveMenu }) => {
 
           return (
             <li key={item.id} className="relative">
-              <div
+              <Link
+               to={`/parents/${item.id}`}
                 className={`flex items-center gap-4 p-3 ${
                   isToggled && "justify-center"
                 } rounded-lg cursor-pointer transition-all duration-200 hover:bg-[#1F4BA5] hover:scale-105`}
@@ -91,7 +92,7 @@ const Sidebar = ({ activeMenu, setActiveMenu }) => {
                     )}
                   </div>
                 )}
-              </div>
+              </Link>
 
               {hasSubMenu && (
                 <ul
@@ -104,7 +105,7 @@ const Sidebar = ({ activeMenu, setActiveMenu }) => {
                   {subMenus[item.id].map((subItem, idx) => (
                     <li key={idx}>
                       <Link
-                        to={`/admin/${subItem
+                        to={`/parents/${subItem
                           .toLowerCase()
                           .replace(" ", "_")}`}
                         className="p-2 block bg-white/10 hover:bg-white/20 rounded-lg text-gray-300 hover:text-white"

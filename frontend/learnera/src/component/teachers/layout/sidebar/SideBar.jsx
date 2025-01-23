@@ -106,7 +106,7 @@ const Sidebar = ({ activeMenu, setActiveMenu }) => {
                           to={`/teachers/${subItem
                             .toLowerCase()
                             .replace(" ", "-")}`}
-                          className="p-2 block bg-white/10 hover:bg-white/20 rounded-lg text-gray-300 hover:text-white"
+                          className="p-2 block bg-white/10 hover:bg-white/20 rounded-lg text-gray-300 hover:text-white text-start"
                         >
                           {subItem}
                         </Link>

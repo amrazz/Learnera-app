@@ -18,8 +18,12 @@ const ParentRelationship = ({ existingParents, onParentUpdate, studentId }) => {
       setLoading(true);
       setError(null);
       try {
-        const response = await api.get('/school_admin/parents/');
-        setParents(response.data.results);
+        const response = await api.get('/school_admin/parents/', {
+          params: {
+            paginate: false, 
+          },
+        });
+        setParents(response.data);
       } catch (err) {
         setError('Failed to fetch parents list');
         toast.error('Failed to fetch parents list');
