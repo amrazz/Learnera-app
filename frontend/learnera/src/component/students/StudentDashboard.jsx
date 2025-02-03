@@ -1,132 +1,231 @@
-import React from "react";
-import { BookOpen, Clock, Calendar, Star, Activity, Book } from "lucide-react";
+// frontend/src/components/StudentDashboard.jsx
+import React, { useEffect, useState } from 'react';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { format } from 'date-fns';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import api from '../../api';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const StudentDashboard = () => {
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const response = await api.get('students/student-dashboard/');
+        setDashboardData(response.data);
+      } catch (error) {
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboardData();
+  }, []);
+
+  if (loading) return <DashboardSkeleton />;
+  if (error) return <div>Error loading dashboard: {error}</div>;
+
+  // Simplified attendance data for pie chart
+  const attendanceSummary = dashboardData.attendance.reduce((acc, month) => ({
+    present: acc.present + month.present,
+    absent: acc.absent + month.absent,
+    late: acc.late + month.late
+  }), { present: 0, absent: 0, late: 0 });
+
+  const attendanceData = [
+    { name: 'Present', value: attendanceSummary.present, color: '#0D2E76' },
+    { name: 'Absent', value: attendanceSummary.absent, color: '#DC143C' },
+    { name: 'Late', value: attendanceSummary.late, color: '#FFD700' },
+  ];
+
   return (
-    <div className="bg-purple-50 min-h-screen p-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl p-8 text-white mb-8">
-          <h1 className="text-3xl font-bold mb-2">Hello, Alex!</h1>
-          <p className="opacity-90">Class X-A • Roll No. 15</p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-            <div className="bg-white/20 rounded-lg p-4">
-              <p className="text-sm opacity-90">Attendance</p>
-              <p className="text-2xl font-bold">95%</p>
-            </div>
-            <div className="bg-white/20 rounded-lg p-4">
-              <p className="text-sm opacity-90">Average Grade</p>
-              <p className="text-2xl font-bold">A-</p>
-            </div>
-            <div className="bg-white/20 rounded-lg p-4">
-              <p className="text-sm opacity-90">Due Tasks</p>
-              <p className="text-2xl font-bold">03</p>
-            </div>
-            <div className="bg-white/20 rounded-lg p-4">
-              <p className="text-sm opacity-90">Achievement Points</p>
-              <p className="text-2xl font-bold">850</p>
-            </div>
-          </div>
+    <div className="p-6 space-y-6">
+      {/* Personal Info Header */}
+      <div className="bg-gradient-to-r from-[#0D2E76] to-[#1842DC] text-white p-6 rounded-xl flex items-center gap-4">
+        <Avatar className="h-16 w-16 border-2 border-white">
+          <AvatarImage className="bg-white border" src={`http://127.0.0.1:8000/${dashboardData.student.profile_image}`} />
+          <AvatarFallback>{dashboardData.student.initials}</AvatarFallback>
+        </Avatar>
+        <div>
+  
+          <h1 className="text-2xl font-bold">{dashboardData.student.name}</h1>
+          <p className="mt-1">
+            Class {dashboardData.student.class} - Section {dashboardData.student.section}
+          </p>
+          <Badge variant="secondary" className="mt-2">
+            Academic Year: {dashboardData.student.academic_year}
+          </Badge>
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-xl shadow-lg p-6 md:col-span-2">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-gray-800">Today's Schedule</h2>
-              <Clock className="w-6 h-6 text-purple-500" />
-            </div>
-            <div className="space-y-4">
-              <div className="flex items-center gap-4 bg-purple-50 rounded-lg p-4">
-                <div className="w-12 h-12 bg-purple-200 rounded-lg flex items-center justify-center">
-                  <BookOpen className="w-6 h-6 text-purple-600" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-800">Mathematics</h3>
-                  <p className="text-sm text-gray-600">09:00 AM - 10:00 AM</p>
-                </div>
-                <div className="text-purple-600 text-sm font-medium">Ongoing</div>
-              </div>
-              <div className="flex items-center gap-4 bg-gray-50 rounded-lg p-4">
-                <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
-                  <Book className="w-6 h-6 text-gray-600" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-800">Physics</h3>
-                  <p className="text-sm text-gray-600">10:15 AM - 11:15 AM</p>
-                </div>
-                <div className="text-gray-600 text-sm">Upcoming</div>
-              </div>
-            </div>
-          </div>
+      {/* Quick Stats Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard title="Total Assignments Due" value={dashboardData.pending_assignments.length} icon="📝" />
+        <StatCard title="Upcoming Exams" value={dashboardData.upcoming_exams.length} icon="📅" />
+        <StatCard title="Attendance %" 
+          value={`${Math.round((attendanceSummary.present / (attendanceSummary.present + attendanceSummary.absent)) * 100)}%`} 
+          icon="✅" 
+        />
+        <StatCard title="Recent Grades" value={dashboardData.recent_grades.average} icon="⭐" />
+      </div>
 
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-gray-800">Upcoming Tasks</h2>
-              <Calendar className="w-6 h-6 text-purple-500" />
-            </div>
-            <div className="space-y-4">
-              <div className="border-l-4 border-red-500 pl-3">
-                <p className="font-medium text-gray-800">Math Assignment</p>
-                <p className="text-sm text-gray-600">Due Tomorrow</p>
-              </div>
-              <div className="border-l-4 border-yellow-500 pl-3">
-                <p className="font-medium text-gray-800">Physics Quiz</p>
-                <p className="text-sm text-gray-600">Due in 3 days</p>
-              </div>
-              <div className="border-l-4 border-green-500 pl-3">
-                <p className="font-medium text-gray-800">English Essay</p>
-                <p className="text-sm text-gray-600">Due next week</p>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Attendance Overview */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">📊 Attendance Summary</CardTitle>
+            <CardDescription>Your overall attendance this year</CardDescription>
+          </CardHeader>
+          <CardContent className="h-64 flex items-center justify-center">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={attendanceData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {attendanceData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  content={({ payload }) => (
+                    <div className="bg-white p-2 rounded-lg shadow-lg">
+                      <p className="font-bold">{payload[0]?.name}</p>
+                      <p>{payload[0]?.value} days</p>
+                    </div>
+                  )}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-gray-800">Recent Performance</h2> 
-              <Activity className="w-6 h-6 text-purple-500" />
-            </div>
+        {/* Upcoming Deadlines */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">⏳ Upcoming Deadlines</CardTitle>
+            <CardDescription>Next 5 important dates</CardDescription>
+          </CardHeader>
+          <CardContent>
             <div className="space-y-4">
-              {['Mathematics', 'Physics', 'Chemistry', 'English'].map((subject) => (
-                <div key={subject}>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-gray-600">{subject}</span>
-                    <span className="text-purple-600">85%</span>
+              {dashboardData.upcoming_deadlines.map((deadline, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="font-medium">{deadline.title}</p>
+                    <p className="text-sm text-gray-500">{deadline.type}</p>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-purple-500 rounded-full h-2 w-4/5"></div>
+                  <div className="text-right">
+                    <p className="font-medium">{format(new Date(deadline.date), 'MMM dd')}</p>
+                    <p className="text-sm text-gray-500">{deadline.days_left} days left</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Assignments Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">📚 Your Assignments</CardTitle>
+          <CardDescription>Recent and pending work</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Pending Assignments */}
+            <div>
+              <h3 className="font-medium mb-2">📥 Pending ({dashboardData.pending_assignments.length})</h3>
+              {dashboardData.pending_assignments.map((assignment, index) => (
+                <div key={index} className="p-3 mb-2 border rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="font-medium">{assignment.subject}</p>
+                      <p className="text-sm">{assignment.title}</p>
+                    </div>
+                    <Badge variant="destructive" className="ml-2">
+                      Due {format(new Date(assignment.due_date), 'MMM dd')}
+                    </Badge>
+                  </div>
+                  <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-blue-600 rounded-full h-2" 
+                      style={{ width: `${assignment.progress}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Recent Submissions */}
+            <div>
+              <h3 className="font-medium mb-2">📤 Recent Submissions ({dashboardData.recent_submissions.length})</h3>
+              {dashboardData.recent_submissions.map((submission, index) => (
+                <div key={index} className="p-3 mb-2 border rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="font-medium">{submission.assignment}</p>
+                      <p className="text-sm">
+                        Submitted {format(new Date(submission.submitted_at), 'MMM dd')}
+                      </p>
+                    </div>
+                    <Badge 
+                      variant={submission.grade ? 'default' : 'secondary'} 
+                      className={`${submission.grade ? 'bg-green-100 text-green-800' : ''}`}
+                    >
+                      {submission.grade ? `Grade: ${submission.grade}` : 'Pending'}
+                    </Badge>
                   </div>
                 </div>
               ))}
             </div>
           </div>
-
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-gray-800">Achievements</h2>
-              <Star className="w-6 h-6 text-purple-500" />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-purple-50 rounded-lg p-4 text-center">
-                <div className="w-12 h-12 bg-purple-200 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <Star className="w-6 h-6 text-purple-600" />
-                </div>
-                <p className="font-medium text-gray-800">Perfect Attendance</p>
-                <p className="text-sm text-purple-600">Last 30 days</p>
-              </div>
-              <div className="bg-purple-50 rounded-lg p-4 text-center">
-                <div className="w-12 h-12 bg-purple-200 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <BookOpen className="w-6 h-6 text-purple-600" />
-                </div>
-                <p className="font-medium text-gray-800">Top Performer</p>
-                <p className="text-sm text-purple-600">Mathematics</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
+
+// Helper components
+const StatCard = ({ title, value, icon }) => (
+  <Card className="transition-all hover:shadow-md">
+    <CardContent className="p-4 flex items-center justify-between">
+      <div>
+        <p className="text-sm text-gray-600">{title}</p>
+        <p className="text-2xl font-bold mt-1">{value}</p>
+      </div>
+      <span className="text-3xl">{icon}</span>
+    </CardContent>
+  </Card>
+);
+
+const DashboardSkeleton = () => (
+  <div className="p-6 space-y-6">
+    <Skeleton className="h-32 w-full rounded-xl" />
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {[...Array(4)].map((_, i) => (
+        <Skeleton key={i} className="h-24 rounded-lg" />
+      ))}
+    </div>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <Skeleton className="h-64 rounded-lg" />
+      <Skeleton className="h-64 rounded-lg" />
+    </div>
+    <Skeleton className="h-96 rounded-lg" />
+  </div>
+);
 
 export default StudentDashboard;

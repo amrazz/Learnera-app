@@ -8,6 +8,11 @@ import AttendanceHistory from "./AttendanceHistory";
 import CreateAssignment from "./CreateAssignment";
 import ShowAssignment from "./ShowAssignment";
 import AssignmentSubmissions from "./AssignmentSubmissions";
+import CreateExam from "./Exam/CreateExam";
+import ExamQuestions from "./Exam/ExamQuestions";
+import ShowExam from "./Exam/ShowExam";
+import ExamEvaluation from "./Exam/ExamEvaluation";
+import TeacherExamResults from "./Exam/TeacherExamResults";
 
 
 const Sections = () => {
@@ -21,6 +26,11 @@ const Sections = () => {
       <Route path="create-assignment" element={<CreateAssignment />} />
       <Route path="show-assignment" element={<ShowAssignment />} />
       <Route path="assignment-submissions/:assignment_id/submissions" element={<AssignmentSubmissions />} />
+      <Route path="show-exam" element={<ShowExam />} />
+      <Route path="create-exam" element={<CreateExam />} />
+      <Route path="create-exam/:examId/questions" element={<ExamQuestions />} />
+      <Route path="exam-evaluation/:examId" element={<ExamEvaluation />} />
+      <Route path="exam-results" element={<TeacherExamResults />} />
     </Routes>
   );
 };

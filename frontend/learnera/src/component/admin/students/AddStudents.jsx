@@ -96,7 +96,7 @@ const AddStudents = () => {
           email: parent.user.email,
         },
       ]);
-      toast.success(`Added ${parent.user.first_name} as ${relationshipType}`);
+      toast.success(`Added ${parent.user.first_name} ${parent.user.last_name} as ${relationshipType}`);
     } else {
       toast.warning("This parent-relationship combination already exists");
     }
@@ -109,7 +109,7 @@ const AddStudents = () => {
     const removedParent = newRelationships[index];
     newRelationships.splice(index, 1);
     setSelectedParentRelationship(newRelationships);
-    toast.info(`Removed ${removedParent.first_name} as ${removedParent.relationship_type}`);
+    toast.info(`Removed ${removedParent.first_name} ${removedParent.last_name} as ${removedParent.relationship_type}`);
   };
 
   const renderParentSearch = () => {
@@ -225,7 +225,7 @@ const AddStudents = () => {
     flatten(errors);
     return flattenedErrors;
   };
-
+  
   const studentFormik = useFormik({
     initialValues,
     validationSchema,
@@ -285,71 +285,22 @@ const AddStudents = () => {
             setSelectedParentRelationship([]);
             setProfile(null);
             navigate("/admin/show_students");
+        } else {
+          toast.error("An error occurred while adding the student.");
+          if (response.data?.errors) {
+            const flattenedErrors = flattenErrors(response.data.errors);
+            flattenedErrors.forEach((error) => toast.error(error));
+          }
         }
-    } catch (error) {
-        console.log("Error response:", error.response);
-        
-        if (error.response?.data) {
-            const errorData = error.response.data;
-            
-            // Handle string error
-            if (typeof errorData === 'string') {
-                toast.error(errorData);
-                return;
-            }
-            
-            // Handle error message
-            if (errorData.error) {
-                toast.error(errorData.error);
-                return;
-            }
-            
-            // Handle error message
-            if (errorData.message) {
-                toast.error(errorData.message);
-                return;
-            }
-            
-            // Handle object errors
-            if (typeof errorData === 'object') {
-                Object.entries(errorData).forEach(([key, value]) => {
-                    if (typeof value === 'string') {
-                        toast.error(`${key}: ${value}`);
-                    } else if (Array.isArray(value)) {
-                        toast.error(`${key}: ${value.join(' ')}`);
-                    } else if (typeof value === 'object') {
-                        Object.entries(value).forEach(([subKey, subValue]) => {
-                            if (Array.isArray(subValue)) {
-                                toast.error(`${key}.${subKey}: ${subValue.join(' ')}`);
-                            } else {
-                                toast.error(`${key}.${subKey}: ${subValue}`);
-                            }
-                        });
-                    }
-                });
-                return;
-            }
-        }
-        // Fallback error
-        toast.error("An error occurred while adding the student. Please try again.");
-    } finally {
+      } catch (error) {
+        toast.error("An unexpected error occurred.");
+        console.error("Error adding student:", error);
+      } finally {
         setIsSubmitting(false);
-    }
-},
-});
+      }
+    },
+  });
 
-// Update ToastContainer configuration
-<ToastContainer
-position="top-right"
-autoClose={5000}
-hideProgressBar={false}
-newestOnTop
-closeOnClick
-rtl={false}
-pauseOnFocusLoss
-draggable
-pauseOnHover
-/>
   if (isSubmitting) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -360,7 +311,7 @@ pauseOnHover
 
   return (
     <div className="max-w-4xl mx-auto p-8 bg-white border border-gray-200 rounded shadow-lg">
-      <ToastContainer />
+            <ToastContainer />
       <h2 className="text-3xl font-bold mb-6 text-center font-montserrat">Add Student</h2>
       <hr />
       <form

@@ -5,8 +5,8 @@ import { CiSettings } from "react-icons/ci";
 import { MegaphoneIcon, PiggyBank, User } from "lucide-react";
 
 export const menu = [
-  { id: "dashboard", name: "Dashboard", logo: LuLayoutDashboard }, 
-  { id: "student-details", name: "Student Details", logo: User }, 
+  { id: "dashboard", name: "Dashboard", logo: LuLayoutDashboard, link : ""}, 
+  { id: "student-details", name: "Student Details", logo: User, link : "student-details" }, 
   { id: "student-attendance", name: "Student Attendance", logo: FaUserCheck }, 
   { id: "class-details", name: "Class Details", logo: FaChalkboardTeacher }, 
   { id: "accounts", name: "Accounts", logo: PiggyBank }, 
@@ -17,6 +17,6 @@ export const menu = [
 ];
 
 export const subMenus = {
-
+  accounts : ["Pay Fees", "Payment History"] 
 
 };

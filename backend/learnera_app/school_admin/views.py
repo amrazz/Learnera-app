@@ -6,13 +6,18 @@ import calendar
 from django.http import Http404
 from django.core.cache import cache
 
+from rest_framework import serializers
+
 from .services import RollNumberService
 from .serializers import (
+    FeeCategorySerializer,
+    FeeStructureSerializer,
     ParentSerializer,
     SectionSerializer,
     ClassListSerializer,
     SchoolClassSerializer,
     SectionTeacherAssignmentSerializer,
+    StudentFeePaymentSerializer,
     StudentListSerializer,
     StudentDetailSerializer,
     SchoolAdminLoginSerializers,
@@ -27,9 +32,16 @@ from .serializers import (
     AttendanceSectionSerializer,
     MonthlyStatisticsSerializer,
 )
+from rest_framework.decorators import api_view
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from parents.models import Parent, StudentParentRelationship
+from parents.models import (
+    FeeCategory,
+    FeeStructure,
+    Parent,
+    StudentFeePayment,
+    StudentParentRelationship,
+)
 from .models import AdmissionNumber
 from students.models import Student
 from .email import EmailService
@@ -82,7 +94,6 @@ class SchoolAdminLoginView(APIView):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-
 class CreateStudentView(APIView):
     parser_classes = [MultiPartParser, FormParser]
     permission_classes = [permissions.IsAdminUser]
@@ -90,7 +101,6 @@ class CreateStudentView(APIView):
     @transaction.atomic
     def post(self, request, *args, **kwargs):
         try:
-
             class_assigned_id = request.data.get("class_assigned")
             section = Section.objects.get(id=class_assigned_id)
 
@@ -99,6 +109,7 @@ class CreateStudentView(APIView):
                     {"error": "This section has reached its maximum student limit."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+
             admission_number_obj, _ = AdmissionNumber.objects.get_or_create(
                 key="admission_number",
                 defaults={"value": "200000"},
@@ -133,11 +144,6 @@ class CreateStudentView(APIView):
             try:
                 active_academic_year = AcademicYear.objects.get(is_active=True)
             except AcademicYear.DoesNotExist:
-                    active_academic_year = None
-
-            try:
-                active_academic_year = AcademicYear.objects.get(is_active=True)
-            except AcademicYear.DoesNotExist:
                 active_academic_year = None
 
             if not active_academic_year or not (
@@ -163,7 +169,6 @@ class CreateStudentView(APIView):
 
             student.save()
 
-
             section.available_students += 1
             section.save()
 
@@ -171,10 +176,15 @@ class CreateStudentView(APIView):
                 RollNumberService.assign_roll_number(
                     student, student.class_assigned, student.academic_year
                 )
-                RollNumberService.reorder_by_name(student.class_assigned, student.academic_year)
+                RollNumberService.reorder_by_name(
+                    student.class_assigned, student.academic_year
+                )
             except Exception as e:
                 transaction.set_rollback(True)
-                return Response(e.detail, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"error": "Failed to assign roll number"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
             for relationship in parent_relationships:
                 parent_id = relationship.get("parent_id")
@@ -192,23 +202,24 @@ class CreateStudentView(APIView):
                         raise ValidationError("Invalid parent ID provided")
 
             try:
-                EmailService.send_welcome_email(
+                email_sent = EmailService.send_welcome_email(
                     user_type="Student",
                     email=user_data["email"],
                     username=user_data["username"],
                     password=user_data["password"],
                 )
-                print("Welcome email initiated for:", user_data["email"])
+                if not email_sent:
+                    print(f"Warning: Welcome email could not be sent to {user_data['email']}")
             except Exception as email_error:
-                print(f"Failed to send welcome email: {str(email_error)}")
+                print(f"Error sending welcome email: {str(email_error)}")
 
-            # Return success response
             return Response(
                 {"message": "Student created successfully"},
                 status=status.HTTP_201_CREATED,
             )
 
         except Exception as e:
+            transaction.set_rollback(True)
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -489,6 +500,7 @@ class SchoolClassListView(generics.ListAPIView):
     )
     serializer_class = ClassListSerializer
     permission_classes = [permissions.IsAdminUser]
+    pagination_class = None
 
 
 class SchoolClassSectionUpdateView(generics.UpdateAPIView):
@@ -581,10 +593,10 @@ class ParentViewSet(viewsets.ModelViewSet):
     serializer_class = ParentSerializer
     permission_classes = [permissions.IsAdminUser]
     pagination_class = PageNumberPagination
-    
+
     def get_pagination_class(self):
-        paginate = self.request.query_params.get('paginate', 'true').lower()
-        if paginate == 'false':
+        paginate = self.request.query_params.get("paginate", "true").lower()
+        if paginate == "false":
             self.pagination_class = None
             return None
         return self.pagination_class
@@ -592,7 +604,7 @@ class ParentViewSet(viewsets.ModelViewSet):
     def list(self, request, *args, **kwargs):
         self.pagination_class = self.get_pagination_class()
         return super().list(request, *args, **kwargs)
-    
+
     def create(self, request, *args, **kwargs):
         try:
             user_data = json.loads(request.data.get("user", "{}"))
@@ -813,11 +825,13 @@ class GetStudentParentViewSet(viewsets.ModelViewSet):
 
 # Teacher management
 
+
 class SubjectListView(generics.ListCreateAPIView):
     queryset = Subject.objects.all()
     permission_classes = [permissions.IsAdminUser]
     serializer_class = SubjectSerializer
     pagination_class = None
+
 
 class TeacherListCreateView(APIView):
     permission_classes = [permissions.IsAdminUser]
@@ -836,14 +850,16 @@ class TeacherListCreateView(APIView):
         if "profile_image" in request.FILES:
             user_data["profile_image"] = request.FILES["profile_image"]
 
-        subject = None  
+        subject = None
         if subject_id:
-            subject = Subject.objects.get(pk = subject_id)
+            subject = Subject.objects.get(pk=subject_id)
         elif new_subject_name:
-            subject, created = Subject.objects.get_or_create(subject_name = new_subject_name)
+            subject, created = Subject.objects.get_or_create(
+                subject_name=new_subject_name
+            )
         serializer = TeacherSerializer(
             data={"user": user_data, "subject": subject.id if subject else None},
-            context={"request": request} 
+            context={"request": request},
         )
         if serializer.is_valid():
             teacher = serializer.save()
@@ -910,13 +926,13 @@ class TeacherDetailView(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    
+
     def delete(self, request, pk):
-        teacher = self.get_object(pk = pk)
+        teacher = self.get_object(pk=pk)
         try:
             teacher.user.delete()
             teacher.delete()
-            
+
             return Response(
                 {"message": "Teacher and associated data deleted successfully"},
                 status=status.HTTP_204_NO_CONTENT,
@@ -925,7 +941,7 @@ class TeacherDetailView(APIView):
             return Response(
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-            
+
 
 class TeacherDocumentDeleteView(APIView):
     permission_classes = [permissions.IsAdminUser]
@@ -1147,3 +1163,82 @@ class AdminSectionListView(generics.ListAPIView):
     def get_queryset(self):
         class_id = self.kwargs.get("class_id")
         return Section.objects.filter(school_class_id=class_id)
+
+
+# ----------------------------------------------------------------------
+
+# Payment integration
+
+
+class FeeCategoryListCreateView(generics.ListCreateAPIView):
+    queryset = FeeCategory.objects.all()
+    serializer_class = FeeCategorySerializer
+    permission_classes = [permissions.IsAdminUser]
+    pagination_class = None
+
+class FeeCategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [permissions.IsAdminUser]
+    queryset = FeeCategory.objects.all()
+    serializer_class = FeeCategorySerializer
+    pagination_class = None
+
+class FeeStructureListCreateView(generics.ListCreateAPIView):
+    serializer_class = FeeStructureSerializer
+    permission_classes = [permissions.IsAdminUser]
+    pagination_class = None
+
+    def get_queryset(self):
+        queryset = FeeStructure.objects.all()
+        fee_type = self.request.query_params.get("fee_type")
+        academic_year = AcademicYear.objects.filter(is_active=True).first()
+        
+        if academic_year:
+            queryset = queryset.filter(academic_year=academic_year)
+        
+        if fee_type:
+            queryset = queryset.filter(fee_type=fee_type)
+        
+        return queryset.select_related(
+            'fee_category',
+            'section__school_class',
+            'academic_year'
+        )
+
+    def perform_create(self, serializer):
+        academic_year = AcademicYear.objects.filter(is_active=True).first()
+        if not academic_year:
+            raise serializers.ValidationError("No active academic year found.")
+        serializer.save(academic_year=academic_year)
+
+
+class FeeStructureDetailedView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = FeeStructure.objects.all()
+    serializer_class = FeeStructureSerializer
+    permission_classes = [permissions.IsAdminUser]
+    pagination_class = None
+
+
+
+class StudentFeePaymentListView(generics.ListAPIView):
+    permission_classes = [permissions.IsAdminUser]
+    serializer_class = StudentFeePaymentSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        queryset = StudentFeePayment.objects.all()
+        
+        status = self.request.query_params.get('status', None)
+        section = self.request.query_params.get('section', None)
+        fee_category = self.request.query_params.get('fee_category', None)
+        search = self.request.query_params.get('search', None)
+
+        if status:
+            queryset = queryset.filter(status=status)
+        if section:
+            queryset = queryset.filter(student__class_assigned__id=section)
+        if fee_category:
+            queryset = queryset.filter(fee_structure__fee_category__id=fee_category)
+        if search:
+            queryset = queryset.filter(student__user__full_name__icontains=search)
+
+        return queryset

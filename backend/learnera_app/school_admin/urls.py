@@ -1,34 +1,40 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 from .views import (
-    AdminAttendanceView,
-    AdminClassListView,
-    AdminMonthlyStatisticsView,
-    AdminSectionListView,
-    SubjectListView,
-    AssignClassTeacherViewSet,
-    CreateSchoolClassViewSet,
-    DeleteClassSectionView,
-    GetStudentParentViewSet,
-    ParentBlockUnblockView,
-    ParentDetailView,
-    ParentStudentManagementView,
     ParentViewSet,
-    SchoolAdminLoginView,
-    CreateStudentView,
     ClassListView,
-    SchoolClassListView,
-    SchoolClassSectionUpdateView,
+    SubjectListView,
     ShowStudentsView,
-    StudentDetailView,
-    StudentParentRelationshipView,
-    StudentUpdateView,
+    ParentDetailView,
     StudentBlockView,
-    StudentDeleteView,
-    TeacherBlockUnblockView,
+    StudentDetailView,
+    CreateStudentView,
     TeacherDetailView,
+    StudentDeleteView,
+    StudentUpdateView,
+    AdminClassListView,
+    SchoolClassListView,
+    AdminAttendanceView,
+    SchoolAdminLoginView,
+    AdminSectionListView,
+    TeacherListCreateView,
+    FeeCategoryDetailView,
+    ParentBlockUnblockView,
+    DeleteClassSectionView,
+    TeacherBlockUnblockView,
+    GetStudentParentViewSet,
+    CreateSchoolClassViewSet,
+    FeeStructureDetailedView,
+    StudentFeePaymentListView,
     TeacherDocumentDeleteView,
-    TeacherListCreateView
+    FeeCategoryListCreateView,
+    AssignClassTeacherViewSet,
+    AdminMonthlyStatisticsView,
+    FeeStructureListCreateView,
+    ParentStudentManagementView,
+    SchoolClassSectionUpdateView,
+    StudentParentRelationshipView,
+    # bulk_create_student_fee_payments,
 )
 
 router = DefaultRouter()
@@ -70,8 +76,17 @@ urlpatterns = [
     path('student-attendance-history/', AdminAttendanceView.as_view(), name='admin-attendance-history'),
     path('student-statistics/', AdminMonthlyStatisticsView.as_view(), name='admin-monthly-statistics'),
     path('school-classes/', AdminClassListView.as_view(), name='admin-classes'),
-    path('school-classes/<int:class_id>/sections/', AdminSectionListView.as_view(), name='admin-sections')
-
+    path('school-classes/<int:class_id>/sections/', AdminSectionListView.as_view(), name='admin-sections'),
+    
+    
+    path("fee-categories/", FeeCategoryListCreateView.as_view(), name='fee-category'),
+    path('fee-categories/<int:pk>/', FeeCategoryDetailView.as_view(), name='fee-category-detail'),
+    
+    path('fee-structures/', FeeStructureListCreateView.as_view(), name='fee-structure'),
+    path('fee-structures/<int:pk>/', FeeStructureDetailedView.as_view(), name='fee-structure-detail'),
+    
+    # path('student-fee-payments/bulk-create/', bulk_create_student_fee_payments, name='bulk-create-fee-payments'),
+    path('student-fee-payments/', StudentFeePaymentListView.as_view(), name='student-fee-payment-list'),
 ]
 
 urlpatterns += [

@@ -66,7 +66,7 @@ const Sidebar = ({ activeMenu, setActiveMenu }) => {
           return (
             <li key={item.id} className="relative">
               <Link
-               to={`/parents/${item.id}`}
+               to={`/parents/${item.link}`}
                 className={`flex items-center gap-4 p-3 ${
                   isToggled && "justify-center"
                 } rounded-lg cursor-pointer transition-all duration-200 hover:bg-[#1F4BA5] hover:scale-105`}

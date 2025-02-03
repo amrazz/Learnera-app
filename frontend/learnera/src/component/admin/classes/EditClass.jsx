@@ -46,7 +46,7 @@ const EditClass = () => {
 
         setTeachers(teachersResponse.data);
 
-        const classData = classResponse.data.results.find(
+        const classData = classResponse.data.find(
           (cls) => cls.id === parseInt(classId)
         );
 

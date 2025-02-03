@@ -72,7 +72,7 @@ const StudentInfo = () => {
 
   const handleDelete = async () => {
     try {
-        const success = await deleteStudent(studentId); // Await the deleteStudent promise
+        const success = await deleteStudent(studentId); 
         if (success) {
             console.log("Delete successful, navigating...");
             navigate("/admin/show_students");

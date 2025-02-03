@@ -1,12 +1,26 @@
 import json
 from django.db import transaction
-from parents.models import Parent, StudentParentRelationship
+from parents.models import (
+    FeeCategory,
+    FeeStructure,
+    Parent,
+    StudentFeePayment,
+    StudentParentRelationship,
+)
 from users.models import CustomUser
 from students.models import Student
 from datetime import datetime
 from rest_framework import serializers
 from django.contrib.auth import authenticate
-from teachers.models import Attendance, SchoolClass, Section, Subject, Teacher, TeacherDocument
+from teachers.models import (
+    AcademicYear,
+    Attendance,
+    SchoolClass,
+    Section,
+    Subject,
+    Teacher,
+    TeacherDocument,
+)
 
 
 class SchoolAdminLoginSerializers(serializers.Serializer):
@@ -99,8 +113,7 @@ class SchoolAdminStudentSerializers(serializers.ModelSerializer):
 
         student = Student.objects.create(user=user, **validated_data)
         now = datetime.now().year
-        
-        
+
         return student
 
     def to_internal_value(self, data):
@@ -115,11 +128,17 @@ class SchoolAdminStudentSerializers(serializers.ModelSerializer):
 
 class SectionSerializer(serializers.ModelSerializer):
     class_teacher_info = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = Section
-        fields = ["id", "section_name", "student_count", "available_students", "class_teacher_info"]
-        
+        fields = [
+            "id",
+            "section_name",
+            "student_count",
+            "available_students",
+            "class_teacher_info",
+        ]
+
     def get_class_teacher_info(self, obj):
         class_teacher = obj.class_teacher
         if class_teacher:
@@ -161,8 +180,10 @@ class StudentListSerializer(serializers.ModelSerializer):
         }
 
     def get_parents(self, obj):
-        
-        relationships = StudentParentRelationship.objects.filter(student=obj).select_related("parent__user")
+
+        relationships = StudentParentRelationship.objects.filter(
+            student=obj
+        ).select_related("parent__user")
         return [
             {
                 "parent_name": f"{rel.parent.user.first_name} {rel.parent.user.last_name}",
@@ -170,14 +191,13 @@ class StudentListSerializer(serializers.ModelSerializer):
             }
             for rel in relationships
         ]
-        
 
 
 class StudentDetailSerializer(serializers.ModelSerializer):
     user = CustomUserSerializer()
     class_assigned = serializers.SerializerMethodField()
     parents = serializers.SerializerMethodField()
-    roll_number = serializers.IntegerField(required = False)
+    roll_number = serializers.IntegerField(required=False)
 
     class Meta:
         model = Student
@@ -187,7 +207,7 @@ class StudentDetailSerializer(serializers.ModelSerializer):
             "admission_number",
             "class_assigned",
             "parents",
-            "roll_number"
+            "roll_number",
         ]
 
     def get_class_assigned(self, obj):
@@ -196,10 +216,14 @@ class StudentDetailSerializer(serializers.ModelSerializer):
             "class_name": obj.class_assigned.school_class.class_name,
             "section_name": obj.class_assigned.section_name,
         }
-        
+
     def get_parents(self, obj):
-        relationship = StudentParentRelationship.objects.filter(student=obj).select_related("parent__user").first()
-    
+        relationship = (
+            StudentParentRelationship.objects.filter(student=obj)
+            .select_related("parent__user")
+            .first()
+        )
+
         if relationship:
             return {
                 "parent_name": f"{relationship.parent.user.first_name} {relationship.parent.user.last_name}",
@@ -207,7 +231,6 @@ class StudentDetailSerializer(serializers.ModelSerializer):
                 "parent_phone_number": relationship.parent.user.phone_number,
             }
         return {}
-
 
 
 class AdminParentSerializer(serializers.ModelSerializer):
@@ -230,19 +253,27 @@ class AdminParentSerializer(serializers.ModelSerializer):
 
 class SchoolClassCreateSerializer(serializers.ModelSerializer):
     section_name = serializers.CharField(write_only=True)
-    student_count = serializers.IntegerField(required=False, write_only=True, default=30)
+    student_count = serializers.IntegerField(
+        required=False, write_only=True, default=30
+    )
     class_teacher = serializers.PrimaryKeyRelatedField(
         queryset=Teacher.objects.all(), write_only=True, required=False
     )
     class_teacher_info = serializers.SerializerMethodField(read_only=True)
 
-    
     class Meta:
         model = SchoolClass
-        fields = ["id", "class_name", "class_teacher", "section_name", "student_count", "class_teacher_info"]
+        fields = [
+            "id",
+            "class_name",
+            "class_teacher",
+            "section_name",
+            "student_count",
+            "class_teacher_info",
+        ]
 
     def get_class_teacher_info(self, obj):
-        section = Section.objects.filter(school_class = obj.id).first()
+        section = Section.objects.filter(school_class=obj.id).first()
         if section:
             return {
                 "id": section.class_teacher.id,
@@ -268,8 +299,7 @@ class SchoolClassCreateSerializer(serializers.ModelSerializer):
 
         # Create or retrieve the SchoolClass
         school_class, created = SchoolClass.objects.get_or_create(
-            class_name=validated_data.get("class_name"),
-            defaults=validated_data
+            class_name=validated_data.get("class_name"), defaults=validated_data
         )
 
         # Check if the section already exists for this class
@@ -277,7 +307,9 @@ class SchoolClassCreateSerializer(serializers.ModelSerializer):
             school_class=school_class, section_name=section_name
         ).exists():
             raise serializers.ValidationError(
-                {"section_name": f"Section {section_name} already exists for class {school_class.class_name}."}
+                {
+                    "section_name": f"Section {section_name} already exists for class {school_class.class_name}."
+                }
             )
 
         Section.objects.create(
@@ -290,14 +322,12 @@ class SchoolClassCreateSerializer(serializers.ModelSerializer):
         return school_class
 
 
-
 class ClassListSerializer(serializers.ModelSerializer):
     sections = SectionSerializer(many=True, read_only=True)
 
     class Meta:
         model = SchoolClass
         fields = ["id", "class_name", "sections"]
-
 
 
 class SchoolClassUpdateSerializer(serializers.ModelSerializer):
@@ -308,7 +338,7 @@ class SchoolClassUpdateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         # Extract section data from the request data (not validated_data)
         section_data = self.context.get("request").data.get("section", None)
-        
+
         # Update SchoolClass fields
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -316,31 +346,36 @@ class SchoolClassUpdateSerializer(serializers.ModelSerializer):
 
         if section_data and self.context.get("section_instance"):
             section = self.context["section_instance"]
-            
-            class_teacher = section_data.get('class_teacher')
-            if class_teacher is not None: 
-                section.class_teacher_id = class_teacher 
+
+            class_teacher = section_data.get("class_teacher")
+            if class_teacher is not None:
+                section.class_teacher_id = class_teacher
 
             # Update other section fields
-            section.section_name = section_data.get('section_name', section.section_name)
-            section.student_count = section_data.get('student_count', section.student_count)
-            
+            section.section_name = section_data.get(
+                "section_name", section.section_name
+            )
+            section.student_count = section_data.get(
+                "student_count", section.student_count
+            )
+
             section.save()
 
         return instance
 
+
 class SectionTeacherAssignmentSerializer(serializers.Serializer):
     teacher_id = serializers.IntegerField()
     section_id = serializers.IntegerField()
-    
+
     def validate(self, data):
         try:
-            self.teacher = Teacher.objects.get(id=data['teacher_id'])
-            self.section = Section.objects.get(id=data['section_id'])
+            self.teacher = Teacher.objects.get(id=data["teacher_id"])
+            self.section = Section.objects.get(id=data["section_id"])
         except (Teacher.DoesNotExist, Section.DoesNotExist):
             raise serializers.ValidationError("Invalid teacher_id or section_id")
-        return data 
-    
+        return data
+
     def create(self, validated_data):
         # Assign the teacher to the section
         self.section.class_teacher = self.teacher
@@ -352,7 +387,8 @@ class SectionTeacherAssignmentSerializer(serializers.Serializer):
         # Add the class to the teacher's classes
         self.teacher.classes.add(self.section.school_class)
 
-        return {'teacher': self.teacher, 'section': self.section}
+        return {"teacher": self.teacher, "section": self.section}
+
 
 # PARENT MANAGEMENT
 # ---------------------------------------------------------------------------
@@ -479,15 +515,10 @@ class ParentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Parent
-        fields = [
-            "id",
-            "user",
-            "occupation",
-            "student_relationship"
-        ]
+        fields = ["id", "user", "occupation", "student_relationship"]
 
     def get_student_relationship(self, obj):
-        student_relationships = self.context.get('student_relationship', [])
+        student_relationships = self.context.get("student_relationship", [])
         return [
             {
                 "student_id": rel.student.user.id,
@@ -497,7 +528,7 @@ class ParentSerializer(serializers.ModelSerializer):
             }
             for rel in student_relationships
         ]
-    
+
     def create(self, validated_data):
         user_data = validated_data.pop("user")
         user_data["is_parent"] = True
@@ -531,26 +562,30 @@ class ParentSerializer(serializers.ModelSerializer):
 # Teacher Serlaizers
 # -------------------------------------------------------------------------------------------------
 
+
 class SubjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subject
-        fields = ['id', 'subject_name']
-        
+        fields = ["id", "subject_name"]
+
     def create(self, validated_data):
         subject_name = validated_data.pop("subject_name")
-        subject = Subject.objects.create(subject_name = subject_name)
+        subject = Subject.objects.create(subject_name=subject_name)
         return subject
-            
+
 
 class TeacherDocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = TeacherDocument
-        fields = ['id', 'title', 'document', 'uploaded_at']
+        fields = ["id", "title", "document", "uploaded_at"]
+
 
 class TeacherSerializer(serializers.ModelSerializer):
     user = CustomUserSerializer()
-    documents = TeacherDocumentSerializer(many=True,source="docs", read_only=True)
-    subject = serializers.PrimaryKeyRelatedField(queryset = Subject.objects.all(), required = False)
+    documents = TeacherDocumentSerializer(many=True, source="docs", read_only=True)
+    subject = serializers.PrimaryKeyRelatedField(
+        queryset=Subject.objects.all(), required=False
+    )
     subject_name = serializers.SerializerMethodField()
 
     class Meta:
@@ -562,13 +597,11 @@ class TeacherSerializer(serializers.ModelSerializer):
             "subject",
             "subject_name",
         ]
-    
-    
+
     def get_subject_name(self, obj):
         if obj.subject:
             return obj.subject.subject_name
         return "No subject Assigned"
-        
 
     @transaction.atomic
     def create(self, validated_data):
@@ -578,25 +611,20 @@ class TeacherSerializer(serializers.ModelSerializer):
         user_serializer = CustomUserSerializer(data=user_data)
         user_serializer.is_valid(raise_exception=True)
         user = user_serializer.save()
-        
-        subject = validated_data.pop('subject', None)
-        teacher = Teacher.objects.create(user=user, subject = subject)
-        
-    
+
+        subject = validated_data.pop("subject", None)
+        teacher = Teacher.objects.create(user=user, subject=subject)
+
         # Handle document uploads if present in request
-        request = self.context.get('request')
+        request = self.context.get("request")
         if request and request.FILES:
-            documents = request.FILES.getlist('documents') 
-            document_titles = request.POST.getlist('document_titles')
-            
-                    
+            documents = request.FILES.getlist("documents")
+            document_titles = request.POST.getlist("document_titles")
+
             for doc, title in zip(documents, document_titles):
                 TeacherDocument.objects.create(
-                    teacher=teacher,
-                    document=doc,
-                    title=title
+                    teacher=teacher, document=doc, title=title
                 )
-            
 
         return teacher
 
@@ -609,7 +637,7 @@ class TeacherSerializer(serializers.ModelSerializer):
                 )
                 user_serializer.is_valid(raise_exception=True)
                 user_serializer.save()
-            
+
             subject = validated_data.pop("subject", None)
             if subject:
                 instance.subject = subject
@@ -622,9 +650,7 @@ class TeacherSerializer(serializers.ModelSerializer):
 
                 for doc, title in zip(documents, document_titles):
                     TeacherDocument.objects.create(
-                        teacher=instance,
-                        document=doc,
-                        title=title
+                        teacher=instance, document=doc, title=title
                     )
 
             instance.save()
@@ -634,33 +660,38 @@ class TeacherSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {"error": "Failed to update teacher", "details": str(e)}
             )
-            
+
+
 # ---------------------------------------
+
 
 class AttendanceSchoolClassSerializer(serializers.ModelSerializer):
     class Meta:
         model = SchoolClass
-        fields = ['id', 'class_name']
+        fields = ["id", "class_name"]
+
 
 class AttendanceSectionSerializer(serializers.ModelSerializer):
     school_class = AttendanceSchoolClassSerializer()
 
     class Meta:
         model = Section
-        fields = ['id', 'section_name', 'school_class']   
+        fields = ["id", "section_name", "school_class"]
+
 
 class AttendanceHistorySerializer(serializers.ModelSerializer):
-    student_name = serializers.SerializerMethodField() 
-    roll_number = serializers.CharField(source = 'student.roll_number')
-    section = AttendanceSectionSerializer(read_only = True)
-    
+    student_name = serializers.SerializerMethodField()
+    roll_number = serializers.CharField(source="student.roll_number")
+    section = AttendanceSectionSerializer(read_only=True)
+
     class Meta:
         model = Attendance
-        fields = ['id', 'student_name', 'roll_number', 'status', 'date', 'section']
-    
+        fields = ["id", "student_name", "roll_number", "status", "date", "section"]
+
     def get_student_name(self, obj):
         return f"{obj.student.user.first_name} {obj.student.user.last_name}"
-    
+
+
 class MonthlyStatisticsSerializer(serializers.Serializer):
     month = serializers.DateField()
     present_count = serializers.IntegerField()
@@ -668,3 +699,153 @@ class MonthlyStatisticsSerializer(serializers.Serializer):
     late_count = serializers.IntegerField()
     total_students = serializers.IntegerField()
     attendance_percentage = serializers.FloatField()
+
+
+# ----------------------------------------------------------------------------------
+
+
+# Payment details
+
+
+class FeeCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FeeCategory
+        fields = "__all__"
+
+
+class FeeStructureSerializer(serializers.ModelSerializer):
+    fee_category_name = serializers.CharField(
+        source="fee_category.name", 
+        read_only=True
+    )
+    class_name = serializers.CharField(
+        source="section.school_class.class_name", 
+        read_only=True, 
+        allow_null=True
+    )
+    section_name = serializers.CharField(
+        source="section.section_name", 
+        read_only=True, 
+        allow_null=True
+    )
+    academic_year_name = serializers.CharField(
+        source="academic_year.name", 
+        read_only=True
+    )
+
+    class Meta:
+        model = FeeStructure
+        fields = [
+            "id",
+            "fee_type",
+            "amount",
+            "academic_year",
+            "academic_year_name",
+            "class_name",
+            "section",
+            "section_name",
+            "fee_category",
+            "fee_category_name",
+            "due_date",
+        ]
+        extra_kwargs = {
+            "academic_year": {"read_only": True},
+            "section": {"required": False, "allow_null": True},
+        }
+
+    def validate(self, data):
+        fee_type = data.get('fee_type')
+        section = data.get('section')
+
+        if fee_type == 'GLOBAL' and section:
+            raise serializers.ValidationError(
+                {"section": "Section should not be provided for global fees"}
+            )
+        if fee_type == 'SPECIFIC' and not section:
+            raise serializers.ValidationError(
+                {"section": "Section is required for specific fees"}
+            )
+
+        return data
+
+    def create(self, validated_data):
+        academic_year = AcademicYear.objects.filter(is_active=True).first()
+        if not academic_year:
+            raise serializers.ValidationError("No active academic year found")
+
+        validated_data["academic_year"] = academic_year
+        fee_structure = super().create(validated_data)
+
+        if fee_structure.fee_type == "GLOBAL":
+            students = Student.objects.filter(academic_year=academic_year)
+        elif fee_structure.section:
+            students = Student.objects.filter(
+                academic_year=academic_year,
+                class_assigned=fee_structure.section
+            )
+        else:
+            students = Student.objects.none()
+
+        student_fee_payments = [
+            StudentFeePayment(
+                student=student,
+                fee_structure=fee_structure,
+                total_amount=fee_structure.amount,
+                due_date=fee_structure.due_date,
+                status="PENDING",
+            )
+            for student in students
+        ]
+        StudentFeePayment.objects.bulk_create(student_fee_payments)
+
+        return fee_structure
+
+
+class StudentFeePaymentSerializer(serializers.ModelSerializer):
+    student_first_name = serializers.CharField(
+        source="student.user.first_name", read_only=True
+    )
+    student_last_name = serializers.CharField(
+        source="student.user.last_name", read_only=True
+    )
+    fee_structure_details = serializers.SerializerMethodField(read_only=True)
+    student_class = serializers.CharField(
+        source="student.class_assigned.school_class.class_name", read_only=True
+    )
+    student_section = serializers.CharField(
+        source="student.class_assigned.section_name", read_only=True
+    )
+    
+
+    class Meta:
+        model = StudentFeePayment
+        fields = [
+            "id",
+            "student",
+            "student_first_name",
+            "student_last_name",
+            "fee_structure",
+            "fee_structure_details",
+            "total_amount",
+            "status",
+            "due_date",
+            "stripe_invoice_id",
+            "stripe_payment_intent_id",
+            "created_at",
+            "updated_at",
+            "student_class",
+            "student_section",
+        ]
+
+    def get_fee_structure_details(self, obj):
+        return {
+            "fee_category_name": obj.fee_structure.fee_category.name,
+            "amount": obj.fee_structure.amount,
+            "due_date": obj.fee_structure.due_date,
+            "section_name": (
+                obj.fee_structure.section.section_name
+                if obj.fee_structure.section
+                else None
+            ),
+            "academic_year_name": obj.fee_structure.academic_year.name,
+        }

@@ -19,6 +19,7 @@ export const menu = [
 
 export const subMenus = {
   attendance: ["Mark Attendance", "Attendance History"],
-  assignments : ["show-assignment", "create-assignment"]
+  assignments : ["Show Assignment", "Create Assignment"],
+  exams : ["Show Exam", "Create Exam", "Exam Results"]
 };
 

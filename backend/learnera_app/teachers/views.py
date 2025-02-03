@@ -1,5 +1,6 @@
 import calendar
 from datetime import datetime
+from decimal import Decimal
 from gettext import translation
 from django.shortcuts import render
 from rest_framework import generics, status, permissions
@@ -11,9 +12,15 @@ from .serializers import (
     AssignmentSerializer,
     AttendanceHistorySerializer,
     BulkAttendanceSerializer,
+    EvaluationSerializer,
+    ExamResultSerializer,
+    ExamSerializer,
     MonthlyStatisticsSerializer,
+    QuestionSerializer,
     SectionSerializer,
+    StudentAnswerSerializer,
     StudentAttendanceSerializer,
+    StudentExamDetailSerializer,
     StudentInfoSerializer,
     StudentSerializer,
     SubjectSerializer,
@@ -25,8 +32,12 @@ from users.models import CustomUser
 from teachers.models import (
     Assignment,
     AssignmentSubmission,
+    Exam,
+    Question,
     SchoolClass,
     Section,
+    StudentAnswer,
+    StudentExam,
     Subject,
     Teacher,
     Attendance,
@@ -406,3 +417,183 @@ class AssignmentGradeSubmissionView(generics.UpdateAPIView):
                 return Response(serializer.data, status = status.HTTP_200_OK)
         except Exception as e:
             return Response({'error' : str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+        
+
+# ---------------------------------------------------
+
+class TeacherExamListCreateView(generics.ListCreateAPIView):
+    serializer_class = ExamSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None
+    
+    def get_queryset(self):
+        if hasattr(self.request.user, 'teacher'):
+            return Exam.objects.filter(teacher=self.request.user.teacher)
+        return Exam.objects.none()
+    
+    def perform_create(self, serializer):
+        serializer.save(teacher=self.request.user.teacher)
+
+class TeacherExamDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = ExamSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        if hasattr(self.request.user, 'teacher'):
+            return Exam.objects.filter(teacher=self.request.user.teacher)
+        return Exam.objects.none()
+
+class QuestionListCreateView(generics.ListCreateAPIView):
+    serializer_class = QuestionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        exam_id = self.kwargs.get('exam_id')
+        if hasattr(self.request.user, 'teacher'):
+            return Question.objects.filter(
+                exam_id=exam_id, 
+                exam__teacher=self.request.user.teacher
+            )
+        return Question.objects.none()
+    
+    def perform_create(self, serializer):
+        exam = get_object_or_404(
+            Exam, 
+            id=self.kwargs.get('exam_id'), 
+            teacher=self.request.user.teacher
+        )
+        serializer.save(exam=exam)
+
+class QuestionDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = QuestionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        if hasattr(self.request.user, 'teacher'):
+            return Question.objects.filter(
+                exam__teacher=self.request.user.teacher
+            )
+        return Question.objects.none()
+    
+    
+class EvaluateExamView(generics.UpdateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = EvaluationSerializer
+    
+    def get_queryset(self):
+        if not hasattr(self.request.user, 'teacher'):
+            return StudentAnswer.objects.none()
+        
+        return StudentAnswer.objects.filter(
+            student_exam_id=self.kwargs.get('pk'),
+            student_exam__exam__teacher=self.request.user.teacher,
+            student_exam__status='SUBMITTED'
+        ).select_related(
+            'student_exam',
+            'question'
+        )
+
+    @transaction.atomic
+    def update(self, request, pk=None, *args, **kwargs):
+
+        answers_data = request.data.get('answers', [])
+        print("This is the answers ", answers_data)
+        print(request.user.teacher.id)
+        if not answers_data or not isinstance(answers_data, list):
+            return Response(
+                {"detail": "No answers provided for evaluation"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        student_exam = get_object_or_404(
+            StudentExam,
+            id=pk,
+            exam__teacher=request.user.teacher,
+            status='SUBMITTED'
+        )
+
+        student_answers = self.get_queryset()
+        if not student_answers:
+            return Response(
+                {"detail": "No submitted answers found for evaluation"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        answer_dict = {str(answer.id): answer for answer in student_answers}
+        updated_answers = []
+        total_score = Decimal('0.0')
+        print(answer_dict)
+        for answer_data in answers_data:
+            print(answer_data, "this is inside the loop")
+        try:
+            for answer_data in answers_data:
+                answer_id = str(answer_data.get('id'))
+                if answer_id not in answer_dict:
+                    raise ValueError(f"Invalid answer ID: {answer_id}")
+
+                answer = answer_dict[answer_id]
+                
+                answer_data['evaluation_comment'] = answer_data.get('evaluation_comment', '')
+                
+                serializer = self.get_serializer(answer, data=answer_data, partial=True)
+                serializer.is_valid(raise_exception=True)
+                updated_answer = serializer.save(evaluated_by=request.user.teacher)
+                
+                updated_answers.append(serializer.data)
+                total_score += Decimal(str(updated_answer.marks_obtained or '0'))
+
+            student_exam.status = 'EVALUATED'
+            student_exam.total_score = total_score
+            student_exam.save()
+
+            return Response({
+                'detail': 'Evaluation submitted successfully',
+                'student_exam_id': student_exam.id,
+                'total_score': float(total_score),
+                'answers': updated_answers
+            }, status=status.HTTP_200_OK)
+
+        except ValueError as e:
+            return Response(
+                {"detail": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            return Response(
+                {"detail": f"An error occurred: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+class TeacherExamSubmissionsView(generics.ListAPIView):
+    serializer_class = StudentExamDetailSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None
+    
+    def get_queryset(self):
+        exam_id = self.kwargs.get('exam_id')
+        if hasattr(self.request.user, 'teacher'):
+            return StudentExam.objects.filter(
+                exam_id=exam_id,
+                exam__teacher=self.request.user.teacher,
+                status__in=['SUBMITTED', 'EVALUATED']
+            ).select_related(
+                'student__user',
+                'exam__subject'
+            ).prefetch_related(
+                'student_answers__question',
+                'student_answers__selected_choice'
+            )
+        return StudentExam.objects.none()
+    
+
+class TeacherExamResultsView(generics.ListAPIView):
+    serializer_class = ExamResultSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        if hasattr(self.request.user, 'teacher'):
+            return StudentExam.objects.filter(
+                exam__teacher = self.request.user.teacher
+            ).select_related('student__user', 'exam')
+        return StudentExam.objects.none()

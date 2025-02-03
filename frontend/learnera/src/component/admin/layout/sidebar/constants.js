@@ -15,10 +15,10 @@
         { id: "subjects", name: "Subjects", logo: FaBook, link : "subjects" },
         { id: "classes", name: "Classes", logo: SiGoogleclassroom },
         { id: "attendance", name: "Attendance", logo: FaUserCheck , link : "attendance"},
+        { id: "payment", name: "Payment", logo: MdAccountBalanceWallet },
+        { id: "accounts", name: "Accounts", logo: MdAccountBalance },
         { id: "leave-management", name: "Leave Management", logo: FaUserTimes },
         { id: "events", name: "Events", logo: MdEventNote },
-        { id: "accounts", name: "Accounts", logo: MdAccountBalance },
-        { id: "payment", name: "Payment", logo: MdAccountBalanceWallet },
         { id: "settings", name: "Settings", logo: CiSettings },
     ];
 
@@ -26,5 +26,6 @@
         students: ["Show Students", "Add Students"],
         parents: ["Show Parents", "Add Parents"],
         teachers: ["Show Teachers", "Add Teachers"],
-        classes : ["Show Class", "Add Class"]
+        classes : ["Show Class", "Add Class"],
+        payment : ["Fee Creation", "payments"]
     };

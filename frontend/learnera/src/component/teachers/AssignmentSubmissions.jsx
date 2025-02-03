@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 
 const AssignmentSubmissions = () => {
   const {assignment_id} = useParams()
@@ -112,6 +112,7 @@ const AssignmentSubmissions = () => {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 p-6">
+      <ToastContainer />
       <Button
         variant="outline"
         onClick={() => navigate(-1)}

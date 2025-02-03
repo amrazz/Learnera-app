@@ -57,7 +57,7 @@ const ParentInfo = () => {
 
   const handleDelete = async () => {
     try {
-      await api.delete(`school_admin/parent_info/${parentId}`);
+      await api.delete(`school_admin/parents/${parentId}/`);
       navigate("/admin/show_parents");
       toast.success("Parent deleted successfully!");
     } catch (error) {

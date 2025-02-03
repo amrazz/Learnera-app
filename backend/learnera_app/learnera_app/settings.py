@@ -14,17 +14,25 @@ import os
 from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
+import environ # type: ignore
+
+
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
 load_dotenv()
+
+env = environ.Env()
+env.read_env(BASE_DIR / '.env')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-6%r6v&ecngjqw=_ucm+_b7xp44=8-8a_m@91p4#698!nzg+j1="
+SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -66,6 +74,7 @@ INSTALLED_APPS = [
     "teachers",
     "parents",
     "students",
+    "django_filters"
 ]
 
 MIDDLEWARE = [
@@ -100,6 +109,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "learnera_app.wsgi.application"
 
+DJANGO_ALLOW_ASYNC_UNSAFE = True
+
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
@@ -108,9 +119,9 @@ WSGI_APPLICATION = "learnera_app.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "learnera",
-        "USER": "postgres",
-        "PASSWORD": "amraz",
+        "NAME": env('DATABASE_NAME'),
+        "USER": env('DATABASE_USER'),
+        "PASSWORD": env("DATABASE_PASSWORD"),
         "HOST": "localhost",
         "PORT": "5432",
     }
@@ -141,7 +152,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "Asia/Kolkata"
 
 USE_I18N = True
 
@@ -175,6 +186,10 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com' 
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'learnerapp999@gmail.com' 
-EMAIL_HOST_PASSWORD = 'tawm jvtc meyv mehj'
+EMAIL_HOST_USER="learnerapp999@gmail.com"
+EMAIL_HOST_PASSWORD="phvb ipat osmr buih"
 DEFAULT_FROM_EMAIL = 'Learnera <learnerapp999@gmail.com>'
+
+
+STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY")
+STRIPE_PUBLISHABLE_KEY = env("STRIPE_PUBLISHABLE_KEY")

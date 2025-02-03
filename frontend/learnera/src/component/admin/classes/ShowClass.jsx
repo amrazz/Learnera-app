@@ -33,7 +33,7 @@ const ShowClass = () => {
       try {
         const response = await api.get("school_admin/classes");
         if (response.data) {
-          const sortedData = response.data.results.sort((a, b) =>
+          const sortedData = response.data.sort((a, b) =>
             a.class_name.localeCompare(b.class_name)
           );
 

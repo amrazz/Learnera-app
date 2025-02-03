@@ -3,7 +3,7 @@ import api from "../../../api"
 export const deleteStudent = async (studentId) => {
     try {
     
-        const response = await api.delete(`school_admin/student_delete/${studentId}`);
+        const response = await api.delete(`school_admin/student_delete/${studentId}/`);
         console.log('this is the delete response', response);
 
         if (response.status === 204) {
