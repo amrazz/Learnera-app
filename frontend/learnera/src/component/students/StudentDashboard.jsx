@@ -1,4 +1,3 @@
-// frontend/src/components/StudentDashboard.jsx
 import React, { useEffect, useState } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
@@ -44,13 +43,17 @@ const StudentDashboard = () => {
     { name: 'Absent', value: attendanceSummary.absent, color: '#DC143C' },
     { name: 'Late', value: attendanceSummary.late, color: '#FFD700' },
   ];
+  
+  let totalClasses = attendanceSummary.present + attendanceSummary.absent;
+
+  let attendancePercentage = totalClasses > 0 ? Math.round((attendanceSummary.present / totalClasses) * 100) : 0
 
   return (
     <div className="p-6 space-y-6">
       {/* Personal Info Header */}
       <div className="bg-gradient-to-r from-[#0D2E76] to-[#1842DC] text-white p-6 rounded-xl flex items-center gap-4">
         <Avatar className="h-16 w-16 border-2 border-white">
-          <AvatarImage className="bg-white border" src={`http://127.0.0.1:8000/${dashboardData.student.profile_image}`} />
+          <AvatarImage className="bg-white border object-cover" src={`http://127.0.0.1:8000${dashboardData.student.profile_image}`} />
           <AvatarFallback>{dashboardData.student.initials}</AvatarFallback>
         </Avatar>
         <div>
@@ -70,7 +73,7 @@ const StudentDashboard = () => {
         <StatCard title="Total Assignments Due" value={dashboardData.pending_assignments.length} icon="📝" />
         <StatCard title="Upcoming Exams" value={dashboardData.upcoming_exams.length} icon="📅" />
         <StatCard title="Attendance %" 
-          value={`${Math.round((attendanceSummary.present / (attendanceSummary.present + attendanceSummary.absent)) * 100)}%`} 
+          value={`${attendancePercentage}%`} 
           icon="✅" 
         />
         <StatCard title="Recent Grades" value={dashboardData.recent_grades.average} icon="⭐" />

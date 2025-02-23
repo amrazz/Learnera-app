@@ -7,6 +7,14 @@ class CustomUser(AbstractUser):
         ('M', "Male"),
         ('F', "Female"),
     ]
+    
+    SCHOOL_TYPE_CHOICES = [
+        ('PRIMARY', 'Primary School'),
+        ('SECONDARY', 'Secondary School'),
+        ('BOTH', 'Both Primary and Secondary')
+    ]
+
+    # Existing fields
     profile_image = models.ImageField(upload_to='profile_images/', null=True, blank=True)
     phone_number = models.CharField(max_length=15, unique=True, null=True, blank=True) 
     emergency_contact_number = models.CharField(max_length=15, null=True, blank=True)
@@ -20,7 +28,7 @@ class CustomUser(AbstractUser):
     country = models.CharField(max_length=100, blank=True, null=True) 
     created_at = models.DateTimeField(default=timezone.now) 
     updated_at = models.DateTimeField(auto_now=True)
-    reset_password = models.BooleanField(default = False, null=True)
+    reset_password = models.BooleanField(default=False, null=True)
 
     # Role-based Booleans
     is_schooladmin = models.BooleanField(default=False)
@@ -29,6 +37,13 @@ class CustomUser(AbstractUser):
     is_parent = models.BooleanField(default=False)
     
     otp_verified = models.BooleanField(default=False)
-    
+
+    # Added School Admin fields
+    school_name = models.CharField(max_length=200, null=True, blank=True)
+    school_type = models.CharField(max_length=50, choices=SCHOOL_TYPE_CHOICES, null=True, blank=True)
+    school_logo = models.ImageField(upload_to='school_logo/', null=True, blank=True)
+
     def __str__(self):
+        if self.is_schooladmin and self.school_name:
+            return f"{self.username} - {self.school_name}"
         return self.username

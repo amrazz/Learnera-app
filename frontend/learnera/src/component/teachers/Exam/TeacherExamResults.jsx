@@ -25,43 +25,43 @@ const TeacherExamResults = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPage, setTotalPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [pageSize] = useState(10);
 
+  // Fetch exam results with pagination and filters
   useEffect(() => {
     const fetchResults = async () => {
       try {
-        const response = await api.get("teachers/exam-results/");
+        setLoading(true);
+        const response = await api.get("teachers/exam-results/", {
+          params: {
+            page: currentPage,
+            page_size: pageSize,
+            search: searchTerm,
+            status: filterStatus !== "all" ? filterStatus : "",
+          },
+        });
         setExamResults(response.data.results);
-        setTotalPage(Math.ceil(response.data.count / 10));
+        setTotalPages(Math.ceil(response.data.count / pageSize));
       } catch (error) {
         console.error("Error fetching exam results:", error);
       } finally {
         setLoading(false);
       }
     };
+
     fetchResults();
-  }, []);
+  }, [currentPage, pageSize, searchTerm, filterStatus]);
 
-  const filteredResults = examResults.filter((result) => {
-    const matchesSearch =
-      result.student.first_name
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      result.student.last_name
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      result.exam.title.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesStatus =
-      filterStatus === "all" || result.status === filterStatus;
-
-    return matchesSearch && matchesStatus;
-  });
-
+  // Handle page change
   const handlePageChange = (page) => {
-    setCurrentPage(page);
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+      window.scrollTo(0, 0); // Scroll to top when page changes
+    }
   };
 
+  // Loading spinner
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -72,6 +72,7 @@ const TeacherExamResults = () => {
 
   return (
     <div className="space-y-6 p-4">
+      {/* Header and Search/Filter Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <h2 className="text-2xl font-bold">Exam Results Overview</h2>
 
@@ -167,7 +168,7 @@ const TeacherExamResults = () => {
       </div>
 
       {/* No Results Message */}
-      {filteredResults.length === 0 && (
+      {examResults.length === 0 && (
         <div className="text-center py-12">
           <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-600">
@@ -181,7 +182,7 @@ const TeacherExamResults = () => {
 
       {/* Exam Results Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredResults.map((result) => (
+        {examResults.map((result) => (
           <Card
             key={result.id}
             className="hover:shadow-lg transition-shadow duration-300"
@@ -245,56 +246,115 @@ const TeacherExamResults = () => {
         ))}
       </div>
 
-      <Pagination>
-  <PaginationContent>
-    {/* Previous Button */}
-    <PaginationItem>
-      <PaginationPrevious
-        onClick={() => handlePageChange(currentPage - 1)}
-        disabled={currentPage === 1}
-        className={
-          currentPage === 1 && "text-gray-400 cursor-not-allowed"
-        }
-      />
-    </PaginationItem>
+      {/* Pagination */}
+      {examResults.length > 0 && (
+        <Pagination className="mt-6">
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className={
+                  currentPage === 1 ? "text-gray-400 cursor-not-allowed" : ""
+                }
+              />
+            </PaginationItem>
 
-    {/* Page Numbers */}
-    {Array.from({ length: totalPage }, (_, i) => (
-      <PaginationItem key={i + 1}>
-        <PaginationLink
-          onClick={() => handlePageChange(i + 1)}
-          isActive={currentPage === i + 1}
-          className={
-            currentPage === i + 1
-              && "bg-gradient-to-b from-[#0D2E76] to-[#1842DC] text-white"
-          }
-        >
-          {i + 1}
-        </PaginationLink>
-      </PaginationItem>
-    ))}
+            {/* First Page */}
+            <PaginationItem>
+              <PaginationLink
+                onClick={() => handlePageChange(1)}
+                isActive={currentPage === 1}
+                className={
+                  currentPage === 1
+                    ? "bg-gradient-to-b from-[#0D2E76] to-[#1842DC] text-white"
+                    : ""
+                }
+              >
+                1
+              </PaginationLink>
+            </PaginationItem>
 
-    {/* Next Button */}
-    <PaginationItem>
-      <PaginationNext
-        onClick={() => handlePageChange(currentPage + 1)}
-        disabled={currentPage === totalPage}
-        className={
-          currentPage === totalPage
-           && "text-gray-400 cursor-not-allowed"
-           
-        }
-      />
-    </PaginationItem>
-  </PaginationContent>
-</Pagination>
+            {/* Show ellipsis if there are many pages */}
+            {currentPage > 3 && (
+              <PaginationItem>
+                <span className="px-4">...</span>
+              </PaginationItem>
+            )}
 
+            {/* Current page and surrounding pages */}
+            {Array.from(
+              { length: Math.min(3, totalPages - 2) },
+              (_, i) => {
+                const pageNum = Math.min(
+                  Math.max(currentPage - 1 + i, 2),
+                  totalPages - 1
+                );
+                return (
+                  pageNum > 1 &&
+                  pageNum < totalPages && (
+                    <PaginationItem key={pageNum}>
+                      <PaginationLink
+                        onClick={() => handlePageChange(pageNum)}
+                        isActive={currentPage === pageNum}
+                        className={
+                          currentPage === pageNum
+                            ? "bg-gradient-to-b from-[#0D2E76] to-[#1842DC] text-white"
+                            : ""
+                        }
+                      >
+                        {pageNum}
+                      </PaginationLink>
+                    </PaginationItem>
+                  )
+                );
+              }
+            )}
+
+            {/* Show ellipsis if there are many pages */}
+            {currentPage < totalPages - 2 && (
+              <PaginationItem>
+                <span className="px-4">...</span>
+              </PaginationItem>
+            )}
+
+            {/* Last Page */}
+            {totalPages > 1 && (
+              <PaginationItem>
+                <PaginationLink
+                  onClick={() => handlePageChange(totalPages)}
+                  isActive={currentPage === totalPages}
+                  className={
+                    currentPage === totalPages
+                      ? "bg-gradient-to-b from-[#0D2E76] to-[#1842DC] text-white"
+                      : ""
+                  }
+                >
+                  {totalPages}
+                </PaginationLink>
+              </PaginationItem>
+            )}
+
+            <PaginationItem>
+              <PaginationNext
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className={
+                  currentPage === totalPages
+                    ? "text-gray-400 cursor-not-allowed"
+                    : ""
+                }
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      )}
 
       {/* Modal for Selected Result */}
       {selectedResult && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-3xl max-h-[68vh] overflow-y-auto z-50">
-            <CardHeader className="top-0">
+          <Card className="w-full max-w-3xl max-h-[80vh] overflow-y-auto">
+            <CardHeader className="sticky top-0 z-10 bg-white">
               <div className="flex justify-between items-center">
                 <div>
                   <CardTitle>{selectedResult.exam.title}</CardTitle>
@@ -305,7 +365,7 @@ const TeacherExamResults = () => {
                 </div>
                 <button
                   onClick={() => setSelectedResult(null)}
-                  className="text-white hover:opacity-80"
+                  className="text-gray-500 hover:text-gray-700 text-xl font-bold"
                 >
                   ×
                 </button>
@@ -313,7 +373,7 @@ const TeacherExamResults = () => {
             </CardHeader>
             <CardContent className="p-6">
               <div className="space-y-6">
-                {selectedResult.answers.map((answer, index) => (
+                {selectedResult.answers.map((answer) => (
                   <div key={answer.id} className="border rounded-lg p-4">
                     <h3 className="font-semibold mb-2">
                       Question {answer.question.order}: {answer.question.text}
@@ -338,7 +398,7 @@ const TeacherExamResults = () => {
                         <p className="text-sm">{answer.answer_text}</p>
                       )}
                       <div className="mt-2 pt-2 border-t">
-                        <p className="text-sm font-semibold">
+                      <p className="text-sm font-semibold">
                           Marks: {answer.marks_obtained}/{answer.question.marks}
                         </p>
                         {answer.evaluation_comment && (
@@ -350,21 +410,55 @@ const TeacherExamResults = () => {
                     </div>
                   </div>
                 ))}
+
+                {/* Summary Section in Modal */}
+                <div className="mt-8 border-t pt-4">
+                  <h3 className="font-semibold text-lg mb-4">Result Summary</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <p className="text-sm text-gray-600">
+                        Total Score: {selectedResult.total_score}/
+                        {selectedResult.exam.total_mark}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Percentage:{" "}
+                        {Math.round(
+                          (selectedResult.total_score /
+                            selectedResult.exam.total_mark) *
+                            100
+                        )}
+                        %
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-sm text-gray-600">
+                        Questions Attempted: {selectedResult.progress.answered}/
+                        {selectedResult.progress.total}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Completion: {selectedResult.progress.percentage}%
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </CardContent>
-            <div className="flex justify-end gap-4 p-6">
+
+            {/* Modal Footer */}
+            <div className="sticky bottom-0 bg-white border-t p-4 flex justify-end gap-4">
               <button
                 onClick={() => setSelectedResult(null)}
-                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 Close
               </button>
               {selectedResult.status !== "EVALUATED" && (
                 <button
-                  className="px-4 py-2 bg-gradient-to-b from-[#0D2E76] to-[#1842DC] text-white rounded-lg hover:opacity-90"
                   onClick={() => {
+                    // Handle evaluation submission logic here
                     setSelectedResult(null);
                   }}
+                  className="px-4 py-2 bg-gradient-to-b from-[#0D2E76] to-[#1842DC] text-white rounded-lg hover:opacity-90 transition-opacity"
                 >
                   Submit Evaluation
                 </button>

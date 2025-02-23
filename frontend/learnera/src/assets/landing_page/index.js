@@ -1,5 +1,5 @@
-import logo from '../landing_page/learnera black.png'
-import hoveredLogo from '../landing_page/learnera white.png'
+import logo from '../landing_page/logo.png'
+import logowhite from '../landing_page/logowhite.png'
 import menu from '../landing_page/menu.png'
 import close from '../landing_page/close.png'
 import poster from '../landing_page/poster.png'
@@ -15,7 +15,7 @@ export {
     close,
     menu,
     hero_video,
-    hoveredLogo,
+    logowhite,
     poster,
     image1,
     image2,

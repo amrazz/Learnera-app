@@ -3,7 +3,7 @@ import {
   close,
   logo,
   menu,
-  hoveredLogo,
+  logowhite,
 } from "../../assets/landing_page/index";
 import { navLinks, navLinks2 } from "./constants";
 import { useNavigate } from "react-router-dom";
@@ -48,7 +48,7 @@ const Navbar = ({scrollToSection, aboutRef,}) => {
           onMouseLeave={() => setHovered(false)}
         >
           <img
-            src={hovered ? logo : scrolled ? logo : hoveredLogo}
+            src={hovered ? logo : scrolled ? logo : logowhite}
             alt="logo"
             className="w-52 object-contain ease-in-out transition-all duration-500"
           />

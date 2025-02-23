@@ -60,6 +60,8 @@ SIMPLE_JWT = {
 
 
 INSTALLED_APPS = [
+    "channels",
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -74,11 +76,13 @@ INSTALLED_APPS = [
     "teachers",
     "parents",
     "students",
-    "django_filters"
+    "chat",
+    "django_filters",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -110,6 +114,15 @@ TEMPLATES = [
 WSGI_APPLICATION = "learnera_app.wsgi.application"
 
 DJANGO_ALLOW_ASYNC_UNSAFE = True
+
+
+ASGI_APPLICATION = "learnera_app.asgi.application"
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+    },
+}
+
 
 
 # Database
@@ -177,10 +190,10 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "users.CustomUser"
 
 
-CORS_ALLOWED_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = ["http://localhost:5173"]
-
-
+CSRF_TRUSTED_ORIGINS = ["http://localhost:5173"]
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_CREDENTIALS = True
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com' 

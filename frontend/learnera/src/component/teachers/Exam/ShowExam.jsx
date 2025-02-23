@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileQuestion, Plus, Edit, Trash2, MoreVertical, FileEdit, FileCheck2 } from 'lucide-react';
+import { FileQuestion, Plus, Edit, Trash2, MoreVertical, FileEdit, FileCheck2, Calendar } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,7 +19,6 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogClose,
 } from '@/components/ui/dialog';
 import {
   Table,
@@ -33,6 +32,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast, ToastContainer } from 'react-toastify';
 import api from '../../../api';
 import { MdChecklist } from 'react-icons/md';
+import { HashLoader } from 'react-spinners';
 
 const ShowExam = () => {
   const navigate = useNavigate();
@@ -47,17 +47,27 @@ const ShowExam = () => {
     title: "",
     description: "",
     total_mark: "",
+    start_time: "",
+    end_time: "",
   });
+
+  // New pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPage, setTotalPage] = useState(1);
+  const pageSize = 10; // adjust this if needed
 
   useEffect(() => {
     fetchExams();
-  }, []);
+  }, [currentPage]);
 
   const fetchExams = async () => {
     try {
       setLoading(true);
-      const response = await api.get('teachers/exams/');
-      setExams(response.data);
+      // Assuming your API supports pagination with a "page" param
+      const response = await api.get('teachers/exams/', { params: { page: currentPage } });
+      // If your API returns paginated data in a "results" field and total "count":
+      setExams(response.data.results);
+      setTotalPage(Math.ceil(response.data.count / pageSize));
     } catch (err) {
       setError('Failed to load exams');
       toast.error('Failed to load exams');
@@ -105,6 +115,8 @@ const ShowExam = () => {
       title: exam.title,
       description: exam.description,
       total_mark: exam.total_mark,
+      start_time: exam.start_time,
+      end_time: exam.end_time,
     });
     setEditDialogOpen(true);
   };
@@ -124,24 +136,23 @@ const ShowExam = () => {
     }
   };
 
-
-
   if (loading) {
-    return <div className="flex justify-center items-center h-screen">Loading...</div>;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <HashLoader color="#0b43ff" size={50} speedMultiplier={2} />
+      </div>
+    );
   }
 
   return (
     <div className="max-w-7xl mx-auto p-6">
-        <ToastContainer />
+      <ToastContainer />
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <FileQuestion className="h-6 w-6 text-primary" />
           My Exams
         </h1>
-        <Button
-          onClick={() => navigate('/teachers/create-exam')}
-          className="flex items-center gap-2"
-        >
+        <Button onClick={() => navigate('/teachers/create-exam')} className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
           Create New Exam
         </Button>
@@ -163,84 +174,114 @@ const ShowExam = () => {
               No exams created yet. Click the button above to create your first exam.
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-center">SL.</TableHead>
-                  <TableHead className="text-center">Title</TableHead>
-                  <TableHead className="text-center">Class</TableHead>
-                  <TableHead className="text-center">Start Time</TableHead>
-                  <TableHead className="text-center">End Time</TableHead>
-                  <TableHead className="text-center">Status</TableHead>
-                  <TableHead className="text-center">Total Marks</TableHead>
-                  <TableHead className="text-center">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {exams.map((exam, index) => {
-                  const status = getExamStatus(exam);
-                  return (
-                    <TableRow key={exam.id}>
-                      <TableCell className="text-center">{index + 1}</TableCell>
-                      <TableCell className="font-medium text-center">{exam.title}</TableCell>
-                      <TableCell className="font-medium text-center">{exam.class_name} - {exam.section_name}</TableCell>
-                      <TableCell className="text-center">{formatDateTime(exam.start_time)}</TableCell>
-                      <TableCell className="text-center">{formatDateTime(exam.end_time)}</TableCell>
-                      <TableCell className="text-center">
-                        <Badge variant="secondary" className={`${status.color} text-white`}>
-                          {status.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-center">{exam.total_mark}</TableCell>
-                      <TableCell className="text-center">
-                       <div className="flex items-center justify-center gap-2">
-                       <div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => navigate(`/teachers/create-exam/${exam.id}/questions`)}
-                              className="cursor-pointer"
-                            >
-                              <FileEdit className="h-4 w-4 mr-2" />
-                              Edit Questions
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                             onClick={() => handleOpenEditDialog(exam)}
-                              className="cursor-pointer"
-                            >
-                              <Edit className="h-4 w-4 mr-2" />
-                              Edit Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setExamToDelete(exam.id);
-                                setDeleteDialogOpen(true);
-                              }}
-                              className="cursor-pointer text-red-600"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                        </div>
-                        <div>
-                          <FileCheck2
-                          onClick={() => navigate(`/teachers/exam-evaluation/${exam.id}`)}
-                          className='cursor-pointer hover:text-green-500 transition-all ease-in-out duration-500'/>
-                        </div>
-                       </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-center">SL.</TableHead>
+                    <TableHead className="text-center">Title</TableHead>
+                    <TableHead className="text-center">Class</TableHead>
+                    <TableHead className="text-center">Start Time</TableHead>
+                    <TableHead className="text-center">End Time</TableHead>
+                    <TableHead className="text-center">Status</TableHead>
+                    <TableHead className="text-center">Total Marks</TableHead>
+                    <TableHead className="text-center">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {exams.map((exam, index) => {
+                    const status = getExamStatus(exam);
+                    return (
+                      <TableRow key={exam.id}>
+                        <TableCell className="text-center">{(currentPage - 1) * pageSize + index + 1}</TableCell>
+                        <TableCell className="font-medium text-center">{exam.title}</TableCell>
+                        <TableCell className="font-medium text-center">
+                          {exam.class_name} - {exam.section_name}
+                        </TableCell>
+                        <TableCell className="text-center">{formatDateTime(exam.start_time)}</TableCell>
+                        <TableCell className="text-center">{formatDateTime(exam.end_time)}</TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant="secondary" className={`${status.color} text-white`}>
+                            {status.label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-center">{exam.total_mark}</TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={() => navigate(`/teachers/create-exam/${exam.id}/questions`)}
+                                  className="cursor-pointer"
+                                >
+                                  <FileEdit className="h-4 w-4 mr-2" />
+                                  Edit Questions
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => handleOpenEditDialog(exam)}
+                                  className="cursor-pointer"
+                                >
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Edit Details
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setExamToDelete(exam.id);
+                                    setDeleteDialogOpen(true);
+                                  }}
+                                  className="cursor-pointer text-red-600"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                            <div>
+                              <FileCheck2
+                                onClick={() => navigate(`/teachers/exam-evaluation/${exam.id}`)}
+                                className='cursor-pointer hover:text-green-500 transition-all ease-in-out duration-500'
+                              />
+                            </div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+
+              {/* Pagination UI */}
+              <div className="flex justify-center items-center mt-4 space-x-2">
+                <Button 
+                  variant="outline" 
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                >
+                  Prev
+                </Button>
+                {Array.from({ length: totalPage }, (_, i) => (
+                  <Button
+                    key={i + 1}
+                    variant={currentPage === i + 1 ? "default" : "outline"}
+                    onClick={() => setCurrentPage(i + 1)}
+                  >
+                    {i + 1}
+                  </Button>
+                ))}
+                <Button 
+                  variant="outline" 
+                  disabled={currentPage === totalPage}
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                >
+                  Next
+                </Button>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
@@ -255,28 +296,52 @@ const ShowExam = () => {
               <Label>Title</Label>
               <Input
                 value={updatedExam.title}
-                onChange={(e) =>
-                  setUpdatedExam({ ...updatedExam, title: e.target.value })
-                }
+                onChange={(e) => setUpdatedExam({ ...updatedExam, title: e.target.value })}
               />
             </div>
             <div>
               <Label>Description</Label>
               <Input
                 value={updatedExam.description}
-                onChange={(e) =>
-                  setUpdatedExam({ ...updatedExam, description: e.target.value })
-                }
+                onChange={(e) => setUpdatedExam({ ...updatedExam, description: e.target.value })}
               />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <Label htmlFor="start_time" className="text-sm font-semibold">
+                  Start Time *
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="start_time"
+                    name="start_time"
+                    type="datetime-local"
+                    value={updatedExam.start_time}
+                    onChange={(e) => setUpdatedExam({ ...updatedExam, start_time: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="end_time" className="text-sm font-semibold">
+                  End Time *
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="end_time"
+                    name="end_time"
+                    type="datetime-local"
+                    value={updatedExam.end_time}
+                    onChange={(e) => setUpdatedExam({ ...updatedExam, end_time: e.target.value })}
+                  />
+                </div>
+              </div>
             </div>
             <div>
               <Label>Total Marks</Label>
               <Input
                 type="number"
                 value={updatedExam.total_mark}
-                onChange={(e) =>
-                  setUpdatedExam({ ...updatedExam, total_mark: e.target.value })
-                }
+                onChange={(e) => setUpdatedExam({ ...updatedExam, total_mark: e.target.value })}
               />
             </div>
           </div>

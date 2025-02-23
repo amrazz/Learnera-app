@@ -72,20 +72,19 @@ const StudentInfo = () => {
 
   const handleDelete = async () => {
     try {
-        const success = await deleteStudent(studentId); 
-        if (success) {
-            console.log("Delete successful, navigating...");
-            navigate("/admin/show_students");
-            toast.success("Student deleted successfully!");
-        } else {
-            toast.error("Failed to delete student");
-        }
+      const success = await deleteStudent(studentId);
+      if (success) {
+        console.log("Delete successful, navigating...");
+        navigate("/admin/show_students");
+        toast.success("Student deleted successfully!");
+      } else {
+        toast.error("Failed to delete student");
+      }
     } catch (error) {
-        toast.error("Error deleting student");
+      toast.error("Error deleting student");
     }
     setShowDeleteModal(false);
-};
-
+  };
 
   const handleBlockUnblock = async () => {
     try {
@@ -202,7 +201,7 @@ const StudentInfo = () => {
           <button
             onClick={() => setShowBlockModal(true)}
             className={`px-4 py-2 rounded-lg shadow-md flex items-center transition-all duration-300 ${
-              student.user.is_active 
+              student.user.is_active
                 ? "bg-orange-500 hover:bg-orange-600 text-white"
                 : "bg-green-500 hover:bg-green-600 text-white"
             }`}
@@ -224,7 +223,7 @@ const StudentInfo = () => {
               {student.user.profile_image ? (
                 <img
                   className="w-32 h-32 rounded-full object-cover border-4 border-blue-100"
-                  src={`http://127.0.0.1:8000/${student.user.profile_image}`}
+                  src={`http://127.0.0.1:8000${student.user.profile_image}`}
                   alt={`${student.user.first_name} ${student.user.last_name}`}
                 />
               ) : (
@@ -236,11 +235,16 @@ const StudentInfo = () => {
                 </div>
               )}
             </div>
-            <h2 className="text-2xl font-semibold text-gray-800 mb-2">
-              {student.user.username} 
+            <h2 className="text-2xl font-semibold text-gray-800 mb-2 flex items-center gap-3">
+              <div className="w-7 h-7 flex items-center justify-center bg-blue-800 rounded-full">
+                <span className="font-montserrat text-white text-sm">
+                  {student.roll_number}
+                </span>
+              </div>
+              {student.user.username}
             </h2>
+
             <p className="text-gray-500">{student.user.email}</p>
-            
           </div>
         </div>
 
@@ -255,7 +259,7 @@ const StudentInfo = () => {
                 label="First Name"
                 value={student.user.first_name}
               />
-               <ConditionalDetailRow
+              <ConditionalDetailRow
                 icon={<Mail className="h-5 w-5 text-blue-500" />}
                 label="Email"
                 value={student.user.email}
@@ -283,16 +287,16 @@ const StudentInfo = () => {
               <ConditionalDetailRow
                 icon={<Users className="h-5 w-5 text-blue-500" />}
                 label="Parent Name"
-                value={student.parents['parent_name']}
+                value={student.parents["parent_name"]}
               />
               <ConditionalDetailRow
                 icon={<PhoneCall className="h-5 w-5 text-blue-500" />}
                 label="Parent Phone Number"
-                value={student.parents['parent_phone_number']}
+                value={student.parents["parent_phone_number"]}
               />
             </div>
             <div className="space-y-3">
-            <ConditionalDetailRow
+              <ConditionalDetailRow
                 icon={<FolderPen className="h-5 w-5 text-blue-500" />}
                 label="Last Name"
                 value={student.user.last_name}
@@ -320,9 +324,8 @@ const StudentInfo = () => {
               <ConditionalDetailRow
                 icon={<Share2 className="h-5 w-5 text-emerald-500" />}
                 label="Parent Role"
-                value={student.parents['relationship_type']}
+                value={student.parents["relationship_type"]}
               />
-
             </div>
           </div>
         </div>

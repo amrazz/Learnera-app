@@ -13,6 +13,10 @@ import ExamQuestions from "./Exam/ExamQuestions";
 import ShowExam from "./Exam/ShowExam";
 import ExamEvaluation from "./Exam/ExamEvaluation";
 import TeacherExamResults from "./Exam/TeacherExamResults";
+import ChatPage from "../chat/ChatPage";
+import TeacherLeaveManagement from "./TeacherLeaveManagement";
+import TeacherLeaveRequest from "./TeacherLeaveRequest";
+import UserProfile from "../UserProfile";
 
 
 const Sections = () => {
@@ -31,6 +35,10 @@ const Sections = () => {
       <Route path="create-exam/:examId/questions" element={<ExamQuestions />} />
       <Route path="exam-evaluation/:examId" element={<ExamEvaluation />} />
       <Route path="exam-results" element={<TeacherExamResults />} />
+      <Route path="chats" element={<ChatPage />} />
+      <Route path="leave-approval" element={<TeacherLeaveManagement />} />
+      <Route path="leave-request" element={<TeacherLeaveRequest />} />
+      <Route path="profile" element={<UserProfile />} />
     </Routes>
   );
 };

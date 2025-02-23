@@ -119,18 +119,22 @@ const ExamInterface = () => {
   };
 
   const formatAnswersForSubmission = () => {
-    const formattedAnswers = Object.entries(answers).map(([questionId, answer]) => {
-      const question = examData.question.find(q => q.id === parseInt(questionId))
+    const formattedAnswers = Object.entries(answers).map(
+      ([questionId, answer]) => {
+        const question = examData.question.find(
+          (q) => q.id === parseInt(questionId)
+        );
 
-      return {
-        question : parseInt(questionId),
-        ...(question.question_type === 'MCQ'
-          ? {selected_choice : parseInt(answer)} : {answer_text : answer}
-        )
+        return {
+          question: parseInt(questionId),
+          ...(question.question_type === "MCQ"
+            ? { selected_choice: parseInt(answer) }
+            : { answer_text: answer }),
+        };
       }
-    })
-    return {answers : formattedAnswers}
-  }
+    );
+    return { answers: formattedAnswers };
+  };
 
   const handleSubmitExam = async (isAutoSubmit = false) => {
     try {
@@ -144,8 +148,8 @@ const ExamInterface = () => {
         toast.success("You have submitted your result stay tuned.");
         localStorage.removeItem(`exam_${examId}_start`);
         localStorage.removeItem(`exam_${examId}_remaining`);
+        localStorage.setItem(`exam_${examId}_submitted`, "true");
 
-        localStorage.setItem(`exam_${examId}_submitted`, 'true');
         navigate("/students/exam-over", {
           state: {
             message: isAutoSubmit
@@ -156,7 +160,7 @@ const ExamInterface = () => {
       }
     } catch (error) {
       console.error("Error submitting exam:", error);
-      toast.error("Error while submitting the exam", error);
+      toast.error(error.response?.data?.error || "Failed to submit exam");
     }
   };
 
@@ -245,31 +249,31 @@ const ExamInterface = () => {
 
           {currentQuestion.question_type === "MCQ" ? (
             <RadioGroup
-            onValueChange={(value) =>
-              handleAnswerChange(currentQuestion.id, value)
-            }
-            value={answers[currentQuestion.id] || ""}
-            className="space-y-4"
-          >
-            {currentQuestion.choices.map((choice) => (
-              <div
-                key={choice.id}
-                className="flex items-center p-4 bg-white rounded-lg border-2 border-blue-100 hover:border-blue-300 transition-colors"
-              >
-                <RadioGroupItem
-                  value={choice.id.toString()}
-                  id={`choice-${choice.id}`}
-                  className="text-blue-600 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
-                />
-                <label
-                  htmlFor={`choice-${choice.id}`}
-                  className="ml-4 text-lg cursor-pointer w-full"
+              onValueChange={(value) =>
+                handleAnswerChange(currentQuestion.id, value)
+              }
+              value={answers[currentQuestion.id] || ""}
+              className="space-y-4"
+            >
+              {currentQuestion.choices.map((choice) => (
+                <div
+                  key={choice.id}
+                  className="flex items-center p-4 bg-white rounded-lg border-2 border-blue-100 hover:border-blue-300 transition-colors"
                 >
-                  {choice.choice_text}
-                </label>
-              </div>
-            ))}
-          </RadioGroup>
+                  <RadioGroupItem
+                    value={choice.id.toString()}
+                    id={`choice-${choice.id}`}
+                    className="text-blue-600 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                  />
+                  <label
+                    htmlFor={`choice-${choice.id}`}
+                    className="ml-4 text-lg cursor-pointer w-full"
+                  >
+                    {choice.choice_text}
+                  </label>
+                </div>
+              ))}
+            </RadioGroup>
           ) : (
             <Textarea
               placeholder="Type your answer here..."

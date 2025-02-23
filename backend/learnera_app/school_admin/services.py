@@ -9,10 +9,6 @@ class RollNumberService:
     @staticmethod
     @transaction.atomic
     def assign_roll_number(student, section, academic_year):
-        """
-        Assigns a new roll number to a student by finding the maximum existing
-        roll number and adding 1.
-        """
         try:
             with transaction.atomic():
                 

@@ -1,11 +1,12 @@
     import { LuLayoutDashboard } from "react-icons/lu";
-    import { PiStudentDuotone } from "react-icons/pi";
+    import { PiCarProfileLight, PiStudentDuotone } from "react-icons/pi";
     import { MdFamilyRestroom } from "react-icons/md";
     import { FaChalkboardTeacher } from "react-icons/fa";
     import { SiGoogleclassroom } from "react-icons/si";
     import { FaUserCheck, FaUserTimes, FaBook } from "react-icons/fa";
     import { MdEventNote, MdAccountBalance, MdAccountBalanceWallet } from "react-icons/md";
     import { CiSettings } from "react-icons/ci";
+import { UserCogIcon } from "lucide-react";
 
     export const menu = [
         { id: "dashboard", name: "Dashboard", logo: LuLayoutDashboard, link : "" },
@@ -16,10 +17,9 @@
         { id: "classes", name: "Classes", logo: SiGoogleclassroom },
         { id: "attendance", name: "Attendance", logo: FaUserCheck , link : "attendance"},
         { id: "payment", name: "Payment", logo: MdAccountBalanceWallet },
-        { id: "accounts", name: "Accounts", logo: MdAccountBalance },
-        { id: "leave-management", name: "Leave Management", logo: FaUserTimes },
-        { id: "events", name: "Events", logo: MdEventNote },
-        { id: "settings", name: "Settings", logo: CiSettings },
+        { id: "leave-management", name: "Leave Management", logo: FaUserTimes, link : "leave-management" },
+        // { id: "events", name: "Events", logo: MdEventNote },
+        { id: "profile", name: "Profile", logo: UserCogIcon, link : "admin-profile" },
     ];
 
     export const subMenus = {

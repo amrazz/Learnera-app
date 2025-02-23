@@ -43,7 +43,7 @@ class EmailService:
             'app_name': 'Learnera',
             'login_url': settings.LOGIN_URL,
         }
-        
+
         try:
             html_message = render_to_string('emails/welcome_email.html', context)
             return EmailService.send_email_sync(

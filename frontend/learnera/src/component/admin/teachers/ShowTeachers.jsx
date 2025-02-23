@@ -96,7 +96,7 @@ const ShowTeachers = () => {
                         {teacher.user.profile_image ? (
                           <img
                             className="h-10 w-10 rounded-full object-cover"
-                            src={`http://127.0.0.1:8000/${teacher.user.profile_image}`}
+                            src={`http://127.0.0.1:8000${teacher.user.profile_image}`}
                             alt=""
                           />
                         ) : (

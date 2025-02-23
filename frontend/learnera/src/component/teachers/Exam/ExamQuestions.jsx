@@ -49,6 +49,7 @@ import {
 } from "@/components/ui/table";
 import { toast } from "react-toastify";
 import api from "../../../api";
+import { HashLoader } from "react-spinners";
 
 const ExamQuestions = () => {
   const { examId } = useParams();
@@ -226,12 +227,13 @@ const ExamQuestions = () => {
     });
   };
 
-  if (loading)
+  if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
-        Loading...
+        <HashLoader color="#0b43ff" size={50} speedMultiplier={2} />
       </div>
     );
+  }
   if (!exam) return null;
 
   return (

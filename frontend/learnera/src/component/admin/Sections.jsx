@@ -21,6 +21,8 @@ import AdminAttendance from "./components/AdminAttendance";
 import Subjects from "./teachers/Subjects";
 import FeeCreation from "./accounts/FeeCreation";
 import ShowFeePayments from "./accounts/ShowFeePayments";
+import AdminLeaveManagement from "./AdminLeaveManagement";
+import AdminProfile from "./AdminProfile";
 
 const Sections = () => {
   return (
@@ -30,9 +32,7 @@ const Sections = () => {
       <Route path="show_students" element={<ShowStudents />} />
       <Route path="logout" element={<Logout />} />
       <Route path="student_info/:studentId" element={<StudentInfo />} />
-      <Route
-        path="student_info/:studentId/edit"
-        element={<EditStudentInfo />}
+      <Route path="student_info/:studentId/edit" element={<EditStudentInfo />}
       />
       <Route path="add_class" element={<AddClass />} />
       <Route path="show_class" element={<ShowClass />} />
@@ -53,6 +53,8 @@ const Sections = () => {
 
 
       <Route path="attendance" element={<AdminAttendance />} />
+      <Route path="leave-management" element={<AdminLeaveManagement />} />
+      <Route path="admin-profile" element={<AdminProfile />} />
     </Routes>
   );
 };

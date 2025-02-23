@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Clock, Award, Calendar, Calendar1 } from "lucide-react";
+import { BookOpen, Clock, Award, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import api from "../../../api";
 import { HashLoader } from "react-spinners";
@@ -15,23 +15,23 @@ import {
   PaginationLink,
 } from "@/components/ui/pagination";
 
-// SubjectIcon Component
+// SubjectIcon Component remains the same
 const SubjectIcon = ({ subject }) => {
   const getEmoji = () => {
     switch (subject?.toLowerCase()) {
       case "math":
       case "mathematics":
-        return "🔢"; // Math
+        return "🔢";
       case "science":
-        return "🧪"; // Science
+        return "🧪";
       case "literature":
-        return "📚"; // Literature
+        return "📚";
       case "chemistry":
-        return "🧬"; // Chemistry
+        return "🧬";
       case "geography":
-        return "🌍"; // Geography
+        return "🌍";
       default:
-        return "📝"; // Default emoji for unknown subjects
+        return "📝";
     }
   };
 
@@ -47,76 +47,88 @@ const ExamCard = ({ exam, navigate }) => {
   const isExamInProgress = now >= startTime && now <= endTime;
   const isExamOver = now > endTime;
 
-  const getButtonText = () => {
+  const getStatusBadge = () => {
     if (isExamUpcoming) {
-      return `Exam starts at ${format(startTime, "h:mm a")}`;
+      return (
+        <span className="absolute top-4 right-4 bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
+          Upcoming
+        </span>
+      );
     } else if (isExamInProgress) {
-      return "Start Your Adventure! 🚀";
-    } else if (isExamOver) {
-      return "Exam is over";
+      return (
+        <span className="absolute top-4 right-4 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium animate-pulse">
+          In Progress
+        </span>
+      );
+    } else {
+      return (
+        <span className="absolute top-4 right-4 bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm font-medium">
+          Completed
+        </span>
+      );
     }
   };
 
-  const isButtonDisabled = isExamOver || isExamUpcoming;
+  const getButtonText = () => {
+    if (isExamUpcoming) {
+      return `Starts at ${format(startTime, "h:mm a")}`;
+    } else if (isExamInProgress) {
+      return "Start Exam Now →";
+    } else {
+      return "Exam Completed";
+    }
+  };
 
   return (
-    <Card className="transform hover:scale-102 transition-all duration-200 hover:shadow-xl bg-gradient-to-br from-white to-blue-50 overflow-hidden relative">
-      <div className="absolute top-0 right-0 w-24 h-24 -rotate-45 translate-x-8 -translate-y-8 bg-blue-500/10" />
-      <CardContent className="p-6">
+    <Card className="transform hover:scale-[1.02] transition-all duration-200 hover:shadow-xl bg-white border-2 border-blue-50">
+      <CardContent className="p-6 relative">
+        {getStatusBadge()}
         <div className="flex items-start gap-4">
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 p-3 bg-blue-50 rounded-lg">
             <SubjectIcon subject={exam.subject_name} />
           </div>
           <div className="flex-grow space-y-3">
             <div>
-              <h3 className="text-xl font-bold text-blue-900">
-                {exam.title} - {exam.subject_name}
+              <h3 className="text-xl font-bold text-blue-900 pr-24">
+                {exam.title}
               </h3>
-              <div className="flex items-center gap-2 text-sm text-blue-600">
-                <Calendar1 className="w-4 h-4" />
-                <span className="font-bold">
-                  {format(new Date(exam.start_time), "dd-MM-yyyy")}
-                </span>
-              </div>
+              <p className="text-blue-600 font-medium">{exam.subject_name}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-blue-500" />
-                <span className="text-sm">{exam.duration} mins</span>
+              <div className="flex items-center gap-2 bg-blue-50 p-2 rounded">
+                <Clock className="w-4 h-4 text-blue-600" />
+                <span className="text-sm font-medium">{exam.duration} mins</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Award className="w-4 h-4 text-blue-500" />
-                <span className="text-sm">{exam.total_mark} marks</span>
+              <div className="flex items-center gap-2 bg-blue-50 p-2 rounded">
+                <Award className="w-4 h-4 text-blue-600" />
+                <span className="text-sm font-medium">{exam.total_mark} marks</span>
               </div>
-              <div className="flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-blue-500" />
-                <span className="text-sm">
+              <div className="flex items-center gap-2 bg-blue-50 p-2 rounded">
+                <BookOpen className="w-4 h-4 text-blue-600" />
+                <span className="text-sm font-medium">
                   {exam.total_questions} questions
                 </span>
               </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-blue-500" />
-                <span className="text-sm">
-                  {format(new Date(exam.start_time), "h:mm a")} -{" "}
-                  {format(new Date(exam.end_time), "h:mm a")}
+              <div className="flex items-center gap-2 bg-blue-50 p-2 rounded">
+                <Calendar className="w-4 h-4 text-blue-600" />
+                <span className="text-sm font-medium">
+                  {format(startTime, "dd MMM, h:mm a")}
                 </span>
               </div>
             </div>
 
-            <div className="pt-3">
-              <Button
-                onClick={() =>
-                  navigate(`/students/exam-preparation/${exam.id}`)
-                }
-                disabled={isButtonDisabled}
-                className={`w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 ${
-                  isButtonDisabled ? "opacity-50 cursor-not-allowed" : ""
-                }`}
-              >
-                {getButtonText()}
-              </Button>
-            </div>
+            <Button
+              onClick={() => navigate(`/students/exam-preparation/${exam.id}`)}
+              disabled={isExamOver || isExamUpcoming}
+              className={`w-full mt-2 ${
+                isExamInProgress
+                  ? "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+                  : "bg-gray-100 text-gray-600"
+              }`}
+            >
+              {getButtonText()}
+            </Button>
           </div>
         </div>
       </CardContent>
@@ -129,22 +141,26 @@ const StudentExamList = () => {
   const [exams, setExams] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    pageSize: 10
+  });
 
   const fetchExams = async (page = 1) => {
     try {
       setIsLoading(true);
       const response = await api.get(`students/exams/?page=${page}`);
-      if (response.status === 200) {
-        setExams(response.data.results);
-        const pageSize = 10;
-        const totalCount = response.data.count;
-        setTotalPages(Math.ceil(totalCount / pageSize));
-        setCurrentPage(page);
-      }
+      setExams(response.data.results);
+      setPagination({
+        currentPage: page,
+        totalPages: Math.ceil(response.data.count / 10),
+        totalItems: response.data.count,
+        pageSize: 10
+      });
     } catch (err) {
-      setError(err);
+      setError("Failed to load exams. Please try again later.");
     } finally {
       setIsLoading(false);
     }
@@ -154,20 +170,28 @@ const StudentExamList = () => {
     fetchExams(1);
   }, []);
 
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      fetchExams(newPage);
+    }
+  };
+
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <HashLoader color="#0b43ff" size={50} speedMultiplier={2} />
+      <div className="min-h-screen flex items-center justify-center">
+        <HashLoader color="#1842DC" size={50} />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-[400px] flex items-center justify-center">
-        <div className="text-2xl text-red-500">
-          Oops! Something went wrong. Please try again later.
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <Card className="p-6 text-center">
+          <div className="text-4xl mb-4">😕</div>
+          <h3 className="text-xl font-bold text-red-600 mb-2">{error}</h3>
+          <Button onClick={() => fetchExams(1)}>Try Again</Button>
+        </Card>
       </div>
     );
   }
@@ -176,77 +200,69 @@ const StudentExamList = () => {
     <div className="max-w-4xl mx-auto p-6">
       <div className="text-center mb-8">
         <h1 className="text-4xl font-bold text-blue-900 mb-2">
-          Your Exam Adventure!
+          Your Exam Dashboard
         </h1>
         <p className="text-blue-600">
-          Ready to show what you know? Let's begin! 🌟
+          View and manage all your upcoming and ongoing exams
         </p>
       </div>
 
-      <div className="grid gap-6">
-        {exams.map((exam) => (
-          <ExamCard key={exam.id} exam={exam} navigate={navigate} />
-        ))}
-
-        {exams.length === 0 && (
-          <Card className="p-12 text-center">
-            <div className="text-6xl mb-4">🎉</div>
+      <div className="space-y-6">
+        {exams.length > 0 ? (
+          exams.map((exam) => (
+            <ExamCard key={exam.id} exam={exam} navigate={navigate} />
+          ))
+        ) : (
+          <Card className="p-12 text-center bg-blue-50">
+            <div className="text-6xl mb-4">🎯</div>
             <h3 className="text-2xl font-bold text-blue-900 mb-2">
-              No Exams Right Now!
+              No Exams Available
             </h3>
             <p className="text-blue-600">
-              Time to relax - you're all caught up! Check back later for new
-              adventures.
+              Check back later for upcoming exams!
             </p>
           </Card>
         )}
       </div>
 
-      {/* Pagination Controls */}
-      {exams.length > 0 && (
-       <Pagination className="mt-5">
-       <PaginationContent>
-         {/* Previous Button */}
-         <PaginationItem>
-           <PaginationPrevious
-             onClick={() => handlePageChange(currentPage - 1)}
-             disabled={currentPage === 1}
-             className={
-               currentPage === 1 && "text-gray-400 cursor-not-allowed"
-             }
-           />
-         </PaginationItem>
-     
-         {/* Page Numbers */}
-         {Array.from({ length: totalPages }, (_, i) => (
-           <PaginationItem key={i + 1}>
-             <PaginationLink
-               onClick={() => handlePageChange(i + 1)}
-               isActive={currentPage === i + 1}
-               className={
-                 currentPage === i + 1
-                   && "bg-gradient-to-b from-[#0D2E76] to-[#1842DC] text-white"
-               }
-             >
-               {i + 1}
-             </PaginationLink>
-           </PaginationItem>
-         ))}
-     
-         {/* Next Button */}
-         <PaginationItem>
-           <PaginationNext
-             onClick={() => handlePageChange(currentPage + 1)}
-             disabled={currentPage === totalPages}
-             className={
-               currentPage === totalPages
-                && "text-gray-400 cursor-not-allowed"
-                
-             }
-           />
-         </PaginationItem>
-       </PaginationContent>
-     </Pagination>
+      {pagination.totalPages > 1 && (
+        <div className="mt-8 flex justify-center">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => handlePageChange(pagination.currentPage - 1)}
+                  disabled={pagination.currentPage === 1}
+                  className={pagination.currentPage === 1 ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
+                />
+              </PaginationItem>
+
+              {[...Array(pagination.totalPages)].map((_, index) => (
+                <PaginationItem key={index + 1}>
+                  <PaginationLink
+                    onClick={() => handlePageChange(index + 1)}
+                    isActive={pagination.currentPage === index + 1}
+                    className={
+                      pagination.currentPage === index + 1
+                        ? "bg-blue-600 text-white hover:bg-blue-700"
+                        : "hover:bg-blue-50"
+                    }
+                  >
+                    {index + 1}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() => handlePageChange(pagination.currentPage + 1)}
+                  disabled={pagination.currentPage === pagination.totalPages}
+                  className={pagination.currentPage === pagination.totalPages ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
       )}
     </div>
   );

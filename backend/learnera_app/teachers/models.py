@@ -3,7 +3,7 @@ from django.utils import timezone
 from users.models import CustomUser
 from django.core.validators import FileExtensionValidator
 from django.core.validators import MinValueValidator, MaxValueValidator
-
+from django.core.exceptions import ValidationError
 
 class Subject(models.Model):
     subject_name = models.CharField(max_length=100)
@@ -262,3 +262,52 @@ class StudentAnswer(models.Model):
     
     class Meta:
         unique_together = ('student_exam', 'question')
+        
+        
+# ------------------------------------------
+
+
+
+class TeacherLeaveRequest(models.Model):
+    LEAVE_TYPE_CHOICES = [
+        ('SICK', 'Sick Leave'),
+        ('PERSONAL', 'Personal Leave'),
+        ('FAMILY', 'Family Emergency'),
+        ('OTHER', 'Other'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('PENDING', 'Pending'),
+        ('APPROVED', 'Approved'),
+        ('REJECTED', 'Rejected'),
+    ]
+    
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name="leave_requests")
+    leave_type = models.CharField(max_length=50, choices=LEAVE_TYPE_CHOICES)
+    start_date = models.DateField()
+    end_date = models.DateField()
+    reason = models.TextField()
+    supporting_document = models.FileField(
+        upload_to="leave_documents/",
+        null=True,
+        blank=True,
+        validators=[
+            FileExtensionValidator(allowed_extensions=["pdf", "jpg", "jpeg", "png"])
+        ],
+    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="PENDING")
+    applied_on = models.DateTimeField(auto_now_add=True)
+    response_comment = models.TextField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-applied_on"]
+
+    def __str__(self):
+        return f"{self.student.user.first_name} {self.student.user.last_name} - {self.leave_type} - {self.status}"
+
+    def clean(self):
+        if self.start_date and self.end_date:
+            if self.start_date > self.end_date:
+                raise ValidationError("End date must be after the start date")
+        if self.start_date and self.start_date < timezone.now().date():
+            raise ValidationError("Cannot apply for leave in the past")

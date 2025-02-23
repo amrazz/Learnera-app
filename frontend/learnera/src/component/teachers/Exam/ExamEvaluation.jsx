@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
 import api from "../../../api";
 import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
@@ -340,6 +340,7 @@ const MarksSummary = ({ exam, onClose, onSubmit }) => {
 // Main Component
 const ExamEvaluation = () => {
   const { examId } = useParams();
+  const navigate = useNavigate();
   const [studentExams, setStudentExams] = useState([]);
   const [selectedExam, setSelectedExam] = useState(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -373,65 +374,100 @@ const ExamEvaluation = () => {
     if (selectedExam && localStorageKey) {
       const savedData = loadFromLocalStorage(localStorageKey);
       if (savedData) {
-        setSelectedExam(prev => ({
-          ...prev,
-          student_answers: prev.student_answers.map(answer => ({
+        // Instead of setting the entire selectedExam state
+        // Only update if the saved data is different from current state
+        const updatedAnswers = selectedExam.student_answers.map(answer => {
+          const savedAnswer = savedData[answer.id];
+          if (!savedAnswer) return answer;
+          
+          return {
             ...answer,
-            marks_obtained: savedData[answer.id]?.marks_obtained || answer.marks_obtained,
-            evaluation_comment: savedData[answer.id]?.evaluation_comment || answer.evaluation_comment
-          }))
-        }));
+            marks_obtained: savedAnswer.marks_obtained || answer.marks_obtained,
+            evaluation_comment: savedAnswer.evaluation_comment || answer.evaluation_comment
+          };
+        });
+
+        // Compare if there are actual changes before updating state
+        const hasChanges = updatedAnswers.some((updatedAnswer, index) => {
+          const originalAnswer = selectedExam.student_answers[index];
+          return (
+            updatedAnswer.marks_obtained !== originalAnswer.marks_obtained ||
+            updatedAnswer.evaluation_comment !== originalAnswer.evaluation_comment
+          );
+        });
+
+        if (hasChanges) {
+          setSelectedExam(prev => ({
+            ...prev,
+            student_answers: updatedAnswers
+          }));
+        }
       }
     }
-  }, [selectedExam, localStorageKey]);
+  }, [selectedExam?.id, localStorageKey]);
 
   const handleMarkUpdate = (answerId, marks, comment = null) => {
     const updatedData = {
+      // Ensure marks is a valid number
       marks_obtained: parseFloat(marks) || 0,
-      ...(comment !== null && { evaluation_comment: comment }),
+      ...(comment !== null && { evaluation_comment: comment || '' }),
     };
-
+  
     setSelectedExam(prev => ({
       ...prev,
       student_answers: prev.student_answers.map(answer =>
         answer.id === answerId ? { ...answer, ...updatedData } : answer
       )
     }));
-
+  
     const savedData = loadFromLocalStorage(localStorageKey) || {};
     savedData[answerId] = updatedData;
     saveToLocalStorage(localStorageKey, savedData);
     toast.success("Marks saved locally!");
   };
 
+
   const handleSubmitEvaluation = async () => {
     try {
       setSaving(true);
       const savedData = loadFromLocalStorage(localStorageKey);
-      const submissionData = selectedExam.student_answers.map(answer => ({
-        id: answer.id,
-        marks_obtained: savedData[answer.id]?.marks_obtained || answer.marks_obtained,
-        evaluation_comment: savedData[answer.id]?.evaluation_comment || answer.evaluation_comment
-      }));
-
+      
+      // Prepare submission data
+      const submissionData = selectedExam.student_answers.map(answer => {
+        const savedAnswer = savedData?.[answer.id] || {};
+        const marks = savedAnswer.marks_obtained ?? answer.marks_obtained ?? 0;
+        
+        return {
+          id: answer.id,
+          marks_obtained: parseFloat(marks) || 0,
+          evaluation_comment: savedAnswer.evaluation_comment || answer.evaluation_comment || ''
+        };
+      });
+  
       const response = await api.patch(`teachers/evaluate/${selectedExam.id}/`, {
         answers: submissionData
       });
-
+  
       if (response.status === 200) {
-        toast.success("Evaluation submitted successfully!");
+        const message = selectedExam.status === 'evaluated' 
+          ? "Evaluation updated successfully!"
+          : "Evaluation submitted successfully!";
+        
+        toast.success(message);
         clearLocalStorage(localStorageKey);
         setSelectedExam(null);
         setShowSummary(false);
         
-        // Refresh the list to show updated status
         const updatedExams = studentExams.map(exam => 
-          exam.id === selectedExam.id ? { ...exam, status: 'evaluated' } : exam
+          exam.id === selectedExam.id 
+            ? { ...exam, status: 'evaluated' } 
+            : exam
         );
         setStudentExams(updatedExams);
+        navigate(`/teachers/show-exam`);
       }
     } catch (error) {
-      toast.error(error?.message || "Failed to submit evaluation");
+      toast.error(error?.message || "Failed to save evaluation");
     } finally {
       setSaving(false);
     }

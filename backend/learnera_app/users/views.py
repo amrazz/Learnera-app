@@ -2,11 +2,10 @@ from rest_framework import generics, status, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-
 from .utils import generate_otp, send_otp
 from .models import CustomUser
-from .serializers import UserLoginserializers
-
+from .serializers import BaseUserProfileSerializer, ParentProfileSerializer, PasswordChangeSerializer, StudentProfileSerializer, TeacherProfileSerializer, UserLoginserializers
+from django.contrib.auth.hashers import check_password
 
 class UserLoginView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -166,3 +165,61 @@ class ChangePasswordView(APIView):
                 {'error': 'User not found'}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
+            
+            
+class BaseProfileView(generics.RetrieveUpdateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_object(self):
+        return self.request.user
+    
+    def get_serializer_class(self):
+        if self.request.user.is_teacher:
+            return TeacherProfileSerializer
+        elif self.request.user.is_student:
+            return StudentProfileSerializer
+        elif self.request.user.is_parent:
+            return ParentProfileSerializer
+        return BaseUserProfileSerializer
+
+class UserProfileView(BaseProfileView):
+    def get(self, request, *args, **kwargs):
+        user = self.get_object()
+        serializer_class = self.get_serializer_class()
+        serializer = serializer_class(user)
+        
+        # Add role information to response
+        data = serializer.data
+        data['role'] = self.get_user_role(user)
+        return Response(data)
+    
+    def get_user_role(self, user):
+        if user.is_teacher:
+            return 'teacher'
+        elif user.is_student:
+            return 'student'
+        elif user.is_parent:
+            return 'parent'
+        return 'user'
+
+    def patch(self, request, *args, **kwargs):
+        kwargs['partial'] = True
+        return super().patch(request, *args, **kwargs)
+    
+    
+class PasswordChangeView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = PasswordChangeSerializer(data=request.data)
+        if serializer.is_valid():
+            user = request.user
+            if not check_password(serializer.data['current_password'], user.password):
+                return Response(
+                    {"current_password": "Wrong password."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            user.set_password(serializer.data['new_password'])
+            user.save()
+            return Response({"status": "password changed successfully"})
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

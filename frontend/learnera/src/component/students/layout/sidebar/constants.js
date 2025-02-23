@@ -7,21 +7,20 @@ import { FaUserCheck, FaUserTimes, FaBook } from "react-icons/fa";
 import { MdEventNote } from "react-icons/md";
 import { CiSettings } from "react-icons/ci";
 import { BiNotification } from "react-icons/bi";
-import { MegaphoneIcon } from "lucide-react";
+import { MegaphoneIcon, MessageCircleMore, UserCheckIcon, UserCogIcon } from "lucide-react";
 
 export const menu = [
-    { id: "dashboard", name: "Dashboard", logo: LuLayoutDashboard, link : 'dashboard' },
-    // { id: "home-work", name: "Homework", logo: FaBook },
-    { id: "my-attendance", name: "My Attendance", logo: FaUserCheck },
+    { id: "dashboard", name: "Dashboard", logo: LuLayoutDashboard, link : '' },
+    { id: "my-attendance", name: "My Attendance", logo: FaUserCheck, link : 'my-attendance' },
     { id: "assignments", name: "Assignments", logo: FaClipboardList, link : 'student-assignments'},
-    { id: "exams", name: "Exams", logo: FaRegEdit },
+    { id: "exams", name: "Exams", logo: FaRegEdit, link : "exam_list" },
     { id: "results", name: "Results", logo: FaChartLine, link : "my-results" },
-    { id: "apply-leave", name: "Apply Leave", logo: FaUserTimes },
+    { id: "chats", name: "Chat", logo: MessageCircleMore, link : "chats" },
+    { id: "apply-leave", name: "Apply Leave", logo: UserCheckIcon, link : 'leave-request' },
     // { id: "events", name: "Events", logo: MdEventNote },
-    { id: "notification", name: "Notifications", logo: MegaphoneIcon },
-    { id: "settings", name: "Settings", logo: CiSettings },
+    // { id: "notification", name: "Notifications", logo: MegaphoneIcon },
+    { id: "profile", name: "Profile", logo: UserCogIcon, link : "profile" },
 ];
 
 export const subMenus = {
-    exams : ["Exam List"]
 };

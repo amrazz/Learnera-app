@@ -1,5 +1,7 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+
+from .views import AdminLeaveResponseView, AdminTeacherLeaveRequestDetailView, AdminTeacherLeaveRequestListView, AttendanceOverviewAPIView, DashboardStatsAPIView, FeeStatsAPIView, PasswordChangeView, RecentStudentsAPIView, RecentTeachersAPIView, SchoolAdminProfileView, UnpaidFeesAPIView, UpcomingExamsAPIView
 from .views import (
     ParentViewSet,
     ClassListView,
@@ -44,6 +46,8 @@ router.register('parents', ParentViewSet)
 router.register('get-student-parent', GetStudentParentViewSet)
 
 
+
+
 urlpatterns = [
     path("login/", SchoolAdminLoginView.as_view(), name="school_admin-login"),
     path("add_students/", CreateStudentView.as_view(), name="add-students"),
@@ -85,9 +89,22 @@ urlpatterns = [
     path('fee-structures/', FeeStructureListCreateView.as_view(), name='fee-structure'),
     path('fee-structures/<int:pk>/', FeeStructureDetailedView.as_view(), name='fee-structure-detail'),
     
-    # path('student-fee-payments/bulk-create/', bulk_create_student_fee_payments, name='bulk-create-fee-payments'),
     path('student-fee-payments/', StudentFeePaymentListView.as_view(), name='student-fee-payment-list'),
-]
+    
+    path('dashboard/stats/', DashboardStatsAPIView.as_view(), name='dashboard-stats'),
+    path('dashboard/recent-students/', RecentStudentsAPIView.as_view(), name='recent-students'),
+    path('dashboard/recent-teachers/', RecentTeachersAPIView.as_view(), name='recent-teachers'),
+    path('dashboard/unpaid-fees/', UnpaidFeesAPIView.as_view(), name='unpaid-fees'),
+    path('dashboard/fee-stats/', FeeStatsAPIView.as_view(), name='fees-stats'),
+    path('dashboard/upcoming-exams/', UpcomingExamsAPIView.as_view(), name='upcoming-exams'),
+    path('dashboard/attendance-overview/', AttendanceOverviewAPIView.as_view(), name='attendance-overview'),
+    
+    path('teacher-leave-requests/', AdminTeacherLeaveRequestListView.as_view(), name='admin-teacher-leave-request-list'),
+    path('teacher-leave-request/<int:pk>/', AdminTeacherLeaveRequestDetailView.as_view(), name='admin-teacher-leave-request-detail'),
+    path('teacher-leave-response/<int:pk>/', AdminLeaveResponseView.as_view(), name='admin-leave-response'),
+    
+ path('profile/', SchoolAdminProfileView.as_view(), name="school_admin_profile"),
+    path('change_password/', PasswordChangeView.as_view(), name="change_password"),]
 
 urlpatterns += [
     path("", include(router.urls)),

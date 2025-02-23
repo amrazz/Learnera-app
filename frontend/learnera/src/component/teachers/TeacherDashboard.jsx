@@ -1,136 +1,245 @@
-import React from "react";
-import { Book, Users, Calendar, MessageSquare, CheckSquare, FileText } from "lucide-react";
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Users,
+  GraduationCap,
+  Book,
+  Clock,
+  Calendar,
+  AlertCircle,
+  ChevronRight,
+  PieChart
+} from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import api from '../../api';
+import { HashLoader } from 'react-spinners';
 
 const TeacherDashboard = () => {
+  const [stats, setStats] = useState(null);
+  const [recentSubmissions, setRecentSubmissions] = useState([]);
+  const [pendingAssignments, setPendingAssignments] = useState([]);
+  const [attendanceOverview, setAttendanceOverview] = useState([]);
+  const [upcomingExams, setUpcomingExams] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      const [
+        statsRes,
+        submissionsRes,
+        assignmentsRes,
+        attendanceRes,
+        examsRes
+      ] = await Promise.all([
+        api.get('teachers/dashboard/stats/'),
+        api.get('teachers/dashboard/recent-submissions/'),
+        api.get('teachers/dashboard/pending-assignments/'),
+        api.get('teachers/dashboard/attendance-overview/'),
+        api.get('teachers/dashboard/upcoming-exams/')
+      ]);
+
+      setStats(statsRes.data);
+      setRecentSubmissions(submissionsRes.data);
+      setPendingAssignments(assignmentsRes.data);
+      setAttendanceOverview(attendanceRes.data);
+      setUpcomingExams(examsRes.data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      setLoading(false);
+    }
+  };
+
+  const colorClasses = {
+    blue: { bg: 'bg-blue-100', text: 'text-blue-600' },
+    green: { bg: 'bg-green-100', text: 'text-green-600' },
+    purple: { bg: 'bg-purple-100', text: 'text-purple-600' },
+    red: { bg: 'bg-red-100', text: 'text-red-600' }
+  };
+
+  const StatCard = ({ icon: Icon, title, value, subtext, color }) => (
+    <Card className="hover:shadow-lg transition-shadow ">
+      <CardContent className="p-6">
+        <div className="flex items-start justify-between">
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-gray-500">{title}</p>
+            <p className="text-2xl font-bold">{value}</p>
+            {subtext && <p className="text-sm text-gray-500">{subtext}</p>}
+          </div>
+          <div className={`p-3 rounded-lg ${colorClasses[color]?.bg}`}>
+            <Icon className={`h-5 w-5 ${colorClasses[color]?.text}`} />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const EmptyState = ({ message }) => (
+    <div className="flex flex-col items-center justify-center p-6 text-center">
+      <AlertCircle className="h-12 w-12 text-gray-400 mb-2" />
+      <p className="text-gray-500">{message}</p>
+    </div>
+  );
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <HashLoader color="#0b43ff" size={50} speedMultiplier={2} />
+      </div>
+    );
+  }
   return (
-    <div className="bg-blue-50 min-h-screen p-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-center mb-8">
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-blue-800">Teacher Workspace</h1>
-            <p className="text-blue-600">Your teaching command center</p>
-          </div>
-          <div className="bg-white rounded-lg p-3 mt-4 md:mt-0">
-            <p className="text-sm text-blue-800">Next Class: Mathematics X-A</p>
-            <p className="text-xs text-blue-600">In 20 minutes</p>
+            <h1 className="text-3xl font-bold text-gray-900">Teacher Dashboard</h1>
+            <p className="text-gray-500">Welcome back, Teacher</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="text-xl font-semibold mb-2">Today's Classes</h3>
-                <p className="text-sm opacity-90">5 classes scheduled</p>
-              </div>
-              <Calendar className="w-8 h-8" />
-            </div>
-            <div className="mt-4 space-y-2">
-              <div className="bg-white/20 rounded p-2">
-                <p className="font-medium">Mathematics X-A</p>
-                <p className="text-sm">09:00 AM - 10:00 AM</p>
-              </div>
-              <div className="bg-white/20 rounded p-2">
-                <p className="font-medium">Physics XI-B</p>
-                <p className="text-sm">11:00 AM - 12:00 PM</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-semibold text-gray-800">Assignments</h3>
-              <CheckSquare className="w-6 h-6 text-blue-500" />
-            </div>
-            <div className="space-y-3">
-              <div className="border-l-4 border-blue-500 pl-3">
-                <p className="font-medium text-gray-800">Math Assignment Due</p>
-                <p className="text-sm text-gray-600">Class X-A • Tomorrow</p>
-              </div>
-              <div className="border-l-4 border-yellow-500 pl-3">
-                <p className="font-medium text-gray-800">Physics Project</p>
-                <p className="text-sm text-gray-600">Class XI-B • Next Week</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-semibold text-gray-800">Quick Actions</h3>
-              <FileText className="w-6 h-6 text-blue-500" />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <button className="p-3 bg-blue-50 rounded-lg text-blue-700 text-sm font-medium hover:bg-blue-100">
-                Take Attendance
-              </button>
-              <button className="p-3 bg-blue-50 rounded-lg text-blue-700 text-sm font-medium hover:bg-blue-100">
-                Create Assignment
-              </button>
-              <button className="p-3 bg-blue-50 rounded-lg text-blue-700 text-sm font-medium hover:bg-blue-100">
-                Schedule Test
-              </button>
-              <button className="p-3 bg-blue-50 rounded-lg text-blue-700 text-sm font-medium hover:bg-blue-100">
-                Upload Resources
-              </button>
-            </div>
-          </div>
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard 
+            icon={Users}
+            title="Total Students"
+            value={stats?.total_students || 0}
+            subtext="Handled"
+            color="blue"
+          />
+          <StatCard 
+            icon={Book}
+            title="Pending Assignments"
+            value={pendingAssignments?.length || 0}
+            subtext="To Grade"
+            color="purple"
+          />
+          <StatCard 
+            icon={Clock}
+            title="Today's Attendance"
+            value={attendanceOverview?.total || 0}
+            subtext="Records"
+            color="red"
+          />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-semibold text-gray-800">Recent Messages</h3>
-              <MessageSquare className="w-6 h-6 text-blue-500" />
-            </div>
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                  <Users className="w-6 h-6 text-gray-600" />
+        {/* Charts and Tables */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Attendance Overview */}
+          <Card>
+            <CardHeader className="border-b">
+              <CardTitle className="text-lg font-semibold flex items-center">
+                <PieChart className="h-5 w-5 mr-2" />
+                Today's Attendance Overview
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              {attendanceOverview && attendanceOverview.details && attendanceOverview.details.length > 0 ? (
+                <div className="space-y-4">
+                  {attendanceOverview.details.map((record, index) => {
+                    const total = record.present + record.absent + record.late;
+                    const presentPercentage = total > 0 ? (record.present / total) * 100 : 0;
+                    return (
+                      <div key={index} className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="font-medium">{record.class_name}</span>
+                          <span className="text-gray-500">
+                            {presentPercentage.toFixed(1)}% Present
+                          </span>
+                        </div>
+                        <Progress 
+                          value={presentPercentage} 
+                          className="h-2"
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
-                <div>
-                  <p className="font-medium text-gray-800">Parent Meeting Request</p>
-                  <p className="text-sm text-gray-600">From: John's Parent</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                  <Book className="w-6 h-6 text-gray-600" />
-                </div>
-                <div>
-                  <p className="font-medium text-gray-800">Department Meeting</p>
-                  <p className="text-sm text-gray-600">Tomorrow at 2 PM</p>
-                </div>
-              </div>
-            </div>
-          </div>
+              ) : (
+                <EmptyState message="No attendance data available for today" />
+              )}
+            </CardContent>
+          </Card>
 
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-semibold text-gray-800">Class Performance</h3>
-              <Users className="w-6 h-6 text-blue-500" />
-            </div>
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-600">Class X-A</span>
-                  <span className="text-blue-600">85% Average</span>
+          {/* Upcoming Exams */}
+          <Card>
+            <CardHeader className="border-b">
+              <CardTitle className="text-lg font-semibold flex items-center">
+                <Calendar className="h-5 w-5 mr-2" />
+                Upcoming Exams
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              {upcomingExams && upcomingExams.length > 0 ? (
+                <div className="space-y-4">
+                  {upcomingExams.map((exam, index) => (
+                    <div key={index} className="p-3 bg-gray-50 rounded-lg">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-medium">{exam.exam_title}</p>
+                          <p className="text-sm text-gray-500">
+                            {exam.class_name} - {new Date(exam.exam_date).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Calendar className="h-4 w-4 text-gray-400" />
+                          <span className="text-sm text-gray-500">
+                            {new Date(exam.exam_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="mt-2 flex items-center space-x-2">
+                        <AlertCircle className="h-4 w-4 text-yellow-500" />
+                        <span className="text-sm text-yellow-500">
+                          {exam.days_remaining} days remaining
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-blue-500 rounded-full h-2 w-4/5"></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-600">Class XI-B</span>
-                  <span className="text-blue-600">78% Average</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-blue-500 rounded-full h-2 w-3/4"></div>
-                </div>
-              </div>
-            </div>
-          </div>
+              ) : (
+                <EmptyState message="No upcoming exams" />
+              )}
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Recent Submissions */}
+        <Card>
+          <CardHeader className="border-b">
+            <CardTitle className="text-lg font-semibold flex items-center">
+              <Clock className="h-5 w-5 mr-2" />
+              Recent Submissions
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4">
+            {recentSubmissions && recentSubmissions.length > 0 ? (
+              <div className="space-y-4">
+                {recentSubmissions.map((submission, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                        <Users className="h-5 w-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{submission.student_name}</p>
+                        <p className="text-sm text-gray-500">Assignment: {submission.assignment_title}</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-gray-400" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState message="No recent submissions" />
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

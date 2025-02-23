@@ -20,6 +20,7 @@ from teachers.models import (
     Subject,
     Teacher,
     TeacherDocument,
+    TeacherLeaveRequest,
 )
 
 
@@ -849,3 +850,65 @@ class StudentFeePaymentSerializer(serializers.ModelSerializer):
             ),
             "academic_year_name": obj.fee_structure.academic_year.name,
         }
+        
+        
+# ------------------------------------------------------------
+
+
+class AdminTeacherLeaveRequestSerializer(serializers.ModelSerializer):
+    teacher_name = serializers.SerializerMethodField()
+    document_url = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = TeacherLeaveRequest
+        fields = [
+            'id', 'teacher_name', 'leave_type', 'start_date', 'end_date', 
+            'status', 'applied_on', 'reason', 'supporting_document', 
+            'response_comment', 'document_url'
+        ]
+    
+    def get_teacher_name(self, obj):
+        return f"{obj.teacher.user.first_name} {obj.teacher.user.last_name}"
+    
+    def get_document_url(self, obj):
+        if obj.supporting_document:
+            return obj.supporting_document.url
+        return None
+
+class AdminLeaveResponseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TeacherLeaveRequest
+        fields = ['status', 'response_comment']
+        
+    def validate_status(self, value):
+        if value not in ['APPROVED', 'REJECTED']:
+            raise serializers.ValidationError("Status must be either APPROVED or REJECTED")
+        return value
+    
+    
+# _-----------------------------------
+class PasswordChangeSerializer(serializers.Serializer):
+    current_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)
+
+class SchoolAdminProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = [
+            'username', 'email', 'school_name', 'school_type', 
+            'phone_number', 'address', 'city', 'state', 
+            'district', 'country', 'profile_image',
+            'school_logo'
+        ]
+
+    def validate_email(self, value):
+        user = self.context['request'].user
+        if CustomUser.objects.exclude(pk=user.pk).filter(email=value).exists():
+            raise serializers.ValidationError("This email is already in use.")
+        return value
+
+    def validate_username(self, value):
+        user = self.context['request'].user
+        if CustomUser.objects.exclude(pk=user.pk).filter(username=value).exists():
+            raise serializers.ValidationError("This username is already in use.")
+        return value

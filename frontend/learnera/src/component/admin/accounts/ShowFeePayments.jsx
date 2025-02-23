@@ -22,6 +22,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +56,8 @@ import {
 const ShowFeePayments = () => {
   const [loading, setLoading] = useState(false);
   const [payments, setPayments] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [filters, setFilters] = useState({
     status: "ALL",
     section: "",
@@ -62,56 +72,50 @@ const ShowFeePayments = () => {
     paidStudents: 0,
     pendingStudents: 0,
   });
-  const [selectedPayment, setSelectedPayment] = useState(null);
 
   useEffect(() => {
     fetchPayments();
   }, [filters]);
 
-  const fetchPayments = async () => {
+  const fetchPayments = async (page = 1) => {
     try {
       setLoading(true);
-      const response = await api.get("school_admin/student-fee-payments/", {
+      const response = await api.get(`school_admin/student-fee-payments/?page=${page}`, {
         params: {
           ...filters,
           status: filters.status === "ALL" ? "" : filters.status,
         },
       });
-      setPayments(response.data);
-      calculateSummary(response.data);
+      setPayments(response.data.results);
+      
+      // Use the summary from backend directly
+      setSummary({
+        totalAmount: parseFloat(response.data.summary.total_amount),
+        paidAmount: parseFloat(response.data.summary.paid_amount),
+        pendingAmount: parseFloat(response.data.summary.pending_amount),
+        totalStudents: response.data.summary.total_students,
+        paidStudents: response.data.summary.paid_students,
+        pendingStudents: response.data.summary.pending_students,
+      });
+      
+      const pageSize = 10;
+      const totalCount = response.data.count;
+      setTotalPages(Math.ceil(totalCount / pageSize));
+      setCurrentPage(page);
     } catch (error) {
       toast.error("Failed to fetch payment details");
     } finally {
       setLoading(false);
     }
+  }
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      fetchPayments(newPage);
+    }
   };
 
-  const calculateSummary = (paymentData) => {
-    const summary = paymentData.reduce(
-      (acc, payment) => {
-        acc.totalAmount += parseFloat(payment.total_amount);
-        if (payment.status === "PAID") {
-          acc.paidAmount += parseFloat(payment.total_amount);
-          acc.paidStudents += 1;
-        } else {
-          acc.pendingAmount += parseFloat(payment.total_amount);
-          acc.pendingStudents += 1;
-        }
-        acc.totalStudents += 1;
-        return acc;
-      },
-      {
-        totalAmount: 0,
-        paidAmount: 0,
-        pendingAmount: 0,
-        totalStudents: 0,
-        paidStudents: 0,
-        pendingStudents: 0,
-      }
-    );
-
-    setSummary(summary);
-  };
+ 
 
   const getStatusBadge = (status) => {
     const variants = {
@@ -127,6 +131,8 @@ const ShowFeePayments = () => {
   };
 
   const PaymentDetailsDialog = ({ payment }) => {
+    if (!payment) return null;
+
     return (
       <Dialog>
         <DialogTrigger asChild>
@@ -142,7 +148,9 @@ const ShowFeePayments = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div className="flex items-center gap-2">
               <User className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm font-medium">{payment.student_name}</span>
+              <span className="text-sm font-medium">
+                {payment.student_first_name} {payment.student_last_name}
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <BookOpen className="w-4 h-4 text-muted-foreground" />
@@ -229,9 +237,7 @@ const ShowFeePayments = () => {
 
   return (
     <div className="space-y-6">
-      {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Total Collections Card */}
         <Card className="relative overflow-hidden border-l-4 border-l-green-500 hover:shadow-lg transition-shadow">
           <div className="absolute right-4 top-4 opacity-20">
             <ArrowUpCircle className="w-12 h-12 text-green-500" />
@@ -252,7 +258,6 @@ const ShowFeePayments = () => {
           </CardContent>
         </Card>
 
-        {/* Payment Status Card */}
         <Card className="relative overflow-hidden border-l-4 border-l-blue-500 hover:shadow-lg transition-shadow">
           <div className="absolute right-4 top-4 opacity-20">
             <Users className="w-12 h-12 text-blue-500" />
@@ -271,7 +276,6 @@ const ShowFeePayments = () => {
           </CardContent>
         </Card>
 
-        {/* Pending Amount Card */}
         <Card className="relative overflow-hidden border-l-4 border-l-amber-500 hover:shadow-lg transition-shadow">
           <div className="absolute right-4 top-4 opacity-20">
             <AlertCircle className="w-12 h-12 text-amber-500" />
@@ -293,7 +297,6 @@ const ShowFeePayments = () => {
         </Card>
       </div>
 
-      {/* Filters */}
       <Card>
         <CardHeader>
           <CardTitle>Fee Payments</CardTitle>
@@ -325,7 +328,6 @@ const ShowFeePayments = () => {
             />
           </div>
 
-          {/* Payments Table */}
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -355,11 +357,15 @@ const ShowFeePayments = () => {
                 ) : (
                   payments.map((payment) => (
                     <TableRow key={payment.id}>
-                      <TableCell>{payment.student_first_name} {payment.student_last_name}</TableCell>
+                      <TableCell>
+                        {payment.student_first_name} {payment.student_last_name}
+                      </TableCell>
                       <TableCell>
                         {payment.fee_structure_details.fee_category_name}
                       </TableCell>
-                      <TableCell>{payment.student_class} - {payment.student_section}</TableCell>
+                      <TableCell>
+                        {payment.student_class} - {payment.student_section}
+                      </TableCell>
                       <TableCell>
                         {new Date(payment.due_date).toLocaleDateString()}
                       </TableCell>
@@ -375,6 +381,43 @@ const ShowFeePayments = () => {
                 )}
               </TableBody>
             </Table>
+          </div>
+
+          <div className="mt-5 flex justify-end items-center gap-4">
+            {payments.length > 0 && (
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                    />
+                  </PaginationItem>
+
+                  {Array.from({ length: totalPages }, (_, i) => (
+                    <PaginationItem key={i + 1}>
+                      <PaginationLink
+                        onClick={() => handlePageChange(i + 1)}
+                        isActive={currentPage === i + 1}
+                        className={
+                          currentPage === i + 1
+                            && "bg-gradient-to-b from-[#0D2E76] to-[#1842DC] text-white"
+                        }
+                      >
+                        {i + 1}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ))}
+
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            )}
           </div>
         </CardContent>
       </Card>

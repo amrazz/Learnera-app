@@ -15,8 +15,9 @@ from .models import (
     Teacher,
     SchoolClass,
     Subject,
+    TeacherLeaveRequest,
 )
-from students.models import Student
+from students.models import Student, StudentLeaveRequest
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -86,7 +87,7 @@ class StudentAttendanceSerializer(serializers.ModelSerializer):
         return f"{obj.user.first_name} {obj.user.last_name}"
 
     def get_roll_number(self, obj):
-        return obj.roll_number
+        return obj.roll_number if obj.roll_number else None
 
     def get_last_attendance_date(self, obj):
         try:
@@ -542,40 +543,144 @@ class EvaluationSerializer(serializers.ModelSerializer):
 class ExamResultSerializer(serializers.ModelSerializer):
     student = StudentBasicSerializer()
     exam = serializers.SerializerMethodField()
-    answers = StudentAnswerDetailSerializer(source = 'student_answers', many = True)
+    answers = StudentAnswerDetailSerializer(source="student_answers", many=True)
     progress = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = StudentExam
         fields = [
-           'id',
-            'student',
-            'exam',
-            'start_time',
-            'submit_time',
-            'status',
-            'total_score',
-            'answers',
-            'progress'
+            "id",
+            "student",
+            "exam",
+            "start_time",
+            "submit_time",
+            "status",
+            "total_score",
+            "answers",
+            "progress",
         ]
+
     def get_exam(self, obj):
         return {
-            'id': obj.exam.id,
-            'title': obj.exam.title,
-            'subject': obj.exam.subject.subject_name,
-            'total_mark': obj.exam.total_mark,
-            'duration': obj.exam.duration,
-            'class_name': obj.exam.class_section.school_class.class_name,
-            'section_name': obj.exam.class_section.section_name,
-            'start_time': obj.exam.start_time,
-            'end_time': obj.exam.end_time
+            "id": obj.exam.id,
+            "title": obj.exam.title,
+            "subject": obj.exam.subject.subject_name,
+            "total_mark": obj.exam.total_mark,
+            "duration": obj.exam.duration,
+            "class_name": obj.exam.class_section.school_class.class_name,
+            "section_name": obj.exam.class_section.section_name,
+            "start_time": obj.exam.start_time,
+            "end_time": obj.exam.end_time,
         }
-    
+
     def get_progress(self, obj):
         total_questions = obj.exam.exam_questions.count()
         answered_questions = obj.student_answers.count()
         return {
-            'answered': answered_questions,
-            'total': total_questions,
-            'percentage': round((answered_questions / total_questions * 100) if total_questions > 0 else 0, 2)
+            "answered": answered_questions,
+            "total": total_questions,
+            "percentage": round(
+                (
+                    (answered_questions / total_questions * 100)
+                    if total_questions > 0
+                    else 0
+                ),
+                2,
+            ),
         }
+
+
+#  ----------------------------
+
+
+class TeacherLeaveResponseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudentLeaveRequest
+        fields = ["status", "response_comment"]
+
+    def validate_status(self, value):
+        if value not in ["APPROVED", "REJECTED"]:
+            raise serializers.ValidationError(
+                "Status must be either APPROVED or REJECTED"
+            )
+        return value
+
+
+class TeacherLeaveRequestSerializer(serializers.ModelSerializer):
+    teacher_name = serializers.SerializerMethodField()
+    responded_by_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TeacherLeaveRequest
+        fields = [
+            "id",
+            "teacher_name",
+            "leave_type",
+            "start_date",
+            "end_date",
+            "status",
+            "applied_on",
+        ]
+
+    def get_teacher_name(self, obj):
+        return f"{obj.teacher.user.first_name} {obj.teacher.user.last_name}"
+
+
+class TeacherLeaveRequestDetailSerializer(serializers.ModelSerializer):
+    teacher_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TeacherLeaveRequest
+        fields = [
+            "id",
+            "teacher_name",
+            "leave_type",
+            "start_date",
+            "end_date",
+            "reason",
+            "supporting_document",
+            "status",
+            "response_comment",
+            "applied_on",
+        ]
+
+    def get_teacher_name(self, obj):
+        return f"{obj.teacher.user.first_name} {obj.teacher.user.last_name}"
+
+
+class TeacherLeaveRequestSerializer(serializers.ModelSerializer):
+    teacher_name = serializers.SerializerMethodField()
+    supporting_document = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TeacherLeaveRequest
+        fields = [
+            "id",
+            "teacher_name",
+            "leave_type",
+            "start_date",
+            "end_date",
+            "status",
+            "applied_on",
+            "reason",
+            "supporting_document",
+            "response_comment",
+        ]
+        read_only_fields = ["status", "response_comment", "teacher_name"]
+
+    def get_supporting_document(self, obj):
+        if obj.supporting_document:
+            return self.context["request"].build_absolute_uri(
+                obj.supporting_document.url
+            )
+        return None
+
+    def get_teacher_name(self, obj):
+        return f"{obj.teacher.user.first_name} {obj.teacher.user.last_name}"
+
+    def create(self, validated_data):
+        teacher = Teacher.objects.get(user=self.context["request"].user)
+        leave_request = TeacherLeaveRequest.objects.create(
+            teacher=teacher, **validated_data
+        )
+        return leave_request

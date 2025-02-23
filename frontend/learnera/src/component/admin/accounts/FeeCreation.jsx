@@ -30,10 +30,24 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import { Textarea } from "@/components/ui/textarea";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
 import { Calendar as Cal } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const FeeCreation = () => {
   const [categories, setCategories] = useState([]);
@@ -100,7 +114,10 @@ const FeeCreation = () => {
   const handleEditCategory = async () => {
     try {
       setLoading(true);
-      await api.put(`school_admin/fee-categories/${editingCategory.id}/`, editingCategory);
+      await api.put(
+        `school_admin/fee-categories/${editingCategory.id}/`,
+        editingCategory
+      );
       await fetchCategories();
       setEditingCategory(null);
       toast.success("Fee category updated successfully");
@@ -138,7 +155,9 @@ const FeeCreation = () => {
       setLoading(true);
       const payload = {
         ...newStructure,
-        due_date: newStructure.due_date ? format(newStructure.due_date, "yyyy-MM-dd") : null,
+        due_date: newStructure.due_date
+          ? format(newStructure.due_date, "yyyy-MM-dd")
+          : null,
         section: selectedSection?.id,
       };
       await api.post("school_admin/fee-structures/", payload);
@@ -168,10 +187,15 @@ const FeeCreation = () => {
       setLoading(true);
       const payload = {
         ...editingStructure,
-        due_date: editingStructure.due_date ? format(editingStructure.due_date, "yyyy-MM-dd") : null,
+        due_date: editingStructure.due_date
+          ? format(editingStructure.due_date, "yyyy-MM-dd")
+          : null,
         section: selectedSection,
       };
-      await api.put(`school_admin/fee-structures/${editingStructure.id}/`, payload);
+      await api.put(
+        `school_admin/fee-structures/${editingStructure.id}/`,
+        payload
+      );
       await fetchFeeStructures();
       setEditingStructure(null);
       setSelectedClass(null);
@@ -193,24 +217,26 @@ const FeeCreation = () => {
       await fetchFeeStructures();
       toast.success("Fee structure deleted successfully");
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to delete structure");
+      toast.error(
+        error.response?.data?.message || "Failed to delete structure"
+      );
     } finally {
       setLoading(false);
-      setIsDeleteDialogOpen(false)
+      setIsDeleteDialogOpen(false);
     }
   };
 
   const confirmDelete = (type, id) => {
-    setItemToDelete({type, id});
-    setIsDeleteDialogOpen(true)
-  }
+    setItemToDelete({ type, id });
+    setIsDeleteDialogOpen(true);
+  };
   const executeDelete = () => {
     if (itemToDelete.type === "category") {
-      handleDeleteCategory(itemToDelete.id)
+      handleDeleteCategory(itemToDelete.id);
     } else if (itemToDelete.type === "structure") {
-      handleDeleteStructure(itemToDelete.id)
+      handleDeleteStructure(itemToDelete.id);
     }
-  }
+  };
 
   return (
     <>
@@ -218,7 +244,7 @@ const FeeCreation = () => {
       <Card className="w-full">
         <CardHeader>
           <CardTitle className="text-3xl text-center">Fee Management</CardTitle>
-          <CardDescription className="text-center" >
+          <CardDescription className="text-center">
             Manage fee categories and structures
           </CardDescription>
         </CardHeader>
@@ -242,11 +268,21 @@ const FeeCreation = () => {
                         <Label htmlFor="name">Category Name</Label>
                         <Input
                           id="name"
-                          value={editingCategory ? editingCategory.name : newCategory.name}
+                          value={
+                            editingCategory
+                              ? editingCategory.name
+                              : newCategory.name
+                          }
                           onChange={(e) =>
                             editingCategory
-                              ? setEditingCategory({ ...editingCategory, name: e.target.value })
-                              : setNewCategory({ ...newCategory, name: e.target.value })
+                              ? setEditingCategory({
+                                  ...editingCategory,
+                                  name: e.target.value,
+                                })
+                              : setNewCategory({
+                                  ...newCategory,
+                                  name: e.target.value,
+                                })
                           }
                           placeholder="Enter category name"
                         />
@@ -255,25 +291,41 @@ const FeeCreation = () => {
                         <Label htmlFor="description">Description</Label>
                         <Textarea
                           id="description"
-                          value={editingCategory ? editingCategory.description : newCategory.description}
+                          value={
+                            editingCategory
+                              ? editingCategory.description
+                              : newCategory.description
+                          }
                           onChange={(e) =>
                             editingCategory
-                              ? setEditingCategory({ ...editingCategory, description: e.target.value })
-                              : setNewCategory({ ...newCategory, description: e.target.value })
+                              ? setEditingCategory({
+                                  ...editingCategory,
+                                  description: e.target.value,
+                                })
+                              : setNewCategory({
+                                  ...newCategory,
+                                  description: e.target.value,
+                                })
                           }
                           placeholder="Enter description"
                         />
                       </div>
                       <div className="flex items-end">
                         <Button
-                        className="bg-gradient-to-b from-[#0D2E76] to-[#1842DC] text-white font-montserrat"
-                          onClick={editingCategory ? handleEditCategory : handleCreateCategory}
+                          className="bg-gradient-to-b from-[#0D2E76] to-[#1842DC] text-white font-montserrat"
+                          onClick={
+                            editingCategory
+                              ? handleEditCategory
+                              : handleCreateCategory
+                          }
                           disabled={loading}
                         >
                           {loading && (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           )}
-                          {editingCategory ? "Update Category" : "Create Category"}
+                          {editingCategory
+                            ? "Update Category"
+                            : "Create Category"}
                         </Button>
                         {editingCategory && (
                           <Button
@@ -290,16 +342,26 @@ const FeeCreation = () => {
                     <Table>
                       <TableHeader>
                         <TableRow className="bg-gradient-to-b from-[#0D2E76] to-[#1842DC] text-white">
-                          <TableHead className="text-center text-white">Name</TableHead>
-                          <TableHead className="text-center text-white">Description</TableHead>
-                          <TableHead className="text-center text-white">Actions</TableHead>
+                          <TableHead className="text-center text-white">
+                            Name
+                          </TableHead>
+                          <TableHead className="text-center text-white">
+                            Description
+                          </TableHead>
+                          <TableHead className="text-center text-white">
+                            Actions
+                          </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {categories.map((category) => (
                           <TableRow key={category.id}>
-                            <TableCell className="text-center">{category.name}</TableCell>
-                            <TableCell className="text-center">{category.description}</TableCell>
+                            <TableCell className="text-center">
+                              {category.name}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {category.description}
+                            </TableCell>
                             <TableCell className="text-center">
                               <Button
                                 variant="secondary"
@@ -314,20 +376,27 @@ const FeeCreation = () => {
                                     variant="destructive"
                                     size="sm"
                                     className="ml-2"
-                                    onClick={() => confirmDelete("category", category.id)}
+                                    onClick={() =>
+                                      confirmDelete("category", category.id)
+                                    }
                                   >
                                     Delete
                                   </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                   <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                    <AlertDialogTitle>
+                                      Are you sure?
+                                    </AlertDialogTitle>
                                     <AlertDialogDescription>
-                                      This action cannot be undone. This will permanently delete the fee category.
+                                      This action cannot be undone. This will
+                                      permanently delete the fee category.
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogCancel>
+                                      Cancel
+                                    </AlertDialogCancel>
                                     <AlertDialogAction onClick={executeDelete}>
                                       Delete
                                     </AlertDialogAction>
@@ -356,11 +425,21 @@ const FeeCreation = () => {
                       <div>
                         <Label>Fee Type</Label>
                         <Select
-                          value={editingStructure ? editingStructure.fee_type : newStructure.fee_type}
+                          value={
+                            editingStructure
+                              ? editingStructure.fee_type
+                              : newStructure.fee_type
+                          }
                           onValueChange={(value) =>
                             editingStructure
-                              ? setEditingStructure({ ...editingStructure, fee_type: value })
-                              : setNewStructure({ ...newStructure, fee_type: value })
+                              ? setEditingStructure({
+                                  ...editingStructure,
+                                  fee_type: value,
+                                })
+                              : setNewStructure({
+                                  ...newStructure,
+                                  fee_type: value,
+                                })
                           }
                         >
                           <SelectTrigger>
@@ -368,7 +447,9 @@ const FeeCreation = () => {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="GLOBAL">Global Fee</SelectItem>
-                            <SelectItem value="SPECIFIC">Specific Fee</SelectItem>
+                            <SelectItem value="SPECIFIC">
+                              Specific Fee
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -376,11 +457,21 @@ const FeeCreation = () => {
                       <div>
                         <Label>Fee Category</Label>
                         <Select
-                          value={editingStructure ? editingStructure.fee_category : newStructure.fee_category}
+                          value={
+                            editingStructure
+                              ? String(editingStructure.fee_category)
+                              : newStructure.fee_category
+                          }
                           onValueChange={(value) =>
                             editingStructure
-                              ? setEditingStructure({ ...editingStructure, fee_category: value })
-                              : setNewStructure({ ...newStructure, fee_category: value })
+                              ? setEditingStructure({
+                                  ...editingStructure,
+                                  fee_category: value,
+                                })
+                              : setNewStructure({
+                                  ...newStructure,
+                                  fee_category: value,
+                                })
                           }
                         >
                           <SelectTrigger>
@@ -403,11 +494,21 @@ const FeeCreation = () => {
                         <Label>Amount</Label>
                         <Input
                           type="number"
-                          value={editingStructure ? editingStructure.amount : newStructure.amount}
+                          value={
+                            editingStructure
+                              ? editingStructure.amount
+                              : newStructure.amount
+                          }
                           onChange={(e) =>
                             editingStructure
-                              ? setEditingStructure({ ...editingStructure, amount: e.target.value })
-                              : setNewStructure({ ...newStructure, amount: e.target.value })
+                              ? setEditingStructure({
+                                  ...editingStructure,
+                                  amount: e.target.value,
+                                })
+                              : setNewStructure({
+                                  ...newStructure,
+                                  amount: e.target.value,
+                                })
                           }
                           placeholder="Enter amount"
                         />
@@ -421,7 +522,10 @@ const FeeCreation = () => {
                               variant={"outline"}
                               className={cn(
                                 "w-[280px] justify-start text-left font-normal",
-                                !(editingStructure ? editingStructure.due_date : newStructure.due_date) && "text-muted-foreground"
+                                !(editingStructure
+                                  ? editingStructure.due_date
+                                  : newStructure.due_date) &&
+                                  "text-muted-foreground"
                               )}
                             >
                               <CalendarIcon className="mr-2 h-4 w-4" />
@@ -437,29 +541,51 @@ const FeeCreation = () => {
                           <PopoverContent className="w-auto p-0">
                             <Cal
                               mode="single"
-                              selected={editingStructure ? editingStructure.due_date : newStructure.due_date}
+                              selected={
+                                editingStructure
+                                  ? editingStructure.due_date
+                                  : newStructure.due_date
+                              }
                               onSelect={(date) =>
                                 editingStructure
-                                  ? setEditingStructure({ ...editingStructure, due_date: date })
-                                  : setNewStructure({ ...newStructure, due_date: date })
+                                  ? setEditingStructure({
+                                      ...editingStructure,
+                                      due_date: date,
+                                    })
+                                  : setNewStructure({
+                                      ...newStructure,
+                                      due_date: date,
+                                    })
                               }
                               initialFocus
-                              disabled={(date) => date < new Date()} 
+                              disabled={(date) => date < new Date()}
                             />
                           </PopoverContent>
                         </Popover>
                       </div>
 
-                      {(editingStructure ? editingStructure.fee_type : newStructure.fee_type) === "SPECIFIC" && (
+                      {(editingStructure
+                        ? editingStructure.fee_type
+                        : newStructure.fee_type) === "SPECIFIC" && (
                         <>
                           <div>
                             <Label>Academic Year</Label>
                             <Input
-                              value={editingStructure ? editingStructure.academic_year : newStructure.academic_year}
+                              value={
+                                editingStructure
+                                  ? editingStructure.academic_year
+                                  : newStructure.academic_year
+                              }
                               onChange={(e) =>
                                 editingStructure
-                                  ? setEditingStructure({ ...editingStructure, academic_year: e.target.value })
-                                  : setNewStructure({ ...newStructure, academic_year: e.target.value })
+                                  ? setEditingStructure({
+                                      ...editingStructure,
+                                      academic_year: e.target.value,
+                                    })
+                                  : setNewStructure({
+                                      ...newStructure,
+                                      academic_year: e.target.value,
+                                    })
                               }
                               placeholder="Enter academic year"
                             />
@@ -470,7 +596,9 @@ const FeeCreation = () => {
                             <Select
                               value={selectedClass ? selectedClass.id : ""}
                               onValueChange={(value) => {
-                                const selected = classes.find(cls => cls.id === value);
+                                const selected = classes.find(
+                                  (cls) => cls.id === value
+                                );
                                 setSelectedClass(selected);
                                 setSelectedSection(null);
                               }}
@@ -479,7 +607,7 @@ const FeeCreation = () => {
                                 <SelectValue placeholder="Select class" />
                               </SelectTrigger>
                               <SelectContent>
-                                {classes.map(cls => (
+                                {classes.map((cls) => (
                                   <SelectItem key={cls.id} value={cls.id}>
                                     {cls.class_name}
                                   </SelectItem>
@@ -493,7 +621,9 @@ const FeeCreation = () => {
                             <Select
                               value={selectedSection ? selectedSection.id : ""}
                               onValueChange={(value) => {
-                                const selected = selectedClass.sections.find(sec => sec.id === value);
+                                const selected = selectedClass.sections.find(
+                                  (sec) => sec.id === value
+                                );
                                 setSelectedSection(selected);
                               }}
                               disabled={!selectedClass}
@@ -502,11 +632,12 @@ const FeeCreation = () => {
                                 <SelectValue placeholder="Select section" />
                               </SelectTrigger>
                               <SelectContent>
-                                {selectedClass && selectedClass.sections.map(sec => (
-                                  <SelectItem key={sec.id} value={sec.id}>
-                                    {sec.section_name}
-                                  </SelectItem>
-                                ))}
+                                {selectedClass &&
+                                  selectedClass.sections.map((sec) => (
+                                    <SelectItem key={sec.id} value={sec.id}>
+                                      {sec.section_name}
+                                    </SelectItem>
+                                  ))}
                               </SelectContent>
                             </Select>
                           </div>
@@ -515,14 +646,20 @@ const FeeCreation = () => {
 
                       <div className="flex items-end">
                         <Button
-                        className="bg-gradient-to-b from-[#0D2E76] to-[#1842DC] text-white font-montserrat"
-                          onClick={editingStructure ? handleEditStructure : handleCreateStructure}
+                          className="bg-gradient-to-b from-[#0D2E76] to-[#1842DC] text-white font-montserrat"
+                          onClick={
+                            editingStructure
+                              ? handleEditStructure
+                              : handleCreateStructure
+                          }
                           disabled={loading}
                         >
                           {loading && (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           )}
-                          {editingStructure ? "Update Structure" : "Create Structure"}
+                          {editingStructure
+                            ? "Update Structure"
+                            : "Create Structure"}
                         </Button>
                         {editingStructure && (
                           <Button
@@ -538,22 +675,42 @@ const FeeCreation = () => {
 
                     <Table>
                       <TableHeader>
-                        <TableRow  className="bg-gradient-to-b from-[#0D2E76] to-[#1842DC] rounded-lg">
-                          <TableHead className="text-white text-center">Type</TableHead>
-                          <TableHead className="text-white text-center">Category</TableHead>
-                          <TableHead className="text-white text-center">Amount</TableHead>
-                          <TableHead className="text-white text-center">Academic Year</TableHead>
-                          <TableHead className="text-white text-center">Due Date</TableHead>
-                          <TableHead className="text-white text-center">Section</TableHead>
-                          <TableHead className="text-white text-center">Actions</TableHead>
+                        <TableRow className="bg-gradient-to-b from-[#0D2E76] to-[#1842DC] rounded-lg">
+                          <TableHead className="text-white text-center">
+                            Type
+                          </TableHead>
+                          <TableHead className="text-white text-center">
+                            Category
+                          </TableHead>
+                          <TableHead className="text-white text-center">
+                            Amount
+                          </TableHead>
+                          <TableHead className="text-white text-center">
+                            Academic Year
+                          </TableHead>
+                          <TableHead className="text-white text-center">
+                            Due Date
+                          </TableHead>
+                          <TableHead className="text-white text-center">
+                            Section
+                          </TableHead>
+                          <TableHead className="text-white text-center">
+                            Actions
+                          </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {feeStructures.map((structure) => (
                           <TableRow key={structure.id}>
-                            <TableCell className="text-center">{structure.fee_type}</TableCell>
-                            <TableCell className="text-center">{structure.fee_category_name}</TableCell>
-                            <TableCell className="text-center">${structure.amount}</TableCell>
+                            <TableCell className="text-center">
+                              {structure.fee_type}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {structure.fee_category_name}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              ${structure.amount}
+                            </TableCell>
                             <TableCell className="text-center">
                               {structure.academic_year_name}
                             </TableCell>
@@ -561,10 +718,13 @@ const FeeCreation = () => {
                               {structure.due_date}
                             </TableCell>
                             <TableCell className="text-center">
-                            {structure.class_name ?structure.class_name + " - " : ""}{structure.section_name || "N/A"}
+                              {structure.class_name
+                                ? structure.class_name + " - "
+                                : ""}
+                              {structure.section_name || "N/A"}
                             </TableCell>
                             <TableCell className="text-center">
-                            <Button
+                              <Button
                                 variant="secondary"
                                 size="sm"
                                 onClick={() => setEditingStructure(structure)}
@@ -577,20 +737,27 @@ const FeeCreation = () => {
                                     variant="destructive"
                                     size="sm"
                                     className="ml-2"
-                                    onClick={() => confirmDelete("structure", structure.id)}
+                                    onClick={() =>
+                                      confirmDelete("structure", structure.id)
+                                    }
                                   >
                                     Delete
                                   </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                   <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                    <AlertDialogTitle>
+                                      Are you sure?
+                                    </AlertDialogTitle>
                                     <AlertDialogDescription>
-                                      This action cannot be undone. This will permanently delete the fee structure.
+                                      This action cannot be undone. This will
+                                      permanently delete the fee structure.
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogCancel>
+                                      Cancel
+                                    </AlertDialogCancel>
                                     <AlertDialogAction onClick={executeDelete}>
                                       Delete
                                     </AlertDialogAction>

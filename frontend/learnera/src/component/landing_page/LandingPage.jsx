@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import Navbar from './navbar';
+import Navbar from './Navbar';
 import Hero from './Hero';
 import About from './About';
 import Features from './Features';
@@ -8,7 +8,7 @@ import Stats from './Stats';
 import Contact from './Contact';
 import Footer from './Footer';
 
-const Landing_page = () => {
+const LandingPage = () => {
   const aboutRef = useRef(null);
   const featuresRef = useRef(null);
   const contactRef = useRef(null);
@@ -38,4 +38,4 @@ const Landing_page = () => {
   );
 };
 
-export default Landing_page;
+export default LandingPage;
