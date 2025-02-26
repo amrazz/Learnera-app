@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import api from "../../../api";
 import {
   ArrowLeft,
@@ -133,6 +133,7 @@ const TeacherInfo = () => {
       />
 
       <div className="flex items-center justify-between mb-6">
+        <ToastContainer />
         <div className="flex items-center">
           <Link
             to="/admin/show_teachers"

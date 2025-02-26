@@ -217,6 +217,7 @@ const StudentInfo = () => {
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">
+        <ToastContainer />
         <div className="md:col-span-1 bg-white shadow-md rounded-lg p-6 h-fit">
           <div className="flex flex-col items-center">
             <div className="w-32 h-32 mb-4">
