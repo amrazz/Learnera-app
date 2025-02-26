@@ -6,15 +6,15 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from django.conf.urls.static import static
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
-    path("chat/", include("chat.urls")),
-    path("users/", include("users.urls")),
-    path("parents/", include("parents.urls")),
-    path("teachers/", include("teachers.urls")),
-    path("students/", include("students.urls")),
-    path("school_admin/", include("school_admin.urls")),
-    path("token/", TokenObtainPairView.as_view(), name="get_token"),
-    path("token/refresh/", TokenRefreshView.as_view(), name="refresh"),
+    path("api/admin/", admin.site.urls),
+    path("api/chat/", include("chat.urls")),
+    path("api/users/", include("users.urls")),
+    path("api/parents/", include("parents.urls")),
+    path("api/teachers/", include("teachers.urls")),
+    path("api/students/", include("students.urls")),
+    path("api/school_admin/", include("school_admin.urls")),
+    path("api/token/", TokenObtainPairView.as_view(), name="get_token"),
+    path("api/token/refresh/", TokenRefreshView.as_view(), name="refresh"),
 ]
 
 

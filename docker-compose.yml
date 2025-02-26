@@ -1,0 +1,74 @@
+services:
+  frontend:
+    build:
+      context: ./frontend/learnera
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    volumes:
+      - ./frontend/learnera:/app
+      - ./frontend/learnera/node_modules:/app/node_modules
+      - static_volume:/app/static
+    environment:
+      NODE_ENV: production
+    stdin_open: true
+    tty: true
+
+  backend:
+    build:
+      context: ./backend/learnera_app
+      dockerfile: Dockerfile
+    command: [ "gunicorn", "--bind", ":8000", "--workers", "3", "--worker-class", "uvicorn.workers.UvicornWorker", "learnera_app.asgi:application" ]
+
+    volumes:
+      - ./backend/learnera_app:/app
+      - media_volume:/app/media/
+      - static_volume:/app/static
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+    env_file:
+      - ./backend/learnera_app/.env
+    environment:
+      - DJANGO_SETTINGS_MODULE=learnera_app.settings
+
+  db:
+    image: postgres:13-alpine
+    environment:
+      - POSTGRES_DB=learnera
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=amraz
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  daphne:
+    build:
+      context: ./backend/learnera_app
+      dockerfile: Dockerfile
+    command: daphne -b 0.0.0.0 -p 8001 learnera_app.asgi:application
+    volumes:
+      - ./backend/learnera_app:/app
+    ports:
+      - "8001:8001"
+    depends_on:
+      - db
+      - redis
+    env_file:
+      - ./backend/learnera_app/.env
+    environment:
+      - DJANGO_SETTINGS_MODULE=learnera_app.settings
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      
+volumes:
+  db_data:
+  media_volume:
+  static_volume:
+  redis_data:

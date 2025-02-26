@@ -37,7 +37,7 @@ SECRET_KEY = env('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 REST_FRAMEWORK = {
@@ -119,7 +119,10 @@ DJANGO_ALLOW_ASYNC_UNSAFE = True
 ASGI_APPLICATION = "learnera_app.asgi.application"
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer",
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("redis", 6379)],  
+        },
     },
 }
 
@@ -132,11 +135,11 @@ CHANNEL_LAYERS = {
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": env('DATABASE_NAME'),
-        "USER": env('DATABASE_USER'),
+        "NAME": env("DATABASE_NAME"),
+        "USER": env("DATABASE_USER"),
         "PASSWORD": env("DATABASE_PASSWORD"),
-        "HOST": "localhost",
-        "PORT": "5432",
+        "HOST": env("DATABASE_HOST"), 
+        "PORT": env("DATABASE_PORT"),
     }
 }
 
@@ -190,8 +193,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "users.CustomUser"
 
 
-CORS_ALLOWED_ORIGINS = ["http://localhost:5173"]
-CSRF_TRUSTED_ORIGINS = ["http://localhost:5173"]
+CORS_ALLOWED_ORIGINS = ["http://localhost", "http://localhost:5173"]
+CSRF_TRUSTED_ORIGINS = ["http://localhost", "http://localhost:5173"]
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWED_CREDENTIALS = True
 
