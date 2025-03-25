@@ -170,7 +170,7 @@ const StudentInfo = () => {
         }
       />
 
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col space-y-5 md:flex-row md:items-center md:justify-between mb-6">
         <div className="flex items-center">
           <Link
             to="/admin/show_students"
@@ -178,12 +178,14 @@ const StudentInfo = () => {
           >
             <ArrowLeft className="h-6 w-6" />
           </Link>
-          <h1 className="text-3xl font-bold text-gray-800">Student Profile</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+            Student Profile
+          </h1>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap gap-2 md:gap-4 items-center justify-center">
           <Link
             to={`/admin/student_info/${studentId}/edit`}
-            className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-600 flex items-center transition-all duration-300"
+            className="bg-blue-500 text-white px-3 py-2 md:px-4 md:py-2 rounded-lg shadow-md hover:bg-blue-600 flex items-center transition-all duration-300 text-sm md:text-base"
             title="Edit Student Information"
           >
             <Edit className="mr-2 h-5 w-5" />
@@ -216,7 +218,7 @@ const StudentInfo = () => {
         </div>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="flex-row space-y-6 md:flex justify-center  gap-6">
         <ToastContainer />
         <div className="md:col-span-1 bg-white shadow-md rounded-lg p-6 h-fit">
           <div className="flex flex-col items-center">
@@ -224,14 +226,14 @@ const StudentInfo = () => {
               {student.user.profile_image ? (
                 <img
                   className="w-32 h-32 rounded-full object-cover border-4 border-blue-100"
-                  src={`http://127.0.0.1:8000${student.user.profile_image}`}
+                  src={`https://learnerapp.site${student.user.profile_image}`}
                   alt={`${student.user.first_name} ${student.user.last_name}`}
                 />
               ) : (
                 <div className="w-32 h-32 bg-blue-100 rounded-full flex items-center justify-center">
                   <span className="text-4xl font-bold text-blue-600">
-                    {student.user.first_name[0]}
-                    {student.user.last_name[0]}
+                    {student.user.first_name && student.user.first_name[0]}
+                    {student.user.last_name && student.user.last_name[0]}
                   </span>
                 </div>
               )}
@@ -244,7 +246,6 @@ const StudentInfo = () => {
               </div>
               {student.user.username}
             </h2>
-
             <p className="text-gray-500">{student.user.email}</p>
           </div>
         </div>

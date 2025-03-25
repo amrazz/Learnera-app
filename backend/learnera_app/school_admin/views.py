@@ -75,7 +75,7 @@ from teachers.models import (
     TeacherLeaveRequest,
 )
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework import permissions, status, viewsets, generics
 
 
@@ -189,6 +189,7 @@ class CreateStudentView(APIView):
             section.save()
 
             try:
+                print(f"Assigning roll number for student in section {student.class_assigned.id}")
                 RollNumberService.assign_roll_number(
                     student, student.class_assigned, student.academic_year
                 )
@@ -196,9 +197,10 @@ class CreateStudentView(APIView):
                     student.class_assigned, student.academic_year
                 )
             except Exception as e:
+                print(f"Roll number assignment failed: {str(e)}")
                 transaction.set_rollback(True)
                 return Response(
-                    {"error": "Failed to assign roll number"},
+                    {"error": f"Failed to assign roll number: {str(e)}"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
@@ -302,11 +304,15 @@ class StudentDetailView(APIView):
 
 class StudentUpdateView(APIView):
     permission_classes = [permissions.IsAdminUser]
-
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+    
     def put(self, request, pk, *args, **kwargs):
         try:
             student = Student.objects.select_related("user").get(user__id=pk)
-
+            
+            if 'profile_image' in request.FILES:
+                student.user.profile_image = request.FILES['profile_image']
+                student.user.save()
             student_data = {
                 k: v
                 for k, v in request.data.items()
@@ -633,9 +639,9 @@ class ParentViewSet(viewsets.ModelViewSet):
                 "occupation": request.data.get("occupation", ""),
             }
 
-            serlaizer = self.get_serializer(data=data)
-            serlaizer.is_valid(raise_exception=True)
-            parent = serlaizer.save()
+            serializer = self.get_serializer(data=data)
+            serializer.is_valid(raise_exception=True)
+            parent = serializer.save()
 
             try:
                 EmailService.send_welcome_email(
@@ -648,13 +654,15 @@ class ParentViewSet(viewsets.ModelViewSet):
             except Exception as email_error:
                 print(f"Failed to send welcome email: {str(email_error)}")
 
-            headers = self.get_success_headers(serlaizer.data)
+            headers = self.get_success_headers(serializer.data)
             return Response(
-                serlaizer.data, status=status.HTTP_201_CREATED, headers=headers
+                serializer.data, status=status.HTTP_201_CREATED, headers=headers
             )
         except Exception as e:
+            error_detail = getattr(e, "detail", None)
+            if error_detail is not None:
+                return Response(error_detail, status=status.HTTP_400_BAD_REQUEST)
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
 
 class ParentDetailView(APIView):
     permission_classes = [permissions.IsAdminUser]

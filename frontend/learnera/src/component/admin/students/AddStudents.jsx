@@ -4,9 +4,31 @@ import { initialValues, validationSchema, inputs } from "./constants";
 import api from "../../../api";
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css"; // Ensure CSS is imported
+import "react-toastify/dist/ReactToastify.css"; 
 import { HashLoader } from "react-spinners";
 import { User } from "lucide-react";
+
+
+const ErrorAlert = ({ messages, onClose }) => (
+  <div
+    className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4"
+    role="alert"
+  >
+    <strong className="font-bold">Error!</strong>
+    <ul className="list-disc pl-5">
+      {messages.map((msg, idx) => (
+        <li key={idx}>{msg}</li>
+      ))}
+    </ul>
+    <button
+      onClick={onClose}
+      className="absolute top-0 right-0 px-2 py-1 text-red-700 hover:text-red-900"
+    >
+      &times;
+    </button>
+  </div>
+);
+
 
 const AddStudents = () => {
   const [profile, setProfile] = useState(null);
@@ -14,6 +36,7 @@ const AddStudents = () => {
   const [classes, setClasses] = useState([]);
   const [sections, setSections] = useState([]);
   const [selectedClass, setSelectedClass] = useState("");
+  const [errorMessages, setErrorMessages] = useState([]);
   const [parentSearchTerm, setParentSearchTerm] = useState("");
   const [parents, setParents] = useState([]);
   const [filteredParents, setFilteredParents] = useState([]);
@@ -65,7 +88,6 @@ const AddStudents = () => {
       const firstName = parent.user.first_name.toLowerCase();
       const lastName = parent.user.last_name.toLowerCase();
       const email = parent.user.email.toLowerCase();
-
       return (
         firstName.includes(searchTermLower) ||
         lastName.includes(searchTermLower) ||
@@ -112,6 +134,23 @@ const AddStudents = () => {
     toast.info(`Removed ${removedParent.first_name} ${removedParent.last_name} as ${removedParent.relationship_type}`);
   };
 
+
+  const flattenErrors = (errorData) => {
+    let messages = [];
+    if (typeof errorData === "string") {
+      messages.push(errorData);
+    } else if (Array.isArray(errorData)) {
+      errorData.forEach((item) => {
+        messages = messages.concat(flattenErrors(item));
+      });
+    } else if (typeof errorData === "object" && errorData !== null) {
+      Object.values(errorData).forEach((value) => {
+        messages = messages.concat(flattenErrors(value));
+      });
+    }
+    return messages;
+  };
+
   const renderParentSearch = () => {
     return (
       <div className="space-y-4 mt-4">
@@ -126,8 +165,6 @@ const AddStudents = () => {
           }}
           className="w-full p-2 border rounded-md"
         />
-
-        {/* Parent Search Results */}
         {parentSearchTerm && filteredParents.length > 0 && (
           <div className="border rounded-md max-h-40 overflow-y-auto">
             {filteredParents.map((parent) => (
@@ -165,8 +202,6 @@ const AddStudents = () => {
             ))}
           </div>
         )}
-
-        {/* Selected Parents Display */}
         <div className="space-y-2">
           <label className="block font-medium text-gray-700">Selected Parents</label>
           {selectedParentRelationship.length > 0 ? (
@@ -209,23 +244,8 @@ const AddStudents = () => {
     }
   };
 
-  const flattenErrors = (errors) => {
-    let flattenedErrors = [];
-  
-    const flatten = (obj, path = "") => {
-      for (const key in obj) {
-        if (typeof obj[key] === "object" && !Array.isArray(obj[key])) {
-          flatten(obj[key], path ? `${path}.${key}` : key);
-        } else {
-          flattenedErrors.push(`${path ? `${path}.` : ""}${key}: ${obj[key].join(" ")}`);
-        }
-      }
-    };
-  
-    flatten(errors);
-    return flattenedErrors;
-  };
-  
+
+
   const studentFormik = useFormik({
     initialValues,
     validationSchema,
@@ -274,27 +294,35 @@ const AddStudents = () => {
 
       try {
         const response = await api.post("school_admin/add_students/", formData, {
-            headers: {
-                "Content-Type": "multipart/form-data",
-            },
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
         });
 
         if (response.status === 201) {
-            toast.success("Student added successfully");
-            resetForm();
-            setSelectedParentRelationship([]);
-            setProfile(null);
-            navigate("/admin/show_students");
+          toast.success("Student added successfully");
+          resetForm();
+          setSelectedParentRelationship([]);
+          setProfile(null);
+          navigate("/admin/show_students");
         } else {
-          toast.error("An error occurred while adding the student.");
-          if (response.data?.errors) {
-            const flattenedErrors = flattenErrors(response.data.errors);
-            flattenedErrors.forEach((error) => toast.error(error));
-          }
+          const flattenedErrors = flattenErrors(response.data);
+          flattenedErrors.forEach((error) => toast.error(error));
         }
       } catch (error) {
-        toast.error("An unexpected error occurred.");
-        console.error("Error adding student:", error);
+        console.error("Error adding parent:", error.response?.data);
+        const errorData = error?.response?.data;
+
+        if (errorData) {
+          const flattened = flattenErrors(errorData);
+          if (flattened.length > 0) {
+            setErrorMessages(flattened);
+          } else {
+            setErrorMessages(["An error occurred while adding the parent."]);
+          }
+        } else {
+          setErrorMessages(["An error occurred while adding the parent."]);
+        }
       } finally {
         setIsSubmitting(false);
       }
@@ -311,7 +339,10 @@ const AddStudents = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-8 bg-white border border-gray-200 rounded shadow-lg">
-            <ToastContainer />
+      <ToastContainer />
+      {errorMessages.length > 0 && (
+        <ErrorAlert messages={errorMessages} onClose={() => setErrorMessages([])} />
+      )}
       <h2 className="text-3xl font-bold mb-6 text-center font-montserrat">Add Student</h2>
       <hr />
       <form
@@ -321,19 +352,19 @@ const AddStudents = () => {
         }}
         encType="multipart/form-data"
       >
-       <div className="my-5">
-  {profile ? (
-    <img
-      className="rounded-full w-40 h-40 border-2 border-black object-contain p-1"
-      src={URL.createObjectURL(profile)} 
-      alt="Profile Preview"
-    />
-  ) : (
-    <div className="rounded-full w-40 h-40 border-2 border-black flex items-center justify-center bg-gray-100">
-      <User className="w-32 h-32 text-gray-600 " />
-    </div>
-  )}
-</div>
+        <div className="my-5 flex flex-col items-center">
+          {profile ? (
+            <img
+              className="rounded-full w-40 h-40 border-2 border-black object-contain p-1"
+              src={URL.createObjectURL(profile)}
+              alt="Profile Preview"
+            />
+          ) : (
+            <div className="rounded-full w-40 h-40 border-2 border-black flex items-center justify-center bg-gray-100">
+              <User className="w-32 h-32 text-gray-600 " />
+            </div>
+          )}
+        </div>
         <div className="mb-4">
           <label className="block font-medium text-gray-700">Profile Image</label>
           <input
@@ -349,8 +380,6 @@ const AddStudents = () => {
             <p className="text-red-500 text-sm">{studentFormik.errors.profileImage}</p>
           )}
         </div>
-
-        {/* Dynamic Form Inputs */}
         <div className="grid grid-cols-2 gap-4">
           {inputs.map(({ name, label, type }) => (
             <div key={name}>
@@ -403,15 +432,12 @@ const AddStudents = () => {
                   className="border p-2 w-full rounded"
                 />
               )}
-
               {studentFormik.touched[name] && studentFormik.errors[name] && (
                 <p className="text-red-500 text-sm">{studentFormik.errors[name]}</p>
               )}
             </div>
           ))}
         </div>
-
-        {/* Class and Section Selection */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           <div className="mb-4">
             <label className="block font-medium text-gray-700">Class</label>
@@ -436,7 +462,6 @@ const AddStudents = () => {
               <p className="text-red-500 text-sm">{studentFormik.errors.class}</p>
             )}
           </div>
-
           <div className="mb-4">
             <label className="block font-medium text-gray-700">Section</label>
             <select
@@ -456,10 +481,7 @@ const AddStudents = () => {
             )}
           </div>
         </div>
-
-        {/* Parent Search and Selection */}
         {renderParentSearch()}
-
         <div className="mt-6 text-end">
           <button
             type="submit"

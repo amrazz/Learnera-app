@@ -31,7 +31,6 @@ const ParentInfo = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showBlockModal, setShowBlockModal] = useState(false);
-
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const navigate = useNavigate();
 
@@ -41,7 +40,7 @@ const ParentInfo = () => {
         const response = await api.get(`school_admin/parents/${parentId}`);
         if (response.status === 200) {
           setParent(response.data);
-          setStudents(response.data.student_relationship)
+          setStudents(response.data.student_relationship);
         } else {
           setError("Failed to fetch parent details. Please try again.");
         }
@@ -65,6 +64,7 @@ const ParentInfo = () => {
     }
     setShowDeleteModal(false);
   };
+
   const handleBlockUnblock = async () => {
     try {
       const endpoint = `school_admin/parents/${parentId}/block/`;
@@ -103,7 +103,6 @@ const ParentInfo = () => {
     );
   }
 
-
   if (!parent) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -111,8 +110,6 @@ const ParentInfo = () => {
       </div>
     );
   }
-
-
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -136,7 +133,7 @@ const ParentInfo = () => {
         confirmText={parent.user.is_active ? "Block" : "Unblock"}
       />
 
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col space-y-5 md:flex-row md:items-center md:justify-between mb-6">
         <div className="flex items-center">
           <Link
             to="/admin/show_parents"
@@ -144,83 +141,91 @@ const ParentInfo = () => {
           >
             <ArrowLeft className="h-6 w-6" />
           </Link>
-          <h1 className="text-3xl font-bold text-gray-800">Parent Profile</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Parent Profile</h1>
         </div>
-        <div className="flex items-center gap-4">
+        
+        <div className="flex flex-wrap gap-2 md:gap-4 items-center justify-center">
           <Link
             to={`/admin/parent_info/${parentId}/edit`}
-            className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-600 flex items-center transition-all duration-300"
+            className="bg-blue-500 text-white px-3 py-2 md:px-4 md:py-2 rounded-lg shadow-md hover:bg-blue-600 flex items-center transition-all duration-300 text-sm md:text-base"
           >
-            <Edit className="mr-2 h-5 w-5" />
+            <Edit className="mr-2 h-4 w-4 md:h-5 md:w-5" />
             <span>Edit</span>
           </Link>
 
           <button
             onClick={() => setShowDeleteModal(true)}
-            className="bg-red-500 text-white px-4 py-2 rounded-lg shadow-md hover:bg-red-600 flex items-center transition-all duration-300"
+            className="bg-red-500 text-white px-3 py-2 md:px-4 md:py-2 rounded-lg shadow-md hover:bg-red-600 flex items-center transition-all duration-300 text-sm md:text-base"
           >
-            <Delete className="mr-2 h-5 w-5" />
+            <Delete className="mr-2 h-4 w-4 md:h-5 md:w-5" />
             <span>Delete</span>
           </button>
 
           <button
             onClick={() => setShowBlockModal(true)}
-            className={`px-4 py-2 rounded-lg shadow-md flex items-center transition-all duration-300 ${
+            className={`px-3 py-2 md:px-4 md:py-2 rounded-lg shadow-md flex items-center transition-all duration-300 text-sm md:text-base ${
               parent.user.is_active 
                 ? "bg-orange-500 hover:bg-orange-600 text-white"
                 : "bg-green-500 hover:bg-green-600 text-white"
             }`}
           >
             {parent.user.is_active ? (
-              <Lock className="mr-2 h-5 w-5" />
+              <Lock className="mr-2 h-4 w-4 md:h-5 md:w-5" />
             ) : (
-              <Unlock className="mr-2 h-5 w-5" />
+              <Unlock className="mr-2 h-4 w-4 md:h-5 md:w-5" />
             )}
             <span>{parent.user.is_active ? "Block" : "Unblock"}</span>
           </button>
         </div>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
-      <ToastContainer />
-        <div className="md:col-span-1 bg-white shadow-md rounded-lg p-6 h-fit">
+      <div className="flex-row space-y-6 md:flex justify-center  gap-6">
+        <ToastContainer />
+        
+
+        <div className="lg:col-span-1 bg-white shadow-md rounded-lg p-12 h-fit">
           <div className="flex flex-col items-center">
-            <div className="w-32 h-32 mb-4">
+            <div className="w-24 h-24 md:w-32 md:h-32 mb-4">
               {parent.user.profile_image ? (
                 <img
-                  className="w-32 h-32 rounded-full object-cover border-4 border-blue-100"
-                  src={`http://127.0.0.1:8000/${parent.user.profile_image}`}
+                  className="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-blue-100"
+                  src={`https://learnerapp.site/${parent.user.profile_image}`}
                   alt={`${parent.user.first_name} ${parent.user.last_name}`}
                 />
               ) : (
-                <div className="w-32 h-32 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-4xl font-bold text-blue-600">
-                    {parent.user.first_name[0]}
-                    {parent.user.last_name[0]}
+                <div className="w-24 h-24 md:w-32 md:h-32 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-3xl md:text-4xl font-bold text-blue-600">
+                    {parent.user.first_name && parent.user.first_name[0]}
+                    {parent.user.last_name && parent.user.last_name[0]}
                   </span>
                 </div>
               )}
             </div>
-            <h2 className="text-2xl font-semibold text-gray-800">
-              {parent.user.username} 
+            <h2 className="text-xl md:text-2xl font-semibold text-gray-800 text-center">
+              {parent.user.username}
             </h2>
-            <p className="text-gray-500">{parent.user.email}</p>
-            <p className="text-gray-500 mt-2">{parent.occupation}</p>
+            <p className="text-gray-500 text-center">{parent.user.email}</p>
+            {parent.occupation && (
+              <p className="text-gray-500 mt-2 text-center">
+                {parent.occupation}
+              </p>
+            )}
           </div>
         </div>
 
-        <div className="md:col-span-2 bg-white shadow-md rounded-lg p-6">
-          <h3 className="text-xl font-semibold text-gray-800 mb-4 border-b pb-2">
+        <div className="lg:col-span-2 bg-white shadow-md rounded-lg p-4 md:p-6">
+          <h3 className="text-lg md:text-xl font-semibold text-gray-800 mb-4 border-b pb-2">
             Parent Information
           </h3>
-          <div className="grid md:grid-cols-2 gap-4">
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
             <div className="space-y-3">
               <ConditionalDetailRow
-                icon={<Mail className="h-5 w-5 text-blue-500" />}
+                icon={<User className="h-5 w-5 text-blue-500" />}
                 label="First Name"
                 value={parent.user.first_name}
               />
-               <ConditionalDetailRow
+              <ConditionalDetailRow
                 icon={<Mail className="h-5 w-5 text-blue-500" />}
                 label="Email"
                 value={parent.user.email}
@@ -242,8 +247,8 @@ const ParentInfo = () => {
               />
             </div>
             <div className="space-y-3">
-            <ConditionalDetailRow
-                icon={<Mail className="h-5 w-5 text-blue-500" />}
+              <ConditionalDetailRow
+                icon={<User className="h-5 w-5 text-blue-500" />}
                 label="Last Name"
                 value={parent.user.last_name}
               />
@@ -270,21 +275,21 @@ const ParentInfo = () => {
             </div>
           </div>
 
-          <h3 className="text-xl font-semibold text-gray-800 mt-6 mb-4 border-b pb-2">
+          <h3 className="text-lg md:text-xl font-semibold text-gray-800 mt-6 mb-4 border-b pb-2">
             Associated Students
           </h3>
-          <div className="grid gap-4">
+          <div className="grid gap-3 md:gap-4">
             {students && students.length > 0 ? (
               students.map((student) => (
-                <div key={student.student_id} className="bg-gray-50 p-4 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <Users className="h-5 w-5 text-blue-500 mr-3" />
+                <div key={student.student_id} className="bg-gray-50 p-3 md:p-4 rounded-lg">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center mb-2 sm:mb-0">
+                      <Users className="h-5 w-5 text-blue-500 mr-3 flex-shrink-0" />
                       <div>
                         <p className="font-medium text-gray-800">
                           {student.student_name}
                         </p>
-                        <div className="flex gap-4 text-sm text-gray-500">
+                        <div className="flex flex-wrap gap-2 md:gap-4 text-sm text-gray-500">
                           <span className="flex items-center">
                             <User className="h-4 w-4 mr-1" />
                             {student.admission_number}
@@ -298,7 +303,7 @@ const ParentInfo = () => {
                     </div>
                     <Link
                       to={`/admin/student_info/${student.student_id}`}
-                      className="text-blue-500 hover:text-blue-600"
+                      className="text-blue-500 hover:text-blue-600 text-sm md:text-base mt-2 sm:mt-0"
                     >
                       View Details
                     </Link>
@@ -316,13 +321,13 @@ const ParentInfo = () => {
 };
 
 const ConditionalDetailRow = ({ icon, label, value }) => (
-  <div className="flex items-center bg-gray-50 p-3 rounded-lg">
-    <div className="mr-4">{icon}</div>
-    <div>
-      <p className="text-sm text-gray-500">{label}</p>
-      <p className="font-medium text-gray-800">{value}</p>
+  <div className="flex items-center bg-gray-50 p-2 md:p-3 rounded-lg">
+    <div className="mr-3 md:mr-4 flex-shrink-0">{icon}</div>
+    <div className="overflow-hidden">
+      <p className="text-xs md:text-sm text-gray-500">{label}</p>
+      <p className="font-medium text-gray-800 text-sm md:text-base truncate">{value || "-"}</p>
     </div>
   </div>
 );
 
-export default ParentInfo
+export default ParentInfo;

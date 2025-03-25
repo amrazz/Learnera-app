@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -159,6 +159,7 @@ const PaymentHistory = () => {
 
   return (
     <Card className="w-full">
+      <ToastContainer />
       <CardHeader>
         <CardTitle className="text-2xl font-bold">Payment History</CardTitle>
         <CardDescription>

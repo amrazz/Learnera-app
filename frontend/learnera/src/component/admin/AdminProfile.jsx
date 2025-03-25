@@ -1,23 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { Edit2, Save, Key } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import React, { useState, useEffect } from "react";
+import { Edit2, Save, Key } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import api from '../../api';
-import { toast, ToastContainer } from 'react-toastify';
-import { HashLoader } from 'react-spinners';
+import api from "../../api";
+import { toast, ToastContainer } from "react-toastify";
+import { HashLoader } from "react-spinners";
 
 const PasswordChangeDialog = ({ isOpen, onClose }) => {
   const [passwords, setPasswords] = useState({
-    current_password: '',
-    new_password: '',
-    confirm_password: ''
+    current_password: "",
+    new_password: "",
+    confirm_password: "",
   });
 
   const handleSubmit = async (e) => {
@@ -27,14 +27,16 @@ const PasswordChangeDialog = ({ isOpen, onClose }) => {
       return;
     }
     try {
-      await api.post('school_admin/change_password/', {
+      await api.post("school_admin/change_password/", {
         current_password: passwords.current_password,
-        new_password: passwords.new_password
+        new_password: passwords.new_password,
       });
       toast.success("Password changed successfully");
       onClose();
     } catch (err) {
-      toast.error(err.response?.data?.current_password || 'Failed to change password');
+      toast.error(
+        err.response?.data?.current_password || "Failed to change password"
+      );
     }
   };
 
@@ -51,9 +53,9 @@ const PasswordChangeDialog = ({ isOpen, onClose }) => {
               type="password"
               value={passwords.current_password}
               onChange={(e) =>
-                setPasswords(prev => ({
+                setPasswords((prev) => ({
                   ...prev,
-                  current_password: e.target.value
+                  current_password: e.target.value,
                 }))
               }
             />
@@ -64,9 +66,9 @@ const PasswordChangeDialog = ({ isOpen, onClose }) => {
               type="password"
               value={passwords.new_password}
               onChange={(e) =>
-                setPasswords(prev => ({
+                setPasswords((prev) => ({
                   ...prev,
-                  new_password: e.target.value
+                  new_password: e.target.value,
                 }))
               }
             />
@@ -77,9 +79,9 @@ const PasswordChangeDialog = ({ isOpen, onClose }) => {
               type="password"
               value={passwords.confirm_password}
               onChange={(e) =>
-                setPasswords(prev => ({
+                setPasswords((prev) => ({
                   ...prev,
-                  confirm_password: e.target.value
+                  confirm_password: e.target.value,
                 }))
               }
             />
@@ -88,9 +90,7 @@ const PasswordChangeDialog = ({ isOpen, onClose }) => {
             <Button type="button" variant="ghost" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit">
-              Change Password
-            </Button>
+            <Button type="submit">Change Password</Button>
           </div>
         </form>
       </DialogContent>
@@ -102,22 +102,22 @@ const AdminProfile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [showColorPalette, setShowColorPalette] = useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
-  
-  const [gradientStart, setGradientStart] = useState('#0D2E76');
-  const [gradientEnd, setGradientEnd] = useState('#1842DC');
+
+  const [gradientStart, setGradientStart] = useState("#0D2E76");
+  const [gradientEnd, setGradientEnd] = useState("#1842DC");
   const [profileData, setProfileData] = useState({
-    school_name: '',
-    school_type: '',
-    phone_number: '',
-    address: '',
-    city: '',
-    state: '',
-    district: '',
-    country: '',
+    school_name: "",
+    school_type: "",
+    phone_number: "",
+    address: "",
+    city: "",
+    state: "",
+    district: "",
+    country: "",
     profile_image: null,
     school_logo: null,
-    username: '',
-    email: '',
+    username: "",
+    email: "",
   });
   const [originalData, setOriginalData] = useState({ ...profileData });
   const [loading, setLoading] = useState(true);
@@ -127,34 +127,34 @@ const AdminProfile = () => {
 
   // Helper function to initialize profile data
   const initializeProfileData = (data) => ({
-    school_name: data.school_name || '',
-    school_type: data.school_type || '',
-    phone_number: data.phone_number || '',
-    address: data.address || '',
-    city: data.city || '',
-    state: data.state || '',
-    district: data.district || '',
-    country: data.country || '',
+    school_name: data.school_name || "",
+    school_type: data.school_type || "",
+    phone_number: data.phone_number || "",
+    address: data.address || "",
+    city: data.city || "",
+    state: data.state || "",
+    district: data.district || "",
+    country: data.country || "",
     profile_image: data.profile_image || null,
     school_logo: data.school_logo || null,
-    username: data.username || '',
-    email: data.email || '',
+    username: data.username || "",
+    email: data.email || "",
   });
 
   const fetchProfileData = async () => {
     try {
-      const response = await api.get('school_admin/profile/');
+      const response = await api.get("school_admin/profile/");
       const data = response.data;
       const initializedData = initializeProfileData(data);
       setProfileData(initializedData);
       setOriginalData(initializedData);
       setLoading(false);
       if (initializedData.username) {
-        localStorage.setItem('adminUsername', initializedData.username);
+        localStorage.setItem("adminUsername", initializedData.username);
       }
     } catch (err) {
       toast.error(err);
-      setError('Failed to fetch profile data');
+      setError("Failed to fetch profile data");
       setLoading(false);
     }
   };
@@ -166,8 +166,12 @@ const AdminProfile = () => {
   // Once username is available, load stored gradient colors
   useEffect(() => {
     if (profileData.username) {
-      const storedStart = localStorage.getItem(`adminGradientStart_${profileData.username}`);
-      const storedEnd = localStorage.getItem(`adminGradientEnd_${profileData.username}`);
+      const storedStart = localStorage.getItem(
+        `adminGradientStart_${profileData.username}`
+      );
+      const storedEnd = localStorage.getItem(
+        `adminGradientEnd_${profileData.username}`
+      );
       if (storedStart) setGradientStart(storedStart);
       if (storedEnd) setGradientEnd(storedEnd);
     }
@@ -176,33 +180,42 @@ const AdminProfile = () => {
   // Update localStorage with admin-specific keys and update CSS variables
   useEffect(() => {
     if (profileData.username) {
-      localStorage.setItem(`adminGradientStart_${profileData.username}`, gradientStart);
-      localStorage.setItem(`adminGradientEnd_${profileData.username}`, gradientEnd);
+      localStorage.setItem(
+        `adminGradientStart_${profileData.username}`,
+        gradientStart
+      );
+      localStorage.setItem(
+        `adminGradientEnd_${profileData.username}`,
+        gradientEnd
+      );
     }
-    document.documentElement.style.setProperty('--gradient-start', gradientStart);
-    document.documentElement.style.setProperty('--gradient-end', gradientEnd);
+    document.documentElement.style.setProperty(
+      "--gradient-start",
+      gradientStart
+    );
+    document.documentElement.style.setProperty("--gradient-end", gradientEnd);
   }, [gradientStart, gradientEnd, profileData.username]);
 
   const extraFields = {
-    username: profileData.username || '',
-    email: profileData.email || '',
+    username: profileData.username || "",
+    email: profileData.email || "",
   };
 
   const handleInputChange = (field, value) => {
-    setProfileData(prev => ({
+    setProfileData((prev) => ({
       ...prev,
-      [field]: value || ''
+      [field]: value || "",
     }));
   };
 
   const handleFileChange = (field, event) => {
     const file = event.target.files[0];
     if (file) {
-      setProfileData(prev => ({
+      setProfileData((prev) => ({
         ...prev,
-        [field]: file
+        [field]: file,
       }));
-      if (field === 'school_logo') {
+      if (field === "school_logo") {
         // Update preview URL for school_logo
         const objectURL = URL.createObjectURL(file);
         setSchoolLogoPreview(objectURL);
@@ -213,7 +226,7 @@ const AdminProfile = () => {
   // Cleanup object URL when schoolLogoPreview changes or component unmounts
   useEffect(() => {
     return () => {
-      if (schoolLogoPreview && schoolLogoPreview.startsWith('blob:')) {
+      if (schoolLogoPreview && schoolLogoPreview.startsWith("blob:")) {
         URL.revokeObjectURL(schoolLogoPreview);
       }
     };
@@ -222,8 +235,8 @@ const AdminProfile = () => {
   const handleSave = async () => {
     try {
       const formData = new FormData();
-      Object.keys(profileData).forEach(key => {
-        if (key === 'profile_image' || key === 'school_logo') {
+      Object.keys(profileData).forEach((key) => {
+        if (key === "profile_image" || key === "school_logo") {
           if (profileData[key] instanceof File) {
             formData.append(key, profileData[key]);
           }
@@ -234,10 +247,10 @@ const AdminProfile = () => {
         }
       });
 
-      const response = await api.patch('school_admin/profile/', formData, {
+      const response = await api.patch("school_admin/profile/", formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
-        }
+          "Content-Type": "multipart/form-data",
+        },
       });
 
       const updatedData = initializeProfileData(response.data);
@@ -246,7 +259,7 @@ const AdminProfile = () => {
       setIsEditing(false);
       toast.success("Profile updated successfully");
     } catch (err) {
-      console.error('Error saving profile:', err);
+      console.error("Error saving profile:", err);
       toast.error("Error saving profile");
     }
   };
@@ -269,16 +282,31 @@ const AdminProfile = () => {
     <div className="min-h-screen bg-gray-100 p-4">
       <ToastContainer />
       <Card className="max-w-4xl mx-auto">
-        <div 
+        <div
           className="h-48 relative rounded-t-lg bg-cover bg-center"
-          style={{ 
-            backgroundImage: `linear-gradient(to top right, ${gradientStart}, ${gradientEnd}), url(${typeof profileData.school_logo === 'string' ? profileData.school_logo : "/api/placeholder/1200/400"})`
+          style={{
+            backgroundImage: `linear-gradient(to top right, ${gradientStart}, ${gradientEnd}), url(${
+              typeof profileData.school_logo === "string"
+                ? profileData.school_logo
+                : "/api/placeholder/1200/400"
+            })`,
           }}
         >
           <div className="absolute -bottom-16 left-8">
             <div className="w-32 h-32 rounded-full border-4 border-white overflow-hidden bg-white">
-              <img 
-                src={profileData.profile_image || "/api/placeholder/128/128"}
+              <img
+                src={
+                  profileData.profile_image
+                    ? profileData.profile_image
+                    : typeof profileData.profile_image === "string"
+                    ? profileData.profile_image.includes("127.0.0.1:8000")
+                      ? profileData.profile_image.replace(
+                          "http://127.0.0.1:8000",
+                          "https://learnerapp.site"
+                        )
+                      : profileData.school_logo
+                    : "/api/placeholder/128/128"
+                }
                 alt="Profile"
                 className="w-full h-full object-cover"
               />
@@ -286,14 +314,25 @@ const AdminProfile = () => {
           </div>
           <div className="absolute -bottom-16 right-8">
             <div className="w-32 h-32 rounded-full border-4 border-white overflow-hidden bg-white">
-              <img 
-                src={profileData.school_logo}
+              <img
+                src={
+                  schoolLogoPreview
+                    ? schoolLogoPreview
+                    : typeof profileData.school_logo === "string"
+                    ? profileData.school_logo.includes("127.0.0.1:8000")
+                      ? profileData.school_logo.replace(
+                          "http://127.0.0.1:8000",
+                          "https://learnerapp.site"
+                        )
+                      : profileData.school_logo
+                    : "/api/placeholder/128/128"
+                }
                 alt="Profile"
                 className="w-full h-full object-cover"
               />
             </div>
           </div>
-          
+
           <div className="absolute top-4 right-4 flex gap-2">
             <div className="space-y-2">
               <Button
@@ -307,18 +346,26 @@ const AdminProfile = () => {
             </div>
             {isEditing ? (
               <>
-                <Button onClick={handleSave} variant="secondary" className="flex items-center gap-2">
+                <Button
+                  onClick={handleSave}
+                  variant="secondary"
+                  className="flex items-center gap-2"
+                >
                   <Save size={16} />
                   Save
                 </Button>
-                <Button onClick={handleCancel} variant="ghost" className="bg-white">
+                <Button
+                  onClick={handleCancel}
+                  variant="ghost"
+                  className="bg-white"
+                >
                   Cancel
                 </Button>
               </>
             ) : (
-              <Button 
-                onClick={() => setIsEditing(true)} 
-                variant="secondary" 
+              <Button
+                onClick={() => setIsEditing(true)}
+                variant="secondary"
                 className="flex items-center gap-2"
               >
                 <Edit2 size={16} />
@@ -331,10 +378,12 @@ const AdminProfile = () => {
         <CardContent className="pt-20">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-600">Username</label>
+              <label className="text-sm font-medium text-gray-600">
+                Username
+              </label>
               <Input
                 value={extraFields.username}
-                onChange={(e) => handleInputChange('username', e.target.value)}
+                onChange={(e) => handleInputChange("username", e.target.value)}
                 disabled={!isEditing}
                 className="w-full"
               />
@@ -343,21 +392,26 @@ const AdminProfile = () => {
               <label className="text-sm font-medium text-gray-600">Email</label>
               <Input
                 value={extraFields.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
+                onChange={(e) => handleInputChange("email", e.target.value)}
                 disabled={!isEditing}
                 className="w-full"
               />
             </div>
             {Object.entries(profileData).map(([key, value]) => {
-              if (['school_logo', 'username', 'email', 'profile_image'].includes(key)) return null;
+              if (
+                ["school_logo", "username", "email", "profile_image"].includes(
+                  key
+                )
+              )
+                return null;
               return (
                 <div key={key} className="space-y-2">
                   <label className="text-sm font-medium text-gray-600 capitalize">
-                    {key.replace(/_/g, ' ')}
+                    {key.replace(/_/g, " ")}
                   </label>
-                  {key === 'school_type' ? (
+                  {key === "school_type" ? (
                     <select
-                      value={value || ''}
+                      value={value || ""}
                       onChange={(e) => handleInputChange(key, e.target.value)}
                       disabled={!isEditing}
                       className="w-full border rounded-md p-2"
@@ -369,11 +423,11 @@ const AdminProfile = () => {
                     </select>
                   ) : (
                     <Input
-                      value={value || ''}
+                      value={value || ""}
                       onChange={(e) => handleInputChange(key, e.target.value)}
                       disabled={!isEditing}
                       className="w-full"
-                      placeholder={`Enter ${key.replace(/_/g, ' ')}`}
+                      placeholder={`Enter ${key.replace(/_/g, " ")}`}
                     />
                   )}
                 </div>
@@ -384,17 +438,19 @@ const AdminProfile = () => {
           {/* Only show the file input for school_logo in editing mode */}
           {isEditing && (
             <div className="space-y-2 mt-6">
-              <label className="text-sm font-medium text-gray-600">Upload School Logo</label>
-              <input 
+              <label className="text-sm font-medium text-gray-600">
+                Upload School Logo
+              </label>
+              <input
                 type="file"
                 accept="image/*"
-                onChange={(e) => handleFileChange('school_logo', e)}
+                onChange={(e) => handleFileChange("school_logo", e)}
                 className="block"
               />
               {schoolLogoPreview && (
-                <img 
-                  src={schoolLogoPreview} 
-                  alt="School Logo Preview" 
+                <img
+                  src={schoolLogoPreview}
+                  alt="School Logo Preview"
                   className="w-40 h-auto mt-2 border rounded"
                 />
               )}
@@ -402,19 +458,23 @@ const AdminProfile = () => {
           )}
 
           <div className="mt-6">
-            <Button 
+            <Button
               onClick={() => setShowColorPalette(!showColorPalette)}
               variant="outline"
             >
-              {showColorPalette ? 'Hide Theme Settings' : 'Theme Settings'}
+              {showColorPalette ? "Hide Theme Settings" : "Theme Settings"}
             </Button>
 
             {showColorPalette && (
               <div className="mt-4 p-4 border rounded-lg">
-                <h3 className="text-sm font-medium mb-3">Customize Theme Gradient</h3>
+                <h3 className="text-sm font-medium mb-3">
+                  Customize Theme Gradient
+                </h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium mb-1">Start Color</label>
+                    <label className="block text-sm font-medium mb-1">
+                      Start Color
+                    </label>
                     <div className="flex items-center gap-2">
                       <input
                         type="color"
@@ -422,7 +482,7 @@ const AdminProfile = () => {
                         onChange={(e) => setGradientStart(e.target.value)}
                         className="w-16 h-8"
                       />
-                      <Input 
+                      <Input
                         value={gradientStart}
                         onChange={(e) => setGradientStart(e.target.value)}
                         className="w-32"
@@ -430,7 +490,9 @@ const AdminProfile = () => {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">End Color</label>
+                    <label className="block text-sm font-medium mb-1">
+                      End Color
+                    </label>
                     <div className="flex items-center gap-2">
                       <input
                         type="color"
@@ -438,14 +500,14 @@ const AdminProfile = () => {
                         onChange={(e) => setGradientEnd(e.target.value)}
                         className="w-16 h-8"
                       />
-                      <Input 
+                      <Input
                         value={gradientEnd}
                         onChange={(e) => setGradientEnd(e.target.value)}
                         className="w-32"
                       />
                     </div>
                     <div className="flex justify-end">
-                      <Button 
+                      <Button
                         onClick={() => window.location.reload()}
                         variant="secondary"
                         className="mt-4"
@@ -454,7 +516,12 @@ const AdminProfile = () => {
                       </Button>
                     </div>
                   </div>
-                  <div className="h-20 rounded-lg" style={{ background: `linear-gradient(to bottom, ${gradientStart}, ${gradientEnd})` }}>
+                  <div
+                    className="h-20 rounded-lg"
+                    style={{
+                      background: `linear-gradient(to bottom, ${gradientStart}, ${gradientEnd})`,
+                    }}
+                  >
                     <div className="h-full flex items-center justify-center text-white">
                       Preview
                     </div>

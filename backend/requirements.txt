@@ -70,4 +70,3 @@ tqdm==4.67.1
 tzdata==2024.2
 typing_extensions==4.12.2
 urllib3==2.3.0
-validate-emai

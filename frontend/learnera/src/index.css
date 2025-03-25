@@ -10,6 +10,27 @@
   transition: transform 0.3s ease-in-out
 }
 
+@layer utilities {
+  /* Hide scrollbar by default */
+  .sidebar-scrollbar {
+    scrollbar-width: none; /* Firefox */
+  }
+  .sidebar-scrollbar::-webkit-scrollbar {
+    width: 0; /* Chrome, Safari, Opera */
+  }
+  /* On hover, show the scrollbar */
+  .sidebar-scrollbar:hover {
+    scrollbar-width: thin;
+  }
+  .sidebar-scrollbar:hover::-webkit-scrollbar {
+    width: 8px;
+  }
+  .sidebar-scrollbar:hover::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.5); /* You can tweak this color */
+    border-radius: 4px;
+  }
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

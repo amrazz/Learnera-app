@@ -7,6 +7,27 @@ import { HashLoader } from "react-spinners";
 import api from "../../../api";
 import { User } from "lucide-react";
 
+
+const ErrorAlert = ({ messages, onClose }) => (
+  <div
+    className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4"
+    role="alert"
+  >
+    <strong className="font-bold">Error!</strong>
+    <ul className="list-disc pl-5">
+      {messages.map((msg, idx) => (
+        <li key={idx}>{msg}</li>
+      ))}
+    </ul>
+    <button
+      onClick={onClose}
+      className="absolute top-0 right-0 px-2 py-1 text-red-700 hover:text-red-900"
+    >
+      &times;
+    </button>
+  </div>
+);
+
 const AddTeachers = () => {
   const [profile, setProfile] = useState(null);
   const [documents, setDocuments] = useState([]);
@@ -14,6 +35,7 @@ const AddTeachers = () => {
   const [subjects, setSubjects] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [isNewSubject, setIsNewSubject] = useState(false);
+  const [errorMessages, setErrorMessages] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -33,6 +55,22 @@ const AddTeachers = () => {
     };
     fetch_subject();
   }, []);
+
+  const flattenErrors = (errorData) => {
+    let messages = [];
+    if (typeof errorData === "string") {
+      messages.push(errorData);
+    } else if (Array.isArray(errorData)) {
+      errorData.forEach((item) => {
+        messages = messages.concat(flattenErrors(item));
+      });
+    } else if (typeof errorData === "object" && errorData !== null) {
+      Object.values(errorData).forEach((value) => {
+        messages = messages.concat(flattenErrors(value));
+      });
+    }
+    return messages;
+  };
 
   const teacherFormik = useFormik({
     initialValues: {
@@ -109,8 +147,19 @@ const AddTeachers = () => {
           resetForm();
         }
       } catch (error) {
-        console.error("Error adding teacher:", error.response?.data || error);
-        toast.error("Failed to create teacher");
+        console.error("Error adding parent:", error.response?.data);
+        const errorData = error?.response?.data;
+
+        if (errorData) {
+          const flattened = flattenErrors(errorData);
+          if (flattened.length > 0) {
+            setErrorMessages(flattened);
+          } else {
+            setErrorMessages(["An error occurred while adding the parent."]);
+          }
+        } else {
+          setErrorMessages(["An error occurred while adding the parent."]);
+        }
       } finally {
         setSubmitting(false);
       }
@@ -151,6 +200,9 @@ const AddTeachers = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-8 bg-white border border-gray-200 rounded shadow-lg">
+      {errorMessages.length > 0 && (
+        <ErrorAlert messages={errorMessages} onClose={() => setErrorMessages([])} />
+      )}
       <h2 className="text-3xl font-bold mb-6 text-center font-montserrat">
         Add Teacher
       </h2>
@@ -194,6 +246,9 @@ const AddTeachers = () => {
               );
             }}
           />
+          {teacherFormik.touched.profileImage && teacherFormik.errors.profileImage && (
+            <p className="text-red-500 text-sm">{teacherFormik.errors.profileImage}</p>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-4">

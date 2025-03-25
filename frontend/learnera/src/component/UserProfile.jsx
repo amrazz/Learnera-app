@@ -192,15 +192,7 @@ const UserProfile = () => {
     }));
   };
 
-  const handleFileChange = (field, event) => {
-    const file = event.target.files[0];
-    if (file) {
-      setProfileData((prev) => ({
-        ...prev,
-        [field]: file,
-      }));
-    }
-  };
+
 
   const handleSave = async () => {
     try {
@@ -318,10 +310,21 @@ const UserProfile = () => {
     );
   }
 
-  // Compute the background image URL with a fallback
+
   const schoolLogoUrl = profileData.school_logo
     ? profileData.school_logo
     : "/api/placeholder/1200/400";
+
+      const getProfileImageUrl = () => {
+        const {profile_image} = profileData;
+        if (!profile_image) return "";
+
+        if (profile_image.startsWith("http")) {
+          return profile_image;
+        }
+      
+        return `https"//learnerapp.site${profile_image}`
+      }
 
   return (
     <div className="min-h-screen bg-gray-100 p-4">
@@ -336,17 +339,11 @@ const UserProfile = () => {
           <div className="absolute -bottom-16 left-8">
             <div className="w-32 h-32 rounded-full border-4 border-white overflow-hidden bg-white">
               <img
-                src={`http://localhost:8000${profileData.profile_image}`}
+                src={getProfileImageUrl()}
                 alt="Profile"
                 className="w-full h-full object-cover"
               />
-              {isEditing && (
-                <Input
-                  type="file"
-                  onChange={(e) => handleFileChange("profile_image", e)}
-                  className="absolute inset-0 opacity-0 cursor-pointer"
-                />
-              )}
+              
             </div>
           </div>
 

@@ -17,9 +17,7 @@ const Students = () => {
       }
     };
     handleResize();
-
     window.addEventListener("resize", handleResize);
-
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
@@ -35,38 +33,49 @@ const Students = () => {
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside);
   }, [isMobile, activeMenu]);
 
   return (
     <div className="relative min-h-screen">
       {isMobile && activeMenu && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-20 transition-opacity duration-300"
           aria-hidden="true"
         />
       )}
 
       <div className="flex min-h-screen">
-        <div 
-          className={`sidebar-container fixed md:relative md:flex z-30 transition-transform duration-300 ${
-            isMobile 
-              ? activeMenu 
-                ? 'translate-x-0' 
-                : '-translate-x-full'
-              : 'translate-x-0'
+        {/* Sidebar container */}
+        <div
+          className={`sidebar-container fixed md:relative md:flex z-30 h-screen md:w-96 overflow-y-auto overflow-x-hidden transition-transform duration-300 ${
+            isMobile
+              ? activeMenu
+                ? "translate-x-0"
+                : "-translate-x-full"
+              : "translate-x-0"
           }`}
         >
           <div className="bg-[#0D2E76] h-full">
-            
-            <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
+            <Sidebar
+              activeMenu={activeMenu}
+              setActiveMenu={setActiveMenu}
+              isMobile={isMobile}
+            />
           </div>
         </div>
-        <div className="flex flex-col w-full">
-          <div className="sticky top-0 bg-white shadow-md z-10">
-            <Nav setActiveMenu={setActiveMenu} isMobile={isMobile} isMenuOpen={activeMenu} />
+
+        {/* Main content container */}
+        <div className="flex flex-col z-10 w-[130%] h-screen overflow-y-auto">
+          <div className="sticky top-0  bg-white shadow-md z-30">
+            <Nav
+              setActiveMenu={setActiveMenu}
+              isMobile={isMobile}
+              isMenuOpen={activeMenu}
+            />
           </div>
-          <div className="p-5 bg-gray-100 h-full">
+          <div className="p-5 bg-gray-100 z-10">
             <Sections />
             <BackToTop />
           </div>

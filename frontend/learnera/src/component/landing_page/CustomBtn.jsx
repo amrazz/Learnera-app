@@ -1,34 +1,17 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from "react";
+import { useNavigate } from "react-router-dom";
 
-export const CustomButton = ({ title }) => {
+export const CustomButton = ({ title, role }) => {
   const navigate = useNavigate();
-  
-  const handleRoleClick = () => {
-    let role = '';
-    switch (title) {
-      case "I'm a Student":
-        role = 'student';
-        break;
-      case "I'm a Tutor":
-        role = 'teacher';
-        break;
-      case "I'm a Parent":
-        role = 'parent';
-        break;
-      default:
-        role = 'student';
-    }
 
-    navigate('/login', { 
-      state: { selectedRole: role }
-    });
-  };
   
+
   return (
-    <div 
+    <div
       className="relative cursor-pointer inline-block text-lg group"
-      onClick={handleRoleClick}
+      onClick={() => {navigate("/login", {
+        state: { selectedRole: role },
+      })}}
     >
       <span className="relative z-10 block px-5 py-3 overflow-hidden font-medium leading-tight text-gray-800 transition-colors duration-300 ease-out border-2 border-gray-900 group-hover:text-white">
         <span className="absolute inset-0 w-full h-full px-5 py-3 bg-gray-50"></span>
@@ -39,4 +22,3 @@ export const CustomButton = ({ title }) => {
     </div>
   );
 };
-

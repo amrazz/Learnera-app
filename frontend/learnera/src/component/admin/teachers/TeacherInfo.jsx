@@ -4,23 +4,20 @@ import { toast, ToastContainer } from "react-toastify";
 import api from "../../../api";
 import {
   ArrowLeft,
+  User,
   Mail,
   PhoneCall,
+  Phone,
+  Cake,
   MapPin,
-  Home,
   Flag,
-  GraduationCap,
   Edit,
   Delete,
-  Unlock,
   Lock,
-  Cake,
-  Dna,
-  Phone,
-  School,
+  Unlock,
   BookOpen,
+  Dna,
   FileText,
-  Book
 } from "lucide-react";
 import { HashLoader } from "react-spinners";
 import Modal from "../../Modal";
@@ -44,7 +41,9 @@ const TeacherInfo = () => {
           setError("Failed to fetch teacher details. Please try again.");
         }
       } catch (error) {
-        setError(error.response?.data?.error || "Failed to fetch teacher details");
+        setError(
+          error.response?.data?.error || "Failed to fetch teacher details"
+        );
       } finally {
         setLoading(false);
       }
@@ -67,21 +66,27 @@ const TeacherInfo = () => {
   const handleBlockUnblock = async () => {
     try {
       const endpoint = `school_admin/teachers/${teacherId}/block/`;
-      const method = teacher.user.is_active ? 'post' : 'put';
-      
+      const method = teacher.user.is_active ? "post" : "put";
+
       await api[method](endpoint);
-      
-      setTeacher(prev => ({
+
+      setTeacher((prev) => ({
         ...prev,
         user: {
           ...prev.user,
-          is_active: !prev.user.is_active
-        }
+          is_active: !prev.user.is_active,
+        },
       }));
 
-      toast.success(`Teacher ${teacher.user.is_active ? 'blocked' : 'unblocked'} successfully!`);
+      toast.success(
+        `Teacher ${
+          teacher.user.is_active ? "blocked" : "unblocked"
+        } successfully!`
+      );
     } catch (error) {
-      toast.error(`Error ${teacher.user.is_active ? 'blocking' : 'unblocking'} teacher`);
+      toast.error(
+        `Error ${teacher.user.is_active ? "blocking" : "unblocking"} teacher`
+      );
     }
     setShowBlockModal(false);
   };
@@ -127,13 +132,16 @@ const TeacherInfo = () => {
         onClose={() => setShowBlockModal(false)}
         onConfirm={handleBlockUnblock}
         title={teacher.user.is_active ? "Block Teacher" : "Unblock Teacher"}
-        message={`Are you sure you want to ${teacher.user.is_active ? 'block' : 'unblock'} this teacher?`}
-        confirmButtonClass={teacher.user.is_active ? "bg-orange-500" : "bg-green-500"}
+        message={`Are you sure you want to ${
+          teacher.user.is_active ? "block" : "unblock"
+        } this teacher?`}
+        confirmButtonClass={
+          teacher.user.is_active ? "bg-orange-500" : "bg-green-500"
+        }
         confirmText={teacher.user.is_active ? "Block" : "Unblock"}
       />
 
-      <div className="flex items-center justify-between mb-6">
-        <ToastContainer />
+      <div className="flex flex-col space-y-5 md:flex-row md:items-center md:justify-between mb-6">
         <div className="flex items-center">
           <Link
             to="/admin/show_teachers"
@@ -141,81 +149,88 @@ const TeacherInfo = () => {
           >
             <ArrowLeft className="h-6 w-6" />
           </Link>
-          <h1 className="text-3xl font-bold text-gray-800">Teacher Profile</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+            Teacher Profile
+          </h1>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap gap-2 md:gap-4 items-center justify-center">
           <Link
             to={`/admin/teacher_info/${teacherId}/edit`}
-            className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-600 flex items-center transition-all duration-300"
+            className="bg-blue-500 text-white px-3 py-2 md:px-4 md:py-2 rounded-lg shadow-md hover:bg-blue-600 flex items-center transition-all duration-300 text-sm md:text-base"
           >
-            <Edit className="mr-2 h-5 w-5" />
+            <Edit className="mr-2 h-4 w-4 md:h-5 md:w-5" />
             <span>Edit</span>
           </Link>
 
           <button
             onClick={() => setShowDeleteModal(true)}
-            className="bg-red-500 text-white px-4 py-2 rounded-lg shadow-md hover:bg-red-600 flex items-center transition-all duration-300"
+            className="bg-red-500 text-white px-3 py-2 md:px-4 md:py-2 rounded-lg shadow-md hover:bg-red-600 flex items-center transition-all duration-300 text-sm md:text-base"
           >
-            <Delete className="mr-2 h-5 w-5" />
+            <Delete className="mr-2 h-4 w-4 md:h-5 md:w-5" />
             <span>Delete</span>
           </button>
 
           <button
             onClick={() => setShowBlockModal(true)}
-            className={`px-4 py-2 rounded-lg shadow-md flex items-center transition-all duration-300 ${
-              teacher.user.is_active 
+            className={`px-3 py-2 md:px-4 md:py-2 rounded-lg shadow-md flex items-center transition-all duration-300 text-sm md:text-base ${
+              teacher.user.is_active
                 ? "bg-orange-500 hover:bg-orange-600 text-white"
                 : "bg-green-500 hover:bg-green-600 text-white"
             }`}
           >
             {teacher.user.is_active ? (
-              <Lock className="mr-2 h-5 w-5" />
+              <Lock className="mr-2 h-4 w-4 md:h-5 md:w-5" />
             ) : (
-              <Unlock className="mr-2 h-5 w-5" />
+              <Unlock className="mr-2 h-4 w-4 md:h-5 md:w-5" />
             )}
             <span>{teacher.user.is_active ? "Block" : "Unblock"}</span>
           </button>
         </div>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
-        <div className="md:col-span-1 bg-white shadow-md rounded-lg p-6 h-fit">
+      <div className="flex flex-col md:flex-row gap-6">
+        <ToastContainer />
+
+        {/* Left Profile Card */}
+        <div className="lg:col-span-1 bg-white shadow-md rounded-lg p-12 h-fit">
           <div className="flex flex-col items-center">
-            <div className="w-32 h-32 mb-4">
+            <div className="w-24 h-24 md:w-32 md:h-32 mb-4">
               {teacher.user.profile_image ? (
                 <img
-                  className="w-32 h-32 rounded-full object-cover border-4 border-blue-100"
-                  src={`http://127.0.0.1:8000/${teacher.user.profile_image}`}
+                  className="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-blue-100"
+                  src={`https://learnerapp.site/${teacher.user.profile_image}`}
                   alt={`${teacher.user.first_name} ${teacher.user.last_name}`}
                 />
               ) : (
-                <div className="w-32 h-32 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-4xl font-bold text-blue-600">
-                    {teacher.user.first_name[0]}
-                    {teacher.user.last_name[0]}
+                <div className="w-24 h-24 md:w-32 md:h-32 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-3xl md:text-4xl font-bold text-blue-600">
+                    {teacher.user.first_name && teacher.user.first_name[0]}
+                    {teacher.user.last_name && teacher.user.last_name[0]}
                   </span>
                 </div>
               )}
             </div>
-            <h2 className="text-2xl font-semibold text-gray-800">
+            <h2 className="text-xl md:text-2xl font-semibold text-gray-800 text-center">
               {teacher.user.username}
             </h2>
-            <p className="text-gray-500">{teacher.user.email}</p>
-            <div className="mt-2 text-center">
-              
-                
-            </div>
+            <p className="text-gray-500 text-center">{teacher.user.email}</p>
+            {teacher.subject_name && (
+              <p className="text-gray-500 mt-2 text-center">
+                {teacher.subject_name}
+              </p>
+            )}
           </div>
         </div>
 
-        <div className="md:col-span-2 bg-white shadow-md rounded-lg p-6">
-          <h3 className="text-xl font-semibold text-gray-800 mb-4 border-b pb-2">
+        {/* Right Detail Card */}
+        <div className="lg:col-span-2 bg-white shadow-md rounded-lg p-4 md:p-6">
+          <h3 className="text-lg md:text-xl font-semibold text-gray-800 mb-4 border-b pb-2">
             Teacher Information
           </h3>
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
             <div className="space-y-3">
               <ConditionalDetailRow
-                icon={<School className="h-5 w-5 text-blue-500" />}
+                icon={<User className="h-5 w-5 text-blue-500" />}
                 label="First Name"
                 value={teacher.user.first_name}
               />
@@ -240,14 +255,14 @@ const TeacherInfo = () => {
                 value={teacher.user.date_of_birth}
               />
               <ConditionalDetailRow
-                icon={<Book className="h-5 w-5 text-purple-500" />}
+                icon={<BookOpen className="h-5 w-5 text-purple-500" />}
                 label="Subject"
                 value={teacher.subject_name}
               />
             </div>
             <div className="space-y-3">
               <ConditionalDetailRow
-                icon={<School className="h-5 w-5 text-blue-500" />}
+                icon={<User className="h-5 w-5 text-blue-500" />}
                 label="Last Name"
                 value={teacher.user.last_name}
               />
@@ -272,29 +287,29 @@ const TeacherInfo = () => {
                 value={teacher.user.gender === "M" ? "Male" : "Female"}
               />
             </div>
-            
           </div>
+
           <div className="mt-6">
-            <h3 className="text-xl font-semibold text-gray-800 mb-4 border-b pb-2">
-              {teacher.user.first_name} {teacher.user.last_name} Qualifications 
+            <h3 className="text-lg md:text-xl font-semibold text-gray-800 mb-4 border-b pb-2">
+              {teacher.user.first_name} {teacher.user.last_name} Qualifications
             </h3>
             {teacher.documents && teacher.documents.length > 0 ? (
               <ul>
                 {teacher.documents.map((doc, index) => (
                   <li
-                  key={doc.id}
-                  className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg mb-2"
-                >
-                  <FileText className="h-5 w-5 text-blue-500" />
-                  <a
-                    href={`http://127.0.0.1:8000/${doc.document}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline"
+                    key={doc.id}
+                    className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg mb-2"
                   >
-                    {`${index + 1}. ${doc.title}`}
-                  </a>
-                </li>
+                    <FileText className="h-5 w-5 text-blue-500" />
+                    <a
+                      href={`https://learnerapp.site/${doc.document}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline"
+                    >
+                      {`${index + 1}. ${doc.title}`}
+                    </a>
+                  </li>
                 ))}
               </ul>
             ) : (
@@ -308,11 +323,13 @@ const TeacherInfo = () => {
 };
 
 const ConditionalDetailRow = ({ icon, label, value }) => (
-  <div className="flex items-center bg-gray-50 p-3 rounded-lg">
-    <div className="mr-4">{icon}</div>
-    <div>
-      <p className="text-sm text-gray-500">{label}</p>
-      <p className="font-medium text-gray-800">{value || "Not specified"}</p>
+  <div className="flex items-center bg-gray-50 p-2 md:p-3 rounded-lg">
+    <div className="mr-3 md:mr-4 flex-shrink-0">{icon}</div>
+    <div className="overflow-hidden">
+      <p className="text-xs md:text-sm text-gray-500">{label}</p>
+      <p className="font-medium text-gray-800 text-sm md:text-base truncate">
+        {value || "Not specified"}
+      </p>
     </div>
   </div>
 );

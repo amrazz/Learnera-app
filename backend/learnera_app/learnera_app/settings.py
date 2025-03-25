@@ -37,9 +37,7 @@ SECRET_KEY = env('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
-
-
+ALLOWED_HOSTS = ['65.1.213.104', 'learnerapp.site', 'www.learnerapp.site', 'localhost', '127.0.0.1']
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
@@ -183,19 +181,33 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = "/static/"
-STATIC_ROOT = os.path.join(BASE_DIR, "static")
+STATIC_ROOT = os.path.join(BASE_DIR, "static_root")  
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "static"),
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
 AUTH_USER_MODEL = "users.CustomUser"
 
 
-CORS_ALLOWED_ORIGINS = ["http://localhost", "http://localhost:5173"]
-CSRF_TRUSTED_ORIGINS = ["http://localhost", "http://localhost:5173"]
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    "https://65.1.213.104",
+    "https://learnerapp.site",
+    "https://www.learnerapp.site",
+    "http://localhost:5173",
+]
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost",
+    "http://localhost:5173",
+    "https://learnerapp.site",
+    "https://www.learnerapp.site",
+    "https://65.1.213.104",
+]
+
+CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_CREDENTIALS = True
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

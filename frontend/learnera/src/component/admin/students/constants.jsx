@@ -132,7 +132,7 @@ export const inputs = [
   },
 ];
 
-export const EditForm = ({ isSubmitting, errors, touched, student }) => {
+export const EditForm = ({ isSubmitting, errors, touched, student, previewImage, setPreviewImage, setFieldValue }) => {
   const navigate = useNavigate();
 
   if (!student) {
@@ -150,7 +150,42 @@ export const EditForm = ({ isSubmitting, errors, touched, student }) => {
         <h3 className="text-xl font-semibold text-gray-800 mb-4">
           Personal Information
         </h3>
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="flex flex-col items-center space-y-5">
+          <div className="w-32 h-32 relative rounded-full overflow-hidden">
+            {previewImage ? (
+              <img
+                src={previewImage}
+                alt="Profile Preview"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                <UserCircle2 className="w-16 h-16 text-gray-400" />
+              </div>
+            )}
+          </div>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(event) => {
+              const file = event.currentTarget.files[0];
+              setFieldValue("profile_image", file);
+              if (file) {
+                setPreviewImage(URL.createObjectURL(file));
+              }
+            }}
+            className="hidden"
+            id="profile_image"
+          />
+          <label
+            htmlFor="profile_image"
+            className="cursor-pointer bg-blue-50 text-blue-600 px-4 py-2 rounded-md hover:bg-blue-100 transition-colors"
+          >
+            Change Profile Picture
+          </label>
+        </div>
+        <div className="grid md:grid-cols-2 gap-4 mt-6">
+
           <div>
             <label className="block text-sm font-medium text-gray-700">
               First Name

@@ -142,7 +142,7 @@ const ShowParents = () => {
                         <img
                           key={index}
                           className="rounded-full w-8 h-8 border-2 border-white object-cover"
-                          src={`http://127.0.0.1:8000/${student.user.profile_image}`}
+                          src={`https://learnerapp.site/${student.user.profile_image}`}
                           alt={student.user.full_name}
                         />
                       )

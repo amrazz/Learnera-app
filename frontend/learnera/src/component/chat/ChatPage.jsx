@@ -65,7 +65,7 @@ const UserList = ({ users, onSelectUser, selectedUser, onBackPress }) => {
                   group-hover:bg-white transition-colors shadow-sm`}
             >
               <Avatar className="">
-                <AvatarImage className="object-cover" src={`http://127.0.0.1:8000${user.profile_image}`} />
+                <AvatarImage className="object-cover" src={`https://learnerapp.site${user.profile_image}`} />
                 <AvatarFallback>{user.first_name[0]} {user.last_name[0]}</AvatarFallback>
               </Avatar>
             </div>
@@ -188,12 +188,12 @@ const ChatWindow = ({
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <button className="p-2 hover:bg-gray-100 rounded-full text-indigo-600">
+                {/* <button className="p-2 hover:bg-gray-100 rounded-full text-indigo-600">
                   <Video size={24} />
                 </button>
                 <button className="p-2 hover:bg-gray-100 rounded-full text-indigo-600">
                   <Phone size={24} />
-                </button>
+                </button> */}
                 <button className="p-2 hover:bg-gray-100 rounded-full text-indigo-600">
                   <MoreVertical size={24} />
                 </button>
@@ -250,9 +250,9 @@ const ChatWindow = ({
                 className="flex-1 p-3 pl-6 bg-gray-100 rounded-full border-0 focus:ring-2 focus:ring-indigo-500 focus:outline-none shadow-sm"
               />
               <div className="absolute flex item-center right-24 gap-3">
-                <button>
+                {/* <button>
                   <Paperclip color="gray" size={18} />
-                </button>
+                </button> */}
                 <button 
                   ref={buttonRef}
                   onClick={() => setShowEmojiPicker(!showEmojiPicker)}
@@ -347,19 +347,27 @@ const ChatPage = () => {
     if (websocketRef.current) {
       websocketRef.current.close();
     }
-
+  
     try {
-      const wsUrl = `ws://127.0.0.1:8000/ws/chat/${token}/`;
+      const wsUrl = `wss://learnerapp.site/ws/chat/${token}/`;
       const ws = new W3CWebSocket(wsUrl);
-      console.log("Connecting to WebSocket:", wsUrl);
-
+      console.log("Connecting to WebSocket:", wsUrl); 
+  
       websocketRef.current = ws;
-
-      ws.onopen = (e) => {
+  
+      ws.onopen = () => {
         console.log("WebSocket Connected Successfully");
         setWebsocket(ws);
-
-        if (e.code !== 1000 && e.code !== 1001) {
+      };
+  
+      ws.onerror = (error) => {
+        console.error("WebSocket Error:", error);  
+      };
+  
+      ws.onclose = (event) => {
+        console.log("WebSocket Closed:", event.code, event.reason);
+        // Reconnect only if not a normal closure
+        if (event.code !== 1000 && event.code !== 1001) {
           setTimeout(() => {
             if (currentUser) {
               initializeWebSocket();
@@ -367,15 +375,12 @@ const ChatPage = () => {
           }, 3000);
         }
       };
-
-      ws.onerror = (error) => {
-        console.error("WebSocket Error:", error);
-      };
-
+  
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-
+          console.log("Received WebSocket Message:", data); 
+  
           if (data.status === "send") {
             setMessages((prev) =>
               prev.map((msg) => {
@@ -392,13 +397,9 @@ const ChatPage = () => {
               })
             );
           } else if (data.status === "received") {
-            // Update contact list for received message
             updateUserLastMessage(data.sender_id, data.message, data.timestamp);
-            
             setMessages((prev) => {
-              const messageExists = prev.some(
-                (msg) => msg.id === data.message_id
-              );
+              const messageExists = prev.some((msg) => msg.id === data.message_id);
               if (!messageExists) {
                 return [
                   ...prev,
@@ -506,7 +507,7 @@ const ChatPage = () => {
   };
 
   return (
-    <div className="flex max-md:h-[28rem] h-">
+    <div className="flex md:h-[28rem]  h-[10rem]">
       <ToastContainer/>
       <div
         className={`absolute inset-0 bg-white 

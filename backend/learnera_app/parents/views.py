@@ -259,7 +259,7 @@ class GenerateInvoicePDF(generics.RetrieveAPIView):
                     spaceAfter=5,
                     spaceBefore=0,
                     leading=14,
-                    fontName="Helvetica",  # Changed from Helvetica-Bold
+                    fontName="Helvetica", 
                 )
             )
             styles.add(

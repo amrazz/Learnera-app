@@ -66,24 +66,16 @@ const validationSchema = Yup.object({
     .required("Country is required"),
   profileImage: Yup.mixed()
     .required("Profile image is required")
-    .test(
-      "fileType",
-      "Only JPEG, PNG, or JPG files are allowed",
-      (value) => {
-        if (!value) return false;
-        const fileType = ["image/jpeg", "image/png", "image/jpg"];
-        return fileType.includes(value.type);
-      }
-    )
-    .test(
-      "fileSize",
-      "File size must be less than 2MB",
-      (value) => {
-        if (!value) return false;
-        const maxSize = 2 * 1024 * 1024;
-        return value.size <= maxSize;
-      }
-    ),
+    .test("fileType", "Only JPEG, PNG, or JPG files are allowed", (value) => {
+      if (!value) return false;
+      const fileType = ["image/jpeg", "image/png", "image/jpg"];
+      return fileType.includes(value.type);
+    })
+    .test("fileSize", "File size must be less than 2MB", (value) => {
+      if (!value) return false;
+      const maxSize = 2 * 1024 * 1024;
+      return value.size <= maxSize;
+    }),
   documents: Yup.array().of(
     Yup.mixed()
       .test(
@@ -230,7 +222,7 @@ const TeacherEditSchema = Yup.object().shape({
   documentTitles: Yup.array().of(
     Yup.string().required("Document title is required")
   ),
-  subject : Yup.string().required("Subject is required")
+  subject: Yup.string().required("Subject is required")
 
 });
 
@@ -275,7 +267,7 @@ const teacherFormFields = [
   {
     section: "Subject Information",
     fields: [
-      { name: "subject", label: "Subject", type: "select", options : [] },
+      { name: "subject", label: "Subject", type: "select", options: [] },
     ],
   },
   {

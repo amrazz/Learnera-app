@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Formik } from "formik";
 import * as Yup from "yup";
-import {EditForm} from './constants'
+import { EditForm } from "./constants";
 import api from "../../../api";
 import { UserCircle2 } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
@@ -30,10 +30,12 @@ const StudentInfoSchema = Yup.object().shape({
   city: Yup.string().required("City is required"),
   state: Yup.string().required("State is required"),
   country: Yup.string().required("Country is required"),
-  emergency_contact_number: Yup.string()
-    .matches(/^[0-9]{10}$/, "Emergency contact number must be 10 digits"),
+  emergency_contact_number: Yup.string().matches(
+    /^[0-9]{10}$/,
+    "Emergency contact number must be 10 digits"
+  ),
   admission_number: Yup.string().required("Admission number is required"),
-  roll_number: Yup.string().required("Roll number is required")
+  roll_number: Yup.string().required("Roll number is required"),
 });
 
 const EditStudentInfo = () => {
@@ -42,12 +44,20 @@ const EditStudentInfo = () => {
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [previewImage, setPreviewImage] = useState(null);
 
   useEffect(() => {
     const fetchStudent = async () => {
       try {
-        const response = await api.get(`school_admin/student_info/${studentId}`);
+        const response = await api.get(
+          `school_admin/student_info/${studentId}`
+        );
         setStudent(response.data);
+        if (response.data.user.profile_image) {
+          setPreviewImage(
+            `https://learnerapp.site${response.data.user.profile_image}`
+          );
+        }
       } catch (error) {
         setError("Failed to fetch student details");
         toast.error("Failed to fetch student details");
@@ -61,10 +71,36 @@ const EditStudentInfo = () => {
 
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
-      await api.put(`school_admin/student_update/${student.user.id}/`, values);
+      const formData = new FormData();
+      
+      // Add all text fields to formData
+      Object.keys(values).forEach(key => {
+        if (key !== 'profile_image') {
+          formData.append(key, values[key]);
+        }
+      });
+      
+      // Add profile image if it exists
+      if (values.profile_image) {
+        formData.append('profile_image', values.profile_image);
+      }
+      
+      // Important: Set the correct content type for the request
+      const config = {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      };
+      
+      await api.put(`school_admin/student_update/${student.user.id}/`,
+        formData,
+        config
+      );
+      
       toast.success("Student information updated successfully");
       navigate(`/admin/student_info/${studentId}`);
     } catch (error) {
+      console.error("Update error:", error);
       toast.error("Failed to update student information");
     } finally {
       setSubmitting(false);
@@ -95,7 +131,8 @@ const EditStudentInfo = () => {
     gender: student.user.gender,
     emergency_contact_number: student.user.emergency_contact_number || "",
     admission_number: student.admission_number,
-    roll_number: student.roll_number
+    roll_number: student.roll_number,
+    profile_image: null,
   };
 
   return (
@@ -114,12 +151,15 @@ const EditStudentInfo = () => {
           validationSchema={StudentInfoSchema}
           onSubmit={handleSubmit}
         >
-          {({ isSubmitting, errors, touched }) => (
+          {({ isSubmitting, errors, touched, setFieldValue }) => (
             <EditForm
               isSubmitting={isSubmitting}
               errors={errors}
               touched={touched}
               student={student}
+              previewImage={previewImage}
+              setPreviewImage={setPreviewImage}
+              setFieldValue={setFieldValue}
             />
           )}
         </Formik>

@@ -1,33 +1,71 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
 import api from "../../../api";
 import { validationSchema, initialValues, inputs } from "./Constants";
 import { HashLoader } from "react-spinners";
+import { User } from "lucide-react";
+
+const ErrorAlert = ({ messages, onClose }) => (
+  <div
+    className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4"
+    role="alert"
+  >
+    <strong className="font-bold">Error!</strong>
+    <ul className="list-disc pl-5">
+      {messages.map((msg, idx) => (
+        <li key={idx}>{msg}</li>
+      ))}
+    </ul>
+    <button
+      onClick={onClose}
+      className="absolute top-0 right-0 px-2 py-1 text-red-700 hover:text-red-900"
+    >
+      &times;
+    </button>
+  </div>
+);
 
 const AddParents = () => {
   const [profile, setProfile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
-
+  const [errorMessages, setErrorMessages] = useState([]);
   const navigate = useNavigate();
 
+  const flattenErrors = (errorData) => {
+    let messages = [];
+    if (typeof errorData === "string") {
+      messages.push(errorData);
+    } else if (Array.isArray(errorData)) {
+      errorData.forEach((item) => {
+        messages = messages.concat(flattenErrors(item));
+      });
+    } else if (typeof errorData === "object" && errorData !== null) {
+      Object.values(errorData).forEach((value) => {
+        messages = messages.concat(flattenErrors(value));
+      });
+    }
+    return messages;
+  };
 
   const parentFormik = useFormik({
     initialValues,
     validationSchema,
     onSubmit: async (values, { resetForm }) => {
-
       setSubmitting(true);
-      setError("");
-
+      // Clear any previous error messages
+      setErrorMessages([]);
+      
       try {
         const formData = new FormData();
         const generatePassword = (length = 12) => {
-          const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+[]{}|;:,.<>?';
-          let password = '';
+          const characters =
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+[]{}|;:,.<>?";
+          let password = "";
           for (let i = 0; i < length; i++) {
-            password += characters.charAt(Math.floor(Math.random() * characters.length));
+            password += characters.charAt(
+              Math.floor(Math.random() * characters.length)
+            );
           }
           return password;
         };
@@ -39,6 +77,8 @@ const AddParents = () => {
           phone_number: values.phoneNumber,
           emergency_contact_number: values.emergencyContactNumber,
           address: values.address,
+          date_of_birth: values.dateOfBirth,
+          gender: values.gender,
           city: values.city,
           state: values.state,
           district: values.district,
@@ -67,18 +107,25 @@ const AddParents = () => {
           navigate("/admin/show_parents");
         }
       } catch (error) {
-        console.error("Error adding parent:", error);
-        setError(
-          error.response?.data?.message?.error ||
-            "Failed to add parent. Please try again."
-        );
+        console.error("Error adding parent:", error.response?.data);
+        const errorData = error?.response?.data;
+
+        if (errorData) {
+          const flattened = flattenErrors(errorData);
+          if (flattened.length > 0) {
+            setErrorMessages(flattened);
+          } else {
+            setErrorMessages(["An error occurred while adding the parent."]);
+          }
+        } else {
+          setErrorMessages(["An error occurred while adding the parent."]);
+        }
       } finally {
         setSubmitting(false);
       }
     },
   });
 
-  
   if (submitting) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -89,29 +136,28 @@ const AddParents = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-8 bg-white border border-gray-200 rounded shadow-lg">
+      {errorMessages.length > 0 && (
+        <ErrorAlert messages={errorMessages} onClose={() => setErrorMessages([])} />
+      )}
       <h2 className="text-3xl font-bold mb-6 text-center font-montserrat">
         Add Parent
       </h2>
       <hr />
 
-      {error && (
-        <div className="my-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-          {error}
-        </div>
-      )}
-
       <form onSubmit={parentFormik.handleSubmit} className="space-y-6">
-        {/* Profile Image Section */}
         <div className="my-5 flex flex-col items-center">
-          <img
-            className="rounded-full w-40 h-40 border-2 border-black object-cover mb-5"
-            src={
-              profile
-                ? URL.createObjectURL(profile)
-                : "https://uxwing.com/wp-content/themes/uxwing/download/peoples-avatars/corporate-user-icon.png"
-            }
-            alt="Profile Preview"
-          />
+        {profile ? (
+            <img
+              className="rounded-full w-40 h-40 border-2 border-black object-contain p-1"
+              src={URL.createObjectURL(profile)}
+              alt="Profile Preview"
+            />
+          ) : (
+            <div className="rounded-full w-40 h-40 border-2 border-black flex items-center justify-center bg-gray-100">
+              <User className="w-32 h-32 text-gray-600 " />
+            </div>
+          )}
+          <div className="md:ml-16 md:mt-4">
           <input
             type="file"
             accept="image/*"
@@ -122,9 +168,12 @@ const AddParents = () => {
             }}
             className="w-full max-w-xs"
           />
+          </div>
+          {parentFormik.touched.profileImage && parentFormik.errors.profileImage && (
+            <p className="text-red-500 text-sm">{parentFormik.errors.profileImage}</p>
+          )}
         </div>
 
-        {/* Form Fields Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {inputs.map(({ name, label, type }) => (
             <div key={name} className="space-y-1">
@@ -186,85 +235,6 @@ const AddParents = () => {
           ))}
         </div>
 
-        {/* Student Search and Selection Section
-        <div className="space-y-4">
-          {renderStudentSearch()}
-          
-          Student Search Results
-          {searchTerm && filteredStudents.length > 0 && (
-            <div className="border rounded-md max-h-40 overflow-y-auto">
-              {filteredStudents.map((student) => (
-                <div
-                  key={student.admission_number}
-                  className="p-2 hover:bg-gray-100 flex justify-between items-center"
-                >
-                  <span>
-                    {student.user.first_name} {student.user.last_name} (
-                    {student.admission_number})
-                  </span>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleStudentSelect(student, 'Father')}
-                      className="px-2 py-1 bg-blue-500 text-white rounded text-sm"
-                    >
-                      Add as Father
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleStudentSelect(student, 'Mother')}
-                      className="px-2 py-1 bg-pink-500 text-white rounded text-sm"
-                    >
-                      Add as Mother
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleStudentSelect(student, 'Guardian')}
-                      className="px-2 py-1 bg-green-500 text-white rounded text-sm"
-                    >
-                      Add as Guardian
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          Selected Students Display
-          <div className="space-y-2">
-            {studentRelationships.length > 0 ? (
-              studentRelationships.map((relationship, index) => {
-                const student = students.find(
-                  (s) => s.admission_number === relationship.admission_number
-                );
-                return (
-                  <div key={index} className="flex items-center gap-2">
-                    <div className="flex-1 p-2 bg-gray-50 rounded">
-                      <span className="font-medium">
-                        {relationship.relationship_type}:
-                      </span>{" "}
-                      {student?.user?.first_name} {student?.user?.last_name} (
-                      {relationship.admission_number})
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeStudent(index)}
-                      className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-700"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="flex justify-center items-center p-4 bg-gray-50 rounded">
-                No students selected
-              </div>
-            )}
-          </div>
-        </div> */}
-
-        {/* Submit Button */}
         <div className="mt-6 text-end">
           <button
             type="submit"

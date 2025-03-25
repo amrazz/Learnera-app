@@ -24,39 +24,39 @@ const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
+
   const { status, error, Role, isAuthenticated } = useSelector(
     (state) => state.auth
   );
   const location = useLocation();
-  const selectedRole = location.state?.selectedRole || 'student';
+  const selectedRole = location.state?.selectedRole || "student";
 
   useEffect(() => {
     const currentPath = window.location.pathname;
-    if (currentPath === '/login') {
-        localStorage.removeItem(ACCESS_TOKEN);
-        localStorage.removeItem(REFRESH_TOKEN);
+    if (currentPath === "/login") {
+      localStorage.removeItem(ACCESS_TOKEN);
+      localStorage.removeItem(REFRESH_TOKEN);
     }
-}, []);
+  }, []);
 
-useEffect(() => {
-
-  if (error) {
-    toast.error(error)
-  }
-  if (isAuthenticated && Role) {
-    const routes = {
-      is_student: "/students",
-      is_teacher: "/teachers",
-      is_parent: "/parents",
-      school_admin: "/admin",
-    };
-
-        const targetRoute = routes[Role];
-        if (targetRoute) {
-            navigate(targetRoute);
-        }
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
     }
-}, [isAuthenticated, Role, navigate]);
+    if (isAuthenticated && Role) {
+      const routes = {
+        is_student: "/students",
+        is_teacher: "/teachers",
+        is_parent: "/parents",
+        school_admin: "/admin",
+      };
+
+      const targetRoute = routes[Role];
+      if (targetRoute) {
+        navigate(targetRoute);
+      }
+    }
+  }, [isAuthenticated, Role, navigate]);
 
   const toggleShowPassword = useCallback(() => {
     setShowPassword((prev) => !prev);
@@ -84,18 +84,16 @@ useEffect(() => {
 
       setTimeout(() => {
         const routes = {
-          is_student : "/students",
+          is_student: "/students",
           is_teacher: "/teachers",
           is_parent: "/parents",
           school_admin: "/admin",
+        };
+        const targetRoute = routes[credentials.role];
+        if (targetRoute) {
+          navigate(targetRoute);
         }
-          const targetRoute = routes[credentials.role];
-          if (targetRoute) {
-            navigate(targetRoute);
-          }
-          }, 2000)
-
-
+      }, 2000);
     } catch (error) {
       toast.error(error || "Invalid Credentials. Please try again.");
     } finally {
@@ -122,8 +120,9 @@ useEffect(() => {
               initialValues={{
                 username: "",
                 password: "",
-                role: "student",
+                role: selectedRole,
               }}
+              enableReinitialize
               validationSchema={LoginSchema}
               onSubmit={handleSubmit}
             >
@@ -145,7 +144,7 @@ useEffect(() => {
                           : "border-gray-300 hover:border-blue-500"
                       }`}
                     >
-                      <option value="student">Student</option>c
+                      <option value="student">Student</option>
                       <option value="teacher">Teacher</option>
                       <option value="school_admin">School Admin</option>
                       <option value="parent">Parent</option>

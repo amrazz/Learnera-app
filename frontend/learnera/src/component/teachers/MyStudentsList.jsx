@@ -110,7 +110,7 @@ const MyStudentsList = () => {
                           {student.user.profile_image ? (
                             <img
                               className="h-10 w-10 rounded-full object-cover"
-                              src={`http://localhost:8000${student.user.profile_image}`}
+                              src={`https://learnerapp.site${student.user.profile_image}`}
                               alt=""
                             />
                           ) : (

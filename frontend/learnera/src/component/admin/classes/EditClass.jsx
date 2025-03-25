@@ -5,7 +5,6 @@ import { Loader } from "lucide-react";
 import api from "../../../api";
 import { ToastContainer, toast } from "react-toastify";
 import { useNavigate, useParams } from "react-router-dom";
-import SearchTeacher from "./SearchTeacher";
 
 const validationSchema = Yup.object({
   class_name: Yup.string()
@@ -32,7 +31,7 @@ const EditClass = () => {
     class_teacher: "",
   });
   const [teachers, setTeachers] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { classId, sectionId } = useParams();
 
@@ -62,18 +61,13 @@ const EditClass = () => {
           throw new Error("Section not found");
         }
 
-        // Get the teacher's full name if a teacher is assigned
-        let teacherName = "";
-        if (classData.class_teacher) {
-          teacherName = `${classData.class_teacher.user.first_name} ${classData.class_teacher.user.last_name}`;
-        }
-
         setInitialValues({
           class_name: classData.class_name,
           section_name: section.section_name,
           student_count: section.student_count,
-          class_teacher: classData.class_teacher?.id || "",
-          teacher_name: teacherName, // Add teacher name to initial values
+          class_teacher: section.class_teacher_info
+            ? section.class_teacher_info.id.toString()
+            : "",
         });
       } catch (error) {
         toast.error(error.message || "Failed to fetch data");
@@ -88,17 +82,19 @@ const EditClass = () => {
 
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
-      setIsLoading(true)
-      console.log(`this is the edited data ${JSON.stringify(values)}`); 
-      
+      setIsLoading(true);
+      console.log(`Edited data: ${JSON.stringify(values)}`);
+
       const payload = {
         class_name: values.class_name,
         section: {
           section_name: values.section_name,
           student_count: values.student_count,
-          class_teacher: values.class_teacher || null, 
+          // Convert back to number if necessary, or handle it in your API
+          class_teacher: values.class_teacher || null,
         },
       };
+
       const response = await api.put(
         `school_admin/update/class/${classId}/section/${sectionId}/`,
         payload
@@ -118,7 +114,7 @@ const EditClass = () => {
       toast.error(errorMessage);
     } finally {
       setSubmitting(false);
-      isLoading(false)
+      setIsLoading(false);
     }
   };
 
@@ -144,7 +140,7 @@ const EditClass = () => {
             onSubmit={handleSubmit}
             enableReinitialize
           >
-            {({ isSubmitting, setFieldValue, values }) => (
+            {({ isSubmitting }) => (
               <Form className="space-y-8">
                 <div className="grid gap-6 md:grid-cols-2">
                   <div>
@@ -180,7 +176,6 @@ const EditClass = () => {
                       className="text-red-600 text-sm mt-1"
                     />
                   </div>
-
                   <div>
                     <label className="block text-gray-700 font-semibold mb-2">
                       Student Count
@@ -198,25 +193,29 @@ const EditClass = () => {
                       className="text-red-600 text-sm mt-1"
                     />
                   </div>
-
                   <div>
                     <label className="block text-gray-700 font-semibold mb-2">
                       Class Teacher
                     </label>
-                    <Field name="class_teacher">
-                      {({ field }) => (
-                        <SearchTeacher
-                          teachers={teachers}
-                          onChange={(value) =>
-                            setFieldValue("class_teacher", value)
-                          }
-                          initialTeacherName={values.teacher_name}
-                        />
-                      )}
+                    <Field
+                      as="select"
+                      name="class_teacher"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">Select Teacher</option>
+                      {teachers.map((teacher) => (
+                        <option key={teacher.id} value={teacher.id.toString()}>
+                        {teacher.user.first_name} {teacher.user.last_name}
+                      </option>
+                      ))}
                     </Field>
+                    <ErrorMessage
+                      name="class_teacher"
+                      component="div"
+                      className="text-red-600 text-sm mt-1"
+                    />
                   </div>
                 </div>
-
                 <div className="flex justify-end space-x-4 mt-6">
                   <button
                     type="button"
