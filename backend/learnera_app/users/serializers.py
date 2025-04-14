@@ -36,7 +36,9 @@ class UserLoginserializers(serializers.Serializer):
         
         
 class BaseUserProfileSerializer(serializers.ModelSerializer):
-    """Base serializer for common user fields"""
+    # Use SerializerMethodField to control the output of profile_image
+    profile_image = serializers.SerializerMethodField()
+
     class Meta:
         model = CustomUser
         fields = [
@@ -44,7 +46,16 @@ class BaseUserProfileSerializer(serializers.ModelSerializer):
             'gender', 'date_of_birth', 'address', 'city', 'state',
             'district', 'postal_code', 'country'
         ]
-        
+
+    def get_profile_image(self, obj):
+        request = self.context.get("request")
+        if obj.profile_image:
+            if request:
+                return request.build_absolute_uri(obj.profile_image.url)
+            else:
+                return f"https://learnerapp.site{obj.profile_image.url}"
+        return None
+
     def validate_email(self, value):
         user = self.context['request'].user
         if CustomUser.objects.exclude(pk=user.pk).filter(email=value).exists():

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Edit2, Save, Key } from "lucide-react";
+import { Edit2, Save, Key, User } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -76,7 +76,9 @@ const PasswordChangeDialog = ({ isOpen, onClose }) => {
             />
           </div>
           <div>
-            <label className="text-sm font-medium">Confirm New Password</label>
+            <label className="text-sm font-medium">
+              Confirm New Password
+            </label>
             <Input
               type="password"
               value={passwords.confirm_password}
@@ -120,7 +122,6 @@ const UserProfile = () => {
     postal_code: "",
     country: "",
     emergency_contact_number: "",
-    // Admin specific fields
     school_name: "",
     school_type: "",
     school_logo: null,
@@ -133,7 +134,6 @@ const UserProfile = () => {
     fetchProfileData();
   }, []);
 
-  // Load theme colors once username is available
   useEffect(() => {
     if (profileData.username) {
       const storedStart = localStorage.getItem(
@@ -192,8 +192,6 @@ const UserProfile = () => {
     }));
   };
 
-
-
   const handleSave = async () => {
     try {
       const formData = new FormData();
@@ -223,20 +221,18 @@ const UserProfile = () => {
     }
   };
 
+  // Allowed fields for editing
+  const editableFields = ["username", "email", "phone_number"];
+
   const renderFields = () => {
     const fields = [
       { key: "username", label: "Username" },
       { key: "email", label: "Email" },
       { key: "phone_number", label: "Phone Number" },
-      {
-        key: "gender",
-        label: "Gender",
-        type: "select",
-        options: [
+      { key: "gender", label: "Gender", type: "select", options: [
           { value: "M", label: "Male" },
           { value: "F", label: "Female" },
-        ],
-      },
+        ] },
       { key: "date_of_birth", label: "Date of Birth", type: "date" },
       { key: "address", label: "Address" },
       { key: "city", label: "City" },
@@ -254,52 +250,39 @@ const UserProfile = () => {
       });
     }
 
-    if (userRole === "admin") {
-      fields.push(
-        { key: "school_name", label: "School Name" },
-        {
-          key: "school_type",
-          label: "School Type",
-          type: "select",
-          options: [
-            { value: "PRIMARY", label: "Primary School" },
-            { value: "SECONDARY", label: "Secondary School" },
-            { value: "BOTH", label: "Both Primary and Secondary" },
-          ],
-        }
+    return fields.map((field) => {
+      const isFieldEditable = isEditing && editableFields.includes(field.key);
+      return (
+        <div key={field.key} className="space-y-2">
+          <label className="text-sm font-medium text-gray-600">
+            {field.label}
+          </label>
+          {field.type === "select" ? (
+            <select
+              value={profileData[field.key] || ""}
+              onChange={(e) => handleInputChange(field.key, e.target.value)}
+              disabled={!isFieldEditable}
+              className="w-full border rounded-md p-2"
+            >
+              <option value="">Select {field.label}</option>
+              {field.options.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <Input
+              type={field.type || "text"}
+              value={profileData[field.key] || ""}
+              onChange={(e) => handleInputChange(field.key, e.target.value)}
+              disabled={!isFieldEditable}
+              className="w-full"
+            />
+          )}
+        </div>
       );
-    }
-
-    return fields.map((field) => (
-      <div key={field.key} className="space-y-2">
-        <label className="text-sm font-medium text-gray-600">
-          {field.label}
-        </label>
-        {field.type === "select" ? (
-          <select
-            value={profileData[field.key] || ""}
-            onChange={(e) => handleInputChange(field.key, e.target.value)}
-            disabled={!isEditing}
-            className="w-full border rounded-md p-2"
-          >
-            <option value="">Select {field.label}</option>
-            {field.options.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <Input
-            type={field.type || "text"}
-            value={profileData[field.key] || ""}
-            onChange={(e) => handleInputChange(field.key, e.target.value)}
-            disabled={!isEditing}
-            className="w-full"
-          />
-        )}
-      </div>
-    ));
+    });
   };
 
   if (loading) {
@@ -310,21 +293,15 @@ const UserProfile = () => {
     );
   }
 
-
   const schoolLogoUrl = profileData.school_logo
     ? profileData.school_logo
     : "/api/placeholder/1200/400";
 
-      const getProfileImageUrl = () => {
-        const {profile_image} = profileData;
-        if (!profile_image) return "";
 
-        if (profile_image.startsWith("http")) {
-          return profile_image;
-        }
-      
-        return `https"//learnerapp.site${profile_image}`
-      }
+  const getProfileImageUrl = () => {
+    const { profile_image } = profileData;
+    return profile_image || "";
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 p-4">
@@ -337,13 +314,16 @@ const UserProfile = () => {
           }}
         >
           <div className="absolute -bottom-16 left-8">
-            <div className="w-32 h-32 rounded-full border-4 border-white overflow-hidden bg-white">
-              <img
-                src={getProfileImageUrl()}
-                alt="Profile"
-                className="w-full h-full object-cover"
-              />
-              
+            <div className="w-32 h-32 rounded-full border-4 border-white overflow-hidden bg-white flex items-center justify-center">
+              {getProfileImageUrl() ? (
+                <img
+                  src={getProfileImageUrl()}
+                  alt="Profile"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <User size={48} className="text-gray-400" />
+              )}
             </div>
           </div>
 
