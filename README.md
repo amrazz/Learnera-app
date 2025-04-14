@@ -1,6 +1,6 @@
 # Learnera - School Management System
 
-![Learnera Logo](frontend/learnera/public/icon.png)
+<img src="frontend/learnera/public/icon.png" alt="Learnera Logo" width="150" />
 
 ## 📚 Overview
 Learnera is a comprehensive school management application built with Python Django (backend) and React.js (frontend). The system helps schools efficiently manage students, teachers, parents, attendance, examinations, fee collection, and communication.
