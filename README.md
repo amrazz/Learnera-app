@@ -1,7 +1,5 @@
 # Learnera - School Management System
 
-<img src="frontend/learnera/public/icon.png" alt="Learnera Logo" width="150" />
-
 ## 📚 Overview
 Learnera is a comprehensive school management application built with Python Django (backend) and React.js (frontend). The system helps schools efficiently manage students, teachers, parents, attendance, examinations, fee collection, and communication.
 
@@ -212,4 +210,8 @@ The application is configured to be deployed on AWS EC2 using Docker:
 For any queries related to this project, you can reach out at:
 
 - Email: learnerapp999@gmail.com
+<<<<<<< HEAD
 - GitHub: amrazz
+=======
+- GitHub: amrazz
+>>>>>>> fed6a51 (add README file)
