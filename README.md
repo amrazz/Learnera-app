@@ -1,4 +1,4 @@
-Learnera - School Management System
+### Learnera - School Management System
 <p align="center">
   <img src="frontend/learnera/public/icon.png" alt="Learnera Logo" width="200"/>
 </p>
