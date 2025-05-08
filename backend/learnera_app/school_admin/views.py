@@ -235,7 +235,6 @@ class CreateStudentView(APIView):
                 {"message": "Student created successfully"},
                 status=status.HTTP_201_CREATED,
             )
-
         except Exception as e:
             transaction.set_rollback(True)
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
