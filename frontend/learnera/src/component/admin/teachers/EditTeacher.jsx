@@ -42,7 +42,7 @@ const EditTeacher = () => {
           setTeacher(response.data);
           if (response.data.user.profile_image) {
             setPreviewImage(
-              `https://learnerapp.site/${response.data.user.profile_image}`
+              `http://localhost:8000${response.data.user.profile_image}`
             );
           }
           if (response.data.documents) {
@@ -333,7 +333,7 @@ const EditTeacher = () => {
                         <span>{doc.title}</span>
                         <div className="flex space-x-2">
                           <a
-                            href={`https://learnerapp.site/${doc.document}`}
+                            href={`http://localhost:8000/${doc.document}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-blue-600 hover:underline"

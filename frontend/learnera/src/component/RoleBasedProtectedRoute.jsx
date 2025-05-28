@@ -6,12 +6,13 @@ import { jwtDecode } from "jwt-decode";
 import { current } from "@reduxjs/toolkit";
 import { HashLoader } from "react-spinners";
 import { Navigate } from "react-router-dom";
+import api from "../api";
 
-const RoleBasedProtectedRoute =  ({ children, allowedRoles })  => {
-    const dispatch = useDispatch();
-    const [isValidating, setIsValidating] = useState(true);
-    const validationAttempted = useRef(false);
-    const { isAuthenticated, Role } = useSelector((state) => state.auth);
+const RoleBasedProtectedRoute = ({ children, allowedRoles }) => {
+  const dispatch = useDispatch();
+  const [isValidating, setIsValidating] = useState(true);
+  const validationAttempted = useRef(false);
+  const { isAuthenticated, Role } = useSelector((state) => state.auth);
 
   useEffect(() => {
     const validateToken = async () => {
@@ -24,11 +25,6 @@ const RoleBasedProtectedRoute =  ({ children, allowedRoles })  => {
 
         if (!accessToken && !refreshToken && isAuthenticated) {
           dispatch(logoutAction());
-          setIsValidating(false);
-          return;
-        }
-
-        if (!accessToken && !refreshToken) {
           setIsValidating(false);
           return;
         }
@@ -49,7 +45,7 @@ const RoleBasedProtectedRoute =  ({ children, allowedRoles })  => {
 
         if (refreshToken) {
           try {
-            const response = await api.post("/api/token/refresh/", {
+            const response = await api.post("token/refresh/", {
               refresh: refreshToken,
             });
 
@@ -80,6 +76,11 @@ const RoleBasedProtectedRoute =  ({ children, allowedRoles })  => {
   }, [dispatch, isAuthenticated]);
 
   if (isValidating) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <HashLoader size={50} />
+      </div>
+    );
   }
 
   if (!isAuthenticated) {
@@ -88,15 +89,13 @@ const RoleBasedProtectedRoute =  ({ children, allowedRoles })  => {
 
   if (!allowedRoles.includes(Role)) {
     const routes = {
-        is_student : "/students",
-        is_teacher: "/teachers",
-        is_parent: "/parents",
+      is_student: "/students",
+      is_teacher: "/teachers",
+      is_parent: "/parents",
     };
 
-    return <Navigate to={routes[Role] || "/login"} replace />
+    return <Navigate to={routes[Role] || "/login"} replace />;
   }
-
-
 
   return children;
 };

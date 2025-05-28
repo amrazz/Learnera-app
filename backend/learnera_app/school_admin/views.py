@@ -1,82 +1,55 @@
-from django.db.models.functions import TruncDate
-
 import json
-from rest_framework.decorators import action
-
+import logging
 import calendar
-from datetime import datetime
-from django.contrib.auth.hashers import check_password
-from django.db.models.functions import TruncMonth
-from django.http import Http404
-from django.db.models import Sum, Count, Case, When, F, DecimalField, Count, Q, Sum
+from .serializers import *
 from decimal import Decimal
-from django.core.cache import cache
-from django.utils import timezone
+from parents.models import *
+from datetime import datetime
+from teachers.models import *
 from datetime import timedelta
-from rest_framework import serializers
-from rest_framework.exceptions import PermissionDenied
-
-from parents.serializers import ExamSerializer, StudentSerializer
-from .services import RollNumberService
-from .serializers import (
-    AdminLeaveResponseSerializer,
-    AdminTeacherLeaveRequestSerializer,
-    FeeCategorySerializer,
-    FeeStructureSerializer,
-    ParentSerializer,
-    PasswordChangeSerializer,
-    SchoolAdminProfileSerializer,
-    SectionSerializer,
-    ClassListSerializer,
-    SchoolClassSerializer,
-    SectionTeacherAssignmentSerializer,
-    StudentFeePaymentSerializer,
-    StudentListSerializer,
-    StudentDetailSerializer,
-    SchoolAdminLoginSerializers,
-    SchoolClassUpdateSerializer,
-    SchoolClassCreateSerializer,
-    SchoolAdminStudentSerializers,
-    StudentParentRelationshipSerlaizer,
-    SubjectSerializer,
-    TeacherSerializer,
-    AttendanceHistorySerializer,
-    AttendanceSchoolClassSerializer,
-    AttendanceSectionSerializer,
-    MonthlyStatisticsSerializer,
-)
-from rest_framework.decorators import api_view
-from django.core.exceptions import ValidationError
-from django.db import transaction
-from parents.models import (
-    FeeCategory,
-    FeeStructure,
-    Parent,
-    PaymentTransaction,
-    StudentFeePayment,
-    StudentParentRelationship,
-)
-from .models import AdmissionNumber
-from students.models import Student
 from .email import EmailService
+from django.http import Http404
+from django.db import transaction
+from django.utils import timezone
+from django.core.cache import cache
+from students.models import Student
+from .models import AdmissionNumber
+from rest_framework import serializers
+from .services import RollNumberService
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from django.utils.encoding import force_bytes
+from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
+from django.db.models.functions import TruncMonth
+from django.core.exceptions import ValidationError
+from django.utils.http import urlsafe_base64_encode
+from rest_framework.exceptions import PermissionDenied
+from django.contrib.auth.hashers import check_password
 from rest_framework_simplejwt.tokens import RefreshToken
-from teachers.models import (
-    AcademicYear,
-    Attendance,
-    Exam,
-    SchoolClass,
-    Section,
-    Subject,
-    Teacher,
-    TeacherDocument,
-    TeacherLeaveRequest,
-)
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from django.contrib.auth.tokens import default_token_generator
+from parents.serializers import ExamSerializer, StudentSerializer
 from rest_framework import permissions, status, viewsets, generics
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from django.db.models import Sum, Count, Case, When, F, DecimalField, Count, Q, Sum
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+
+handler = logging.FileHandler("admin_views_log.log")
+handler.setLevel(logging.DEBUG)
+
+
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+handler.setFormatter(formatter)
+
+if not logger.hasHandlers():
+    logger.addHandler(handler)
+
+
+User = get_user_model()
 
 
 # STUDENT MANAGEMENT
@@ -84,16 +57,22 @@ from rest_framework import permissions, status, viewsets, generics
 # --------------------------------------------------------------
 
 
+def set_password_link(user):
+    uid = urlsafe_base64_encode(force_bytes(user.id))
+    token = default_token_generator.make_token(user)
+    set_password_link = f"http://localhost:5173/set-password/{uid}/{token}/"
+    return set_password_link
+
+
 class SchoolAdminLoginView(APIView):
     permission_classes = [permissions.AllowAny]
-    print("I am here in admin view")
 
     def post(self, request, *args, **kwargs):
+        logger.debug("Login request received with data: %s", request.data)
         serializer = SchoolAdminLoginSerializers(data=request.data)
-        print(serializer)
         if serializer.is_valid():
-            print("This is valid serializer")
             user = serializer.validated_data["user"]
+            logger.info("Successful login for school admin: %s", user.username)
             refresh = RefreshToken.for_user(user)
 
             return Response(
@@ -105,10 +84,12 @@ class SchoolAdminLoginView(APIView):
                 },
                 status=status.HTTP_200_OK,
             )
+        logger.warning("Login failed with errors: %s", serializer.errors)
         return Response(
-            {"error": "Login Falied", "details": serializer.errors},
+            {"error": "Login Failed", "details": serializer.errors},
             status=status.HTTP_400_BAD_REQUEST,
         )
+
 
 class CreateStudentView(APIView):
     parser_classes = [MultiPartParser, FormParser]
@@ -116,22 +97,23 @@ class CreateStudentView(APIView):
 
     @transaction.atomic
     def post(self, request, *args, **kwargs):
+        logger.debug("Create student request received: %s", request.data)
+
         try:
             class_assigned_id = request.data.get("class_assigned")
             section = Section.objects.get(id=class_assigned_id)
 
             if section.available_students >= section.student_count:
+                logger.warning("Section %s is full", class_assigned_id)
                 return Response(
                     {"error": "This section has reached its maximum student limit."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
             admission_number_obj, _ = AdmissionNumber.objects.get_or_create(
-                key="admission_number",
-                defaults={"value": "200000"},
+                key="admission_number", defaults={"value": "200000"}
             )
-            admission_number = int(admission_number_obj.value)
-            admission_number += 1
+            admission_number = int(admission_number_obj.value) + 1
             admission_number_obj.value = str(admission_number)
             admission_number_obj.save()
 
@@ -149,14 +131,20 @@ class CreateStudentView(APIView):
             parent_relationships = json.loads(
                 request.data.get("parent_relationships", "[]")
             )
-
             serializer = SchoolAdminStudentSerializers(data=student_data)
+
             if not serializer.is_valid():
+                logger.warning("Student serializer invalid: %s", serializer.errors)
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
             student = serializer.save()
-            current_date = datetime.now().date()
+            logger.info("Student created with username: %s", user_data.get("username"))
+            new_user = User.objects.get(username=user_data.get("username"))
+            if new_user:
+                password_link = set_password_link(new_user)
 
+            # Academic year logic
+            current_date = datetime.now().date()
             try:
                 active_academic_year = AcademicYear.objects.get(is_active=True)
             except AcademicYear.DoesNotExist:
@@ -165,77 +153,71 @@ class CreateStudentView(APIView):
             if not active_academic_year or not (
                 active_academic_year.start_date <= current_date
             ):
+                logger.info("Creating new academic year for date: %s", current_date)
                 if active_academic_year:
                     active_academic_year.is_active = False
                     active_academic_year.save()
-
                 new_start_date = datetime(current_date.year, 6, 1).date()
                 new_end_date = datetime(current_date.year + 1, 3, 30).date()
-
-                new_academic_year = AcademicYear.objects.create(
+                active_academic_year = AcademicYear.objects.create(
                     name=f"{new_start_date.year}-{new_end_date.year}",
                     start_date=new_start_date,
                     end_date=new_end_date,
                     is_active=True,
                 )
 
-                student.academic_year = new_academic_year
-            else:
-                student.academic_year = active_academic_year
-
+            student.academic_year = active_academic_year
             student.save()
 
             section.available_students += 1
             section.save()
 
             try:
-                print(f"Assigning roll number for student in section {student.class_assigned.id}")
                 RollNumberService.assign_roll_number(
                     student, student.class_assigned, student.academic_year
                 )
                 RollNumberService.reorder_by_name(
                     student.class_assigned, student.academic_year
                 )
+                logger.info("Roll number assigned for student %s", student.id)
             except Exception as e:
-                print(f"Roll number assignment failed: {str(e)}")
+                logger.error("Roll number assignment failed: %s", str(e))
                 transaction.set_rollback(True)
                 return Response(
                     {"error": f"Failed to assign roll number: {str(e)}"},
-                    status=status.HTTP_400_BAD_REQUEST
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
 
             for relationship in parent_relationships:
-                parent_id = relationship.get("parent_id")
-                relationship_type = relationship.get("relationship_type")
-
-                if parent_id and relationship_type:
-                    try:
-                        parent = Parent.objects.get(id=parent_id)
-                        StudentParentRelationship.objects.create(
-                            parent=parent,
-                            student=student,
-                            relationship_type=relationship_type,
-                        )
-                    except Parent.DoesNotExist:
-                        raise ValidationError("Invalid parent ID provided")
+                try:
+                    parent = Parent.objects.get(id=relationship["parent_id"])
+                    StudentParentRelationship.objects.create(
+                        parent=parent,
+                        student=student,
+                        relationship_type=relationship["relationship_type"],
+                    )
+                except Parent.DoesNotExist:
+                    logger.warning("Invalid parent ID: %s", relationship["parent_id"])
+                    raise ValidationError("Invalid parent ID provided")
 
             try:
-                email_sent = EmailService.send_welcome_email(
+                EmailService.send_welcome_email(
                     user_type="Student",
                     email=user_data["email"],
                     username=user_data["username"],
-                    password=user_data["password"],
+                    set_password_link=password_link,
                 )
-                if not email_sent:
-                    print(f"Warning: Welcome email could not be sent to {user_data['email']}")
+                logger.info("Welcome email sent to %s", user_data["email"])
             except Exception as email_error:
-                print(f"Error sending welcome email: {str(email_error)}")
+                logger.error("Error sending welcome email: %s", str(email_error))
 
             return Response(
                 {"message": "Student created successfully"},
                 status=status.HTTP_201_CREATED,
             )
+
         except Exception as e:
+            logger.exception("Unhandled error during student creation: %s", str(e))
             transaction.set_rollback(True)
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -245,7 +227,6 @@ class ClassListView(APIView):
 
     def get(self, request):
         class_id = request.query_params.get("class_id")
-
         try:
             if class_id:
                 school_class = (
@@ -254,6 +235,7 @@ class ClassListView(APIView):
                     .first()
                 )
                 if not school_class:
+                    logger.warning("Class with ID %s not found", class_id)
                     return Response(
                         {"error": "Class not found"}, status=status.HTTP_404_NOT_FOUND
                     )
@@ -266,7 +248,7 @@ class ClassListView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         except Exception as e:
-            print(f"Error: {e}")
+            logger.exception("Error retrieving class list: %s", str(e))
             return Response(
                 {"error": "Something went wrong"}, status=status.HTTP_400_BAD_REQUEST
             )
@@ -286,50 +268,48 @@ class StudentDetailView(APIView):
     def get(self, request, pk, *args, **kwargs):
         try:
             student = Student.objects.select_related(
-                "user",
-                "class_assigned",
-                "class_assigned__school_class",
+                "user", "class_assigned", "class_assigned__school_class"
             ).get(user__id=pk)
-
             serializer = StudentDetailSerializer(student)
+            logger.info("Fetched details for student id: %s", pk)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Student.DoesNotExist:
+            logger.warning("Student with id %s not found", pk)
             return Response(
                 {"error": "Student not found"}, status=status.HTTP_404_NOT_FOUND
             )
         except Exception as e:
+            logger.exception("Error fetching student details: %s", str(e))
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class StudentUpdateView(APIView):
     permission_classes = [permissions.IsAdminUser]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
-    
+
     def put(self, request, pk, *args, **kwargs):
         try:
             student = Student.objects.select_related("user").get(user__id=pk)
-            
-            if 'profile_image' in request.FILES:
-                student.user.profile_image = request.FILES['profile_image']
+            logger.debug("Updating student %s with data: %s", pk, request.data)
+
+            if "profile_image" in request.FILES:
+                student.user.profile_image = request.FILES["profile_image"]
                 student.user.save()
-            student_data = {
-                k: v
-                for k, v in request.data.items()
-                if k
-                in [
+
+            # Update fields
+            for key, value in request.data.items():
+                if key in [
                     "admission_number",
                     "roll_number",
                     "parent_name",
                     "parent_email",
                     "class_assigned",
-                ]
-            }
-
-            user_data = {
-                k: v
-                for k, v in request.data.items()
-                if k
-                in [
+                ]:
+                    if key == "class_assigned":
+                        student.class_assigned = Section.objects.get(id=value)
+                    else:
+                        setattr(student, key, value)
+                elif key in [
                     "first_name",
                     "last_name",
                     "email",
@@ -341,36 +321,29 @@ class StudentUpdateView(APIView):
                     "date_of_birth",
                     "gender",
                     "emergency_contact_number",
-                ]
-            }
-
-            for key, value in student_data.items():
-                if key == "class_assigned":
-                    student.class_assigned = Section.objects.get(id=value)
-                else:
-                    setattr(student, key, value)
-
-            if user_data:
-                for key, value in user_data.items():
+                ]:
                     setattr(student.user, key, value)
-                student.user.save()
 
+            student.user.save()
             student.save()
 
             serializer = StudentDetailSerializer(student)
+            logger.info("Successfully updated student: %s", pk)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         except Student.DoesNotExist:
+            logger.warning("Student with id %s not found for update", pk)
             return Response(
                 {"error": "Student not found"}, status=status.HTTP_404_NOT_FOUND
             )
         except Section.DoesNotExist:
+            logger.warning("Invalid class assignment provided for student: %s", pk)
             return Response(
                 {"error": "Invalid class assignment"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         except Exception as e:
-            print(f"Unexpected error: {e}")
+            logger.exception("Unexpected error updating student: %s", str(e))
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -641,13 +614,16 @@ class ParentViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(data=data)
             serializer.is_valid(raise_exception=True)
             parent = serializer.save()
+            new_user = parent.user
+            password_link = set_password_link(new_user)
 
             try:
+
                 EmailService.send_welcome_email(
                     user_type="Parent",
                     email=user_data["email"],
                     username=user_data["username"],
-                    password=user_data["password"],
+                    set_password_link=password_link,
                 )
                 print("Welcome email initiated for:", user_data["email"])
             except Exception as email_error:
@@ -662,6 +638,7 @@ class ParentViewSet(viewsets.ModelViewSet):
             if error_detail is not None:
                 return Response(error_detail, status=status.HTTP_400_BAD_REQUEST)
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class ParentDetailView(APIView):
     permission_classes = [permissions.IsAdminUser]
@@ -886,12 +863,14 @@ class TeacherListCreateView(APIView):
         )
         if serializer.is_valid():
             teacher = serializer.save()
+            newuser = teacher.user
+            password_link = set_password_link(newuser)
             try:
                 EmailService.send_welcome_email(
                     user_type="Teacher",
                     email=user_data["email"],
                     username=user_data["username"],
-                    password=user_data["password"],
+                    set_password_link=password_link,
                 )
                 print("Welcome email initiated for:", user_data["email"])
             except Exception as email_error:
@@ -1199,11 +1178,13 @@ class FeeCategoryListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAdminUser]
     pagination_class = None
 
+
 class FeeCategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAdminUser]
     queryset = FeeCategory.objects.all()
     serializer_class = FeeCategorySerializer
     pagination_class = None
+
 
 class FeeStructureListCreateView(generics.ListCreateAPIView):
     serializer_class = FeeStructureSerializer
@@ -1214,17 +1195,15 @@ class FeeStructureListCreateView(generics.ListCreateAPIView):
         queryset = FeeStructure.objects.all()
         fee_type = self.request.query_params.get("fee_type")
         academic_year = AcademicYear.objects.filter(is_active=True).first()
-        
+
         if academic_year:
             queryset = queryset.filter(academic_year=academic_year)
-        
+
         if fee_type:
             queryset = queryset.filter(fee_type=fee_type)
-        
+
         return queryset.select_related(
-            'fee_category',
-            'section__school_class',
-            'academic_year'
+            "fee_category", "section__school_class", "academic_year"
         )
 
     def perform_create(self, serializer):
@@ -1241,18 +1220,17 @@ class FeeStructureDetailedView(generics.RetrieveUpdateDestroyAPIView):
     pagination_class = None
 
 
-
 class StudentFeePaymentListView(generics.ListAPIView):
     permission_classes = [permissions.IsAdminUser]
     serializer_class = StudentFeePaymentSerializer
 
     def get_queryset(self):
         queryset = StudentFeePayment.objects.all()
-        
-        status = self.request.query_params.get('status', None)
-        section = self.request.query_params.get('section', None)
-        fee_category = self.request.query_params.get('fee_category', None)
-        search = self.request.query_params.get('search', None)
+
+        status = self.request.query_params.get("status", None)
+        section = self.request.query_params.get("section", None)
+        fee_category = self.request.query_params.get("fee_category", None)
+        search = self.request.query_params.get("search", None)
 
         if status:
             queryset = queryset.filter(status=status)
@@ -1262,262 +1240,276 @@ class StudentFeePaymentListView(generics.ListAPIView):
             queryset = queryset.filter(fee_structure__fee_category__id=fee_category)
         if search:
             queryset = queryset.filter(student__user__full_name__icontains=search)
-        
+
         return queryset
 
     def get_summary(self):
         queryset = self.get_queryset()
-        
+
         summary = queryset.aggregate(
-            total_amount=Sum(F('fee_structure__amount'), default=Decimal('0.00')),
-            paid_amount=Sum(Case(
-                When(status='PAID', then=F('fee_structure__amount')),
-                default=0,
-                output_field=DecimalField()
-            ), default=Decimal('0.00')),
-            pending_amount=Sum(Case(
-                When(status__in=['PENDING', 'OVERDUE'], then=F('fee_structure__amount')),
-                default=0,
-                output_field=DecimalField()
-            ), default=Decimal('0.00')),
-            total_students=Count('student', distinct=True),
-            paid_students=Count(Case(
-                When(status='PAID', then=1),
-            ), distinct=True),
-            pending_students=Count(Case(
-                When(status__in=['PENDING', 'OVERDUE'], then=1),
-            ), distinct=True)
+            total_amount=Sum(F("fee_structure__amount"), default=Decimal("0.00")),
+            paid_amount=Sum(
+                Case(
+                    When(status="PAID", then=F("fee_structure__amount")),
+                    default=0,
+                    output_field=DecimalField(),
+                ),
+                default=Decimal("0.00"),
+            ),
+            pending_amount=Sum(
+                Case(
+                    When(
+                        status__in=["PENDING", "OVERDUE"],
+                        then=F("fee_structure__amount"),
+                    ),
+                    default=0,
+                    output_field=DecimalField(),
+                ),
+                default=Decimal("0.00"),
+            ),
+            total_students=Count("student", distinct=True),
+            paid_students=Count(
+                Case(
+                    When(status="PAID", then=1),
+                ),
+                distinct=True,
+            ),
+            pending_students=Count(
+                Case(
+                    When(status__in=["PENDING", "OVERDUE"], then=1),
+                ),
+                distinct=True,
+            ),
         )
-        
+
         return summary
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         summary = self.get_summary()
         page = self.paginate_queryset(queryset)
-        
+
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             response = self.get_paginated_response(serializer.data)
-            response.data['summary'] = summary
+            response.data["summary"] = summary
             return response
 
         serializer = self.get_serializer(queryset, many=True)
-        return Response({
-            'results': serializer.data,
-            'summary': summary
-        })
-    
-    
+        return Response({"results": serializer.data, "summary": summary})
+
+
 # -------------------------------------------------------------
+
 
 # Admin Dashboard
 class DashboardStatsAPIView(APIView):
     permission_classes = [permissions.IsAdminUser]
-    
+
     def get(self, request):
         # Get current date and last month
         today = timezone.now()
         last_month = today - timedelta(days=30)
-        
+
         # Basic statistics
         stats = {
-            'total_students': Student.objects.count(),
-            'total_teachers': Teacher.objects.count(),
-            'total_parents': Parent.objects.count(),
-            'pending_fees': StudentFeePayment.objects.filter(status='PENDING').count(),
-            
+            "total_students": Student.objects.count(),
+            "total_teachers": Teacher.objects.count(),
+            "total_parents": Parent.objects.count(),
+            "pending_fees": StudentFeePayment.objects.filter(status="PENDING").count(),
             # Attendance overview for last month
-            'attendance': {
-                'present': Attendance.objects.filter(
-                    date__gte=last_month,
-                    status='present'
+            "attendance": {
+                "present": Attendance.objects.filter(
+                    date__gte=last_month, status="present"
                 ).count(),
-                'absent': Attendance.objects.filter(
-                    date__gte=last_month,
-                    status='absent'
+                "absent": Attendance.objects.filter(
+                    date__gte=last_month, status="absent"
                 ).count(),
-                'late': Attendance.objects.filter(
-                    date__gte=last_month,
-                    status='late'
+                "late": Attendance.objects.filter(
+                    date__gte=last_month, status="late"
                 ).count(),
             },
-            
             # Fee collection stats
-            'fee_collection': {
-                'paid': StudentFeePayment.objects.filter(
-                    status='PAID'
-                ).count(),
-                'pending': StudentFeePayment.objects.filter(
-                    status='PENDING'
-                ).count(),
-                'overdue': StudentFeePayment.objects.filter(
-                    status='OVERDUE'
-                ).count(),
+            "fee_collection": {
+                "paid": StudentFeePayment.objects.filter(status="PAID").count(),
+                "pending": StudentFeePayment.objects.filter(status="PENDING").count(),
+                "overdue": StudentFeePayment.objects.filter(status="OVERDUE").count(),
             },
-            
             # Upcoming exams
-            'upcoming_exams': Exam.objects.filter(
-                start_time__gte=today
-            ).count(),
+            "upcoming_exams": Exam.objects.filter(start_time__gte=today).count(),
         }
-        
+
         return Response(stats)
+
 
 class RecentStudentsAPIView(generics.ListAPIView):
     permission_classes = [permissions.IsAdminUser]
     serializer_class = StudentSerializer
     pagination_class = None
-    
+
     def get_queryset(self):
-        return Student.objects.all().order_by('-id')[:5]
-    
+        return Student.objects.all().order_by("-id")[:5]
+
+
 class FeeStatsAPIView(APIView):
     permission_classes = [permissions.IsAdminUser]
-    
+
     def get(self, request):
         # Total expected fee from FeeStructure
-        total_expected = FeeStructure.objects.aggregate(
-            total=Sum('amount')
-        )['total'] or 0
+        total_expected = (
+            FeeStructure.objects.aggregate(total=Sum("amount"))["total"] or 0
+        )
 
         # Total collected fee: sum the amount_paid from PaymentTransaction where the linked fee payment is PAID and transaction is SUCCESS
-        total_collected = PaymentTransaction.objects.filter(
-            student_fee_payment__status='PAID',
-            status='SUCCESS'
-        ).aggregate(
-            total=Sum('amount_paid')
-        )['total'] or 0
+        total_collected = (
+            PaymentTransaction.objects.filter(
+                student_fee_payment__status="PAID", status="SUCCESS"
+            ).aggregate(total=Sum("amount_paid"))["total"]
+            or 0
+        )
 
         # Total pending fee: sum the total_amount from StudentFeePayment where status is PENDING
-        total_pending_amount = StudentFeePayment.objects.filter(
-            status='PENDING'
-        ).aggregate(
-            total=Sum('total_amount')
-        )['total'] or 0
+        total_pending_amount = (
+            StudentFeePayment.objects.filter(status="PENDING").aggregate(
+                total=Sum("total_amount")
+            )["total"]
+            or 0
+        )
 
-        upcoming_payments_qs = StudentFeePayment.objects.filter(
-            status='PENDING',
-            due_date__gte=timezone.now()
-        ).select_related('fee_structure__fee_category').values(
-            'fee_structure__fee_category__name', 'total_amount', 'due_date'
-        ).order_by('due_date')[:3]
+        upcoming_payments_qs = (
+            StudentFeePayment.objects.filter(
+                status="PENDING", due_date__gte=timezone.now()
+            )
+            .select_related("fee_structure__fee_category")
+            .values("fee_structure__fee_category__name", "total_amount", "due_date")
+            .order_by("due_date")[:3]
+        )
 
         upcoming_payments = [
             {
-                'category': payment['fee_structure__fee_category__name'],
-                'amount': payment['total_amount'],
-                'due_date': payment['due_date']
+                "category": payment["fee_structure__fee_category__name"],
+                "amount": payment["total_amount"],
+                "due_date": payment["due_date"],
             }
             for payment in upcoming_payments_qs
         ]
-        
+
         fee_stats = {
-            'total_expected': total_expected,
-            'total_collected': total_collected,
-            'total_pending_amount': total_pending_amount,
-            'upcoming_payments': upcoming_payments
+            "total_expected": total_expected,
+            "total_collected": total_collected,
+            "total_pending_amount": total_pending_amount,
+            "upcoming_payments": upcoming_payments,
         }
-        
+
         return Response(fee_stats)
+
 
 class RecentTeachersAPIView(generics.ListAPIView):
     permission_classes = [permissions.IsAdminUser]
     serializer_class = TeacherSerializer
     pagination_class = None
-    
+
     def get_queryset(self):
-        return Teacher.objects.all().order_by('-id')[:5]
+        return Teacher.objects.all().order_by("-id")[:5]
+
 
 class UnpaidFeesAPIView(generics.ListAPIView):
     permission_classes = [permissions.IsAdminUser]
     serializer_class = FeeStructureSerializer
     pagination_class = None
-    
+
     def get_queryset(self):
-        return FeeStructure.objects.filter(
-            status__in=['PENDING', 'OVERDUE']
-        ).order_by('due_date')[:10]
+        return FeeStructure.objects.filter(status__in=["PENDING", "OVERDUE"]).order_by(
+            "due_date"
+        )[:10]
+
 
 class UpcomingExamsAPIView(generics.ListAPIView):
     permission_classes = [permissions.IsAdminUser]
     serializer_class = ExamSerializer
     pagination_class = None
-    
+
     def get_queryset(self):
-        return Exam.objects.filter(
-            start_time__gte=timezone.now()
-        ).order_by('start_time')[:5]
+        return Exam.objects.filter(start_time__gte=timezone.now()).order_by(
+            "start_time"
+        )[:5]
+
 
 class AttendanceOverviewAPIView(APIView):
     permission_classes = [permissions.IsAdminUser]
     pagination_class = None
-    
+
     def get(self, request):
         today = timezone.now().date()
-        
+
         # Get attendance by class
-        class_attendance = Attendance.objects.filter(
-            date=today
-        ).values(
-            'section__school_class__class_name'
-        ).annotate(
-            present=Count('id', filter=Q(status='present')),
-            absent=Count('id', filter=Q(status='absent')),
-            late=Count('id', filter=Q(status='late'))
+        class_attendance = (
+            Attendance.objects.filter(date=today)
+            .values("section__school_class__class_name")
+            .annotate(
+                present=Count("id", filter=Q(status="present")),
+                absent=Count("id", filter=Q(status="absent")),
+                late=Count("id", filter=Q(status="late")),
+            )
         )
-        
+
         return Response(class_attendance)
-        
-        
+
+
 # =-----------------------------------------------------
+
 
 class AdminTeacherLeaveRequestListView(generics.ListAPIView):
     serializer_class = AdminTeacherLeaveRequestSerializer
     permission_classes = [permissions.IsAdminUser]
     pagination_class = PageNumberPagination
-    
+
     def get_queryset(self):
-        queryset = TeacherLeaveRequest.objects.all().order_by('-applied_on')
-        status = self.request.query_params.get('status', None)
-        search = self.request.query_params.get('search', None)
-        
+        queryset = TeacherLeaveRequest.objects.all().order_by("-applied_on")
+        status = self.request.query_params.get("status", None)
+        search = self.request.query_params.get("search", None)
+
         if status:
             queryset = queryset.filter(status=status)
         if search:
-            queryset = queryset.filter(teacher__user__first_name__icontains=search) | \
-            queryset.filter(teacher__user__last_name__icontains=search)
+            queryset = queryset.filter(
+                teacher__user__first_name__icontains=search
+            ) | queryset.filter(teacher__user__last_name__icontains=search)
         return queryset
+
 
 class AdminTeacherLeaveRequestDetailView(generics.RetrieveAPIView):
     serializer_class = AdminTeacherLeaveRequestSerializer
     permission_classes = [permissions.IsAdminUser]
     queryset = TeacherLeaveRequest.objects.all()
 
+
 class AdminLeaveResponseView(generics.UpdateAPIView):
     serializer_class = AdminLeaveResponseSerializer
     permission_classes = [permissions.IsAdminUser]
     queryset = TeacherLeaveRequest.objects.all()
-    
+
     def perform_update(self, serializer):
         instance = self.get_object()
-        if instance.status != 'PENDING':
+        if instance.status != "PENDING":
             raise PermissionDenied("This leave request has already been processed")
         serializer.save()
-        
-        
+
+
 # --------------------------------------
+
 
 class SchoolAdminProfileView(generics.RetrieveUpdateAPIView):
     serializer_class = SchoolAdminProfileSerializer
     permission_classes = [permissions.IsAdminUser]
-    
+
     def get_object(self):
         return self.request.user
 
     def patch(self, request, *args, **kwargs):
-        kwargs['partial'] = True
+        kwargs["partial"] = True
         return super().patch(request, *args, **kwargs)
+
 
 class PasswordChangeView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -1526,12 +1518,12 @@ class PasswordChangeView(APIView):
         serializer = PasswordChangeSerializer(data=request.data)
         if serializer.is_valid():
             user = request.user
-            if not check_password(serializer.data['current_password'], user.password):
+            if not check_password(serializer.data["current_password"], user.password):
                 return Response(
                     {"current_password": "Wrong password."},
-                    status=status.HTTP_400_BAD_REQUEST
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
-            user.set_password(serializer.data['new_password'])
+            user.set_password(serializer.data["new_password"])
             user.save()
             return Response({"status": "password changed successfully"})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

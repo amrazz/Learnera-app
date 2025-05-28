@@ -214,7 +214,7 @@ const StudentDetails = () => {
               >
                 <div className="relative">
                   <img 
-                    src={`https://learnerapp.site${user.profile_image}` || '/api/placeholder/400/320'} 
+                    src={`http://localhost:8000${user.profile_image}` || '/api/placeholder/400/320'} 
                     alt={`${user.first_name} ${user.last_name}`}
                     className="w-full h-48 object-cover"
                   />

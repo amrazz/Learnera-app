@@ -55,7 +55,7 @@ const EditStudentInfo = () => {
         setStudent(response.data);
         if (response.data.user.profile_image) {
           setPreviewImage(
-            `https://learnerapp.site${response.data.user.profile_image}`
+            `http://localhost:8000${response.data.user.profile_image}`
           );
         }
       } catch (error) {

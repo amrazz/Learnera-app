@@ -51,6 +51,21 @@ from rest_framework.pagination import PageNumberPagination
 from django.db import transaction
 from django.db.models.functions import TruncMonth
 from django.db.models import Count, Q
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+
+handler = logging.FileHandler('teacher_views_log.log')
+handler.setLevel(logging.DEBUG)
+
+
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+
+if not logger.hasHandlers():
+    logger.addHandler(handler)
 
 
 # Create your views here.

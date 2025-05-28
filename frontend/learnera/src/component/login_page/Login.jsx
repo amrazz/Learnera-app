@@ -40,9 +40,6 @@ const Login = () => {
   }, []);
 
   useEffect(() => {
-    if (error) {
-      toast.error(error);
-    }
     if (isAuthenticated && Role) {
       const routes = {
         is_student: "/students",
@@ -95,7 +92,7 @@ const Login = () => {
         }
       }, 2000);
     } catch (error) {
-      toast.error(error || "Invalid Credentials. Please try again.");
+      toast.error("Invalid Credentials. Please try again.");
     } finally {
       setSubmitting(false);
     }

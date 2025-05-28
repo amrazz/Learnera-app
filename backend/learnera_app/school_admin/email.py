@@ -26,7 +26,7 @@ class EmailService:
             return False
 
     @staticmethod
-    def send_welcome_email(user_type, email, username, password):
+    def send_welcome_email(user_type, email, username, set_password_link):
         subject_mapping = {
             "Student": "Welcome to Learnera - Your Student Account Details",
             "Teacher": "Welcome to Learnera - Your Teacher Account Details",
@@ -38,10 +38,9 @@ class EmailService:
             
         context = {
             'username': username,
-            'password': password,
             'user_type': user_type,
             'app_name': 'Learnera',
-            'login_url': settings.LOGIN_URL,
+            'set_password_link': set_password_link,
         }
 
         try:

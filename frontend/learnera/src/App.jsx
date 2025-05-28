@@ -1,12 +1,13 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import LandingPage from './component/landing_page/LandingPage';
-import Login from './component/login_page/Login';
 import Admin from './component/admin/Admin';
+import Login from './component/login_page/Login';
+import Parents from './component/parents/Parents';
 import Logout from './component/login_page/Logout';
 import Students from './component/students/Students';
-import Parents from './component/parents/Parents';
 import Teachers from './component/teachers/Teachers';
+import LandingPage from './component/landing_page/LandingPage';
+import SetUserPassword from './component/login_page/SetUserPassword';
 import RoleBasedProtectedRoute from './component/RoleBasedProtectedRoute';
 
 const App = () => {
@@ -15,6 +16,7 @@ const App = () => {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/set-password/:uid/:token" element={<SetUserPassword />} />
         <Route path="/logout" element={<Logout />} />
         <Route path="/admin/*" element={<RoleBasedProtectedRoute allowedRoles={["school_admin"]}><Admin /></RoleBasedProtectedRoute>} />
         <Route path="/students/*" element={<RoleBasedProtectedRoute allowedRoles={["is_student"]}> <Students /> </RoleBasedProtectedRoute>} />

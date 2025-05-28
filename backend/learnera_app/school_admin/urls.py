@@ -2,42 +2,7 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from .views import AdminLeaveResponseView, AdminTeacherLeaveRequestDetailView, AdminTeacherLeaveRequestListView, AttendanceOverviewAPIView, DashboardStatsAPIView, FeeStatsAPIView, PasswordChangeView, RecentStudentsAPIView, RecentTeachersAPIView, SchoolAdminProfileView, UnpaidFeesAPIView, UpcomingExamsAPIView
-from .views import (
-    ParentViewSet,
-    ClassListView,
-    SubjectListView,
-    ShowStudentsView,
-    ParentDetailView,
-    StudentBlockView,
-    StudentDetailView,
-    CreateStudentView,
-    TeacherDetailView,
-    StudentDeleteView,
-    StudentUpdateView,
-    AdminClassListView,
-    SchoolClassListView,
-    AdminAttendanceView,
-    SchoolAdminLoginView,
-    AdminSectionListView,
-    TeacherListCreateView,
-    FeeCategoryDetailView,
-    ParentBlockUnblockView,
-    DeleteClassSectionView,
-    TeacherBlockUnblockView,
-    GetStudentParentViewSet,
-    CreateSchoolClassViewSet,
-    FeeStructureDetailedView,
-    StudentFeePaymentListView,
-    TeacherDocumentDeleteView,
-    FeeCategoryListCreateView,
-    AssignClassTeacherViewSet,
-    AdminMonthlyStatisticsView,
-    FeeStructureListCreateView,
-    ParentStudentManagementView,
-    SchoolClassSectionUpdateView,
-    StudentParentRelationshipView,
-    # bulk_create_student_fee_payments,
-)
+from .views import *
 
 router = DefaultRouter()
 router.register(r"add_class", CreateSchoolClassViewSet, basename="add-class")

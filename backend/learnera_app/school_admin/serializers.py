@@ -22,6 +22,9 @@ from teachers.models import (
     TeacherDocument,
     TeacherLeaveRequest,
 )
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 
 class SchoolAdminLoginSerializers(serializers.Serializer):
@@ -123,7 +126,6 @@ class SchoolAdminStudentSerializers(serializers.ModelSerializer):
                 data["user"] = json.loads(data["user"])
             except json.JSONDecodeError:
                 raise serializers.ValidationError({"user": "Invalid JSON data"})
-
         return super().to_internal_value(data)
 
 
@@ -716,22 +718,16 @@ class FeeCategorySerializer(serializers.ModelSerializer):
 
 class FeeStructureSerializer(serializers.ModelSerializer):
     fee_category_name = serializers.CharField(
-        source="fee_category.name", 
-        read_only=True
+        source="fee_category.name", read_only=True
     )
     class_name = serializers.CharField(
-        source="section.school_class.class_name", 
-        read_only=True, 
-        allow_null=True
+        source="section.school_class.class_name", read_only=True, allow_null=True
     )
     section_name = serializers.CharField(
-        source="section.section_name", 
-        read_only=True, 
-        allow_null=True
+        source="section.section_name", read_only=True, allow_null=True
     )
     academic_year_name = serializers.CharField(
-        source="academic_year.name", 
-        read_only=True
+        source="academic_year.name", read_only=True
     )
 
     class Meta:
@@ -755,14 +751,14 @@ class FeeStructureSerializer(serializers.ModelSerializer):
         }
 
     def validate(self, data):
-        fee_type = data.get('fee_type')
-        section = data.get('section')
+        fee_type = data.get("fee_type")
+        section = data.get("section")
 
-        if fee_type == 'GLOBAL' and section:
+        if fee_type == "GLOBAL" and section:
             raise serializers.ValidationError(
                 {"section": "Section should not be provided for global fees"}
             )
-        if fee_type == 'SPECIFIC' and not section:
+        if fee_type == "SPECIFIC" and not section:
             raise serializers.ValidationError(
                 {"section": "Section is required for specific fees"}
             )
@@ -781,8 +777,7 @@ class FeeStructureSerializer(serializers.ModelSerializer):
             students = Student.objects.filter(academic_year=academic_year)
         elif fee_structure.section:
             students = Student.objects.filter(
-                academic_year=academic_year,
-                class_assigned=fee_structure.section
+                academic_year=academic_year, class_assigned=fee_structure.section
             )
         else:
             students = Student.objects.none()
@@ -816,7 +811,6 @@ class StudentFeePaymentSerializer(serializers.ModelSerializer):
     student_section = serializers.CharField(
         source="student.class_assigned.section_name", read_only=True
     )
-    
 
     class Meta:
         model = StudentFeePayment
@@ -850,65 +844,98 @@ class StudentFeePaymentSerializer(serializers.ModelSerializer):
             ),
             "academic_year_name": obj.fee_structure.academic_year.name,
         }
-        
-        
+
+
 # ------------------------------------------------------------
 
 
 class AdminTeacherLeaveRequestSerializer(serializers.ModelSerializer):
     teacher_name = serializers.SerializerMethodField()
     document_url = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = TeacherLeaveRequest
         fields = [
-            'id', 'teacher_name', 'leave_type', 'start_date', 'end_date', 
-            'status', 'applied_on', 'reason', 'supporting_document', 
-            'response_comment', 'document_url'
+            "id",
+            "teacher_name",
+            "leave_type",
+            "start_date",
+            "end_date",
+            "status",
+            "applied_on",
+            "reason",
+            "supporting_document",
+            "response_comment",
+            "document_url",
         ]
-    
+
     def get_teacher_name(self, obj):
         return f"{obj.teacher.user.first_name} {obj.teacher.user.last_name}"
-    
+
     def get_document_url(self, obj):
         if obj.supporting_document:
             return obj.supporting_document.url
         return None
 
+
 class AdminLeaveResponseSerializer(serializers.ModelSerializer):
     class Meta:
         model = TeacherLeaveRequest
-        fields = ['status', 'response_comment']
-        
+        fields = ["status", "response_comment"]
+
     def validate_status(self, value):
-        if value not in ['APPROVED', 'REJECTED']:
-            raise serializers.ValidationError("Status must be either APPROVED or REJECTED")
+        if value not in ["APPROVED", "REJECTED"]:
+            raise serializers.ValidationError(
+                "Status must be either APPROVED or REJECTED"
+            )
         return value
-    
-    
+
+
 # _-----------------------------------
 class PasswordChangeSerializer(serializers.Serializer):
     current_password = serializers.CharField(required=True)
     new_password = serializers.CharField(required=True)
 
+
+from rest_framework import serializers
+from .models import CustomUser  # Adjust import as needed
+
 class SchoolAdminProfileSerializer(serializers.ModelSerializer):
+    profile_image = serializers.SerializerMethodField()
+    school_logo = serializers.SerializerMethodField()
+
     class Meta:
         model = CustomUser
         fields = [
-            'username', 'email', 'school_name', 'school_type', 
-            'phone_number', 'address', 'city', 'state', 
-            'district', 'country', 'profile_image',
-            'school_logo'
+            "username",
+            "email",
+            "school_name",
+            "school_type",
+            "phone_number",
+            "address",
+            "city",
+            "state",
+            "district",
+            "country",
+            "profile_image",
+            "school_logo",
         ]
 
+    def get_profile_image(self, obj):
+        return obj.profile_image.url if obj.profile_image else None
+
+    def get_school_logo(self, obj):
+        return obj.school_logo.url if obj.school_logo else None
+
     def validate_email(self, value):
-        user = self.context['request'].user
+        user = self.context["request"].user
         if CustomUser.objects.exclude(pk=user.pk).filter(email=value).exists():
             raise serializers.ValidationError("This email is already in use.")
         return value
 
     def validate_username(self, value):
-        user = self.context['request'].user
+        user = self.context["request"].user
         if CustomUser.objects.exclude(pk=user.pk).filter(username=value).exists():
             raise serializers.ValidationError("This username is already in use.")
         return value
+

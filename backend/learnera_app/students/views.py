@@ -35,6 +35,21 @@ from django.db.models import Avg
 from django.db.models import Avg, Count, Q
 
 from django.db.models.functions import ExtractMonth
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+
+handler = logging.FileHandler("student_views_log.log")
+handler.setLevel(logging.DEBUG)
+
+
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+handler.setFormatter(formatter)
+
+if not logger.hasHandlers():
+    logger.addHandler(handler)
 
 
 # Create your views here.
@@ -116,7 +131,7 @@ class StudentExamListView(generics.ListAPIView):
     def get_queryset(self):
         if hasattr(self.request.user, "student"):
             student = self.request.user.student
-            print("This is the student", student.class_assigned)
+            logger.debug("This is the student : %s", student.class_assigned)
             return Exam.objects.filter(
                 class_section=student.class_assigned,
             ).order_by("-created_at")
@@ -198,7 +213,6 @@ class SubmitExamView(APIView):
             )
 
         student = request.user.student
-        print(student.id)
         exam = get_object_or_404(Exam, id=exam_id)
 
         try:
@@ -565,28 +579,29 @@ class AttendanceStatisticsView(APIView):
 class StudentLeaveRequestListCreateView(generics.ListCreateAPIView):
     serializer_class = StudentLeaveRequestSerializer
     permission_classes = [permissions.IsAuthenticated]
-    
+
     def get_queryset(self):
         return StudentLeaveRequest.objects.filter(student__user=self.request.user)
-    
+
     def get_serializer_class(self):
-        if self.request.method == 'POST':
+        if self.request.method == "POST":
             return StudentLeaveRequestDetailSerializer
         return StudentLeaveRequestSerializer
+
 
 class StudentLeaveRequestDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = StudentLeaveRequestDetailSerializer
     permission_classes = [permissions.IsAuthenticated]
-    
+
     def get_queryset(self):
         return StudentLeaveRequest.objects.filter(student__user=self.request.user)
-    
+
     def perform_destroy(self, instance):
-        if instance.status != 'PENDING':
+        if instance.status != "PENDING":
             raise PermissionDenied("Cannot delete a processed leave request")
         instance.delete()
-    
+
     def perform_update(self, serializer):
-        if serializer.instance.status != 'PENDING':
+        if serializer.instance.status != "PENDING":
             raise PermissionDenied("Cannot update a processed leave request")
         serializer.save()

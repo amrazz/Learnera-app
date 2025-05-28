@@ -102,6 +102,7 @@ const AdminProfile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [showColorPalette, setShowColorPalette] = useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [profileImagePreview, setProfileImagePreview] = useState(null);
 
   const [gradientStart, setGradientStart] = useState("#0D2E76");
   const [gradientEnd, setGradientEnd] = useState("#1842DC");
@@ -215,10 +216,15 @@ const AdminProfile = () => {
         ...prev,
         [field]: file,
       }));
+
       if (field === "school_logo") {
-        // Update preview URL for school_logo
         const objectURL = URL.createObjectURL(file);
         setSchoolLogoPreview(objectURL);
+      }
+
+      if (field === "profile_image") {
+        const objectURL = URL.createObjectURL(file);
+        setProfileImagePreview(objectURL);
       }
     }
   };
@@ -226,11 +232,14 @@ const AdminProfile = () => {
   // Cleanup object URL when schoolLogoPreview changes or component unmounts
   useEffect(() => {
     return () => {
-      if (schoolLogoPreview && schoolLogoPreview.startsWith("blob:")) {
+      if (schoolLogoPreview?.startsWith("blob:")) {
         URL.revokeObjectURL(schoolLogoPreview);
       }
+      if (profileImagePreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(profileImagePreview);
+      }
     };
-  }, [schoolLogoPreview]);
+  }, [schoolLogoPreview, profileImagePreview]);
 
   const handleSave = async () => {
     try {
@@ -293,22 +302,62 @@ const AdminProfile = () => {
           }}
         >
           <div className="absolute -bottom-16 left-8">
-            <div className="w-32 h-32 rounded-full border-4 border-white overflow-hidden bg-white">
+            <div className="w-32 h-32 rounded-full border-4 border-white overflow-hidden bg-white relative group">
+              {isEditing && (
+                <label
+                  htmlFor="profileImageInput"
+                  className="absolute inset-0 z-10 bg-black bg-opacity-30 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity text-sm font-semibold cursor-pointer"
+                >
+                  Change
+                </label>
+              )}
               <img
                 src={
-                  profileData.profile_image
-                    ? profileData.profile_image
-                    : typeof profileData.profile_image === "string"
-                    ? profileData.profile_image.includes("127.0.0.1:8000")
-                      ? profileData.profile_image.replace(
-                          "http://127.0.0.1:8000",
-                          "https://learnerapp.site"
-                        )
-                      : profileData.school_logo
-                    : "/api/placeholder/128/128"
+                  profileImagePreview
+                    ? profileImagePreview
+                    : `http://127.0.0.1:8000${profileData.profile_image}`
                 }
                 alt="Profile"
                 className="w-full h-full object-cover"
+              />
+              <input
+                id="profileImageInput"
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleFileChange("profile_image", e)}
+                className="hidden"
+                disabled={!isEditing}
+              />
+            </div>
+          </div>
+
+          {/* School Logo Section */}
+          <div className="absolute -bottom-16 right-8">
+            <div className="w-32 h-32 rounded-full border-4 border-white overflow-hidden bg-white relative cursor-pointer group">
+              {isEditing && (
+                <label
+                  htmlFor="schoolLogoInput"
+                  className="absolute inset-0 z-10 bg-black bg-opacity-30 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity text-sm font-semibold cursor-pointer"
+                >
+                  Change
+                </label>
+              )}
+              <img
+                src={
+                  schoolLogoPreview
+                    ? schoolLogoPreview
+                    : profileData.school_logo
+                }
+                alt="School Logo"
+                className="w-full h-full object-cover"
+              />
+              <input
+                id="schoolLogoInput"
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleFileChange("school_logo", e)}
+                className="hidden"
+                disabled={!isEditing}
               />
             </div>
           </div>
@@ -318,16 +367,9 @@ const AdminProfile = () => {
                 src={
                   schoolLogoPreview
                     ? schoolLogoPreview
-                    : typeof profileData.school_logo === "string"
-                    ? profileData.school_logo.includes("127.0.0.1:8000")
-                      ? profileData.school_logo.replace(
-                          "http://127.0.0.1:8000",
-                          "https://learnerapp.site"
-                        )
-                      : profileData.school_logo
-                    : "/api/placeholder/128/128"
+                    :`http://127.0.0.1:8000${profileData.school_logo}`
                 }
-                alt="Profile"
+                alt="school log"
                 className="w-full h-full object-cover"
               />
             </div>
@@ -436,26 +478,6 @@ const AdminProfile = () => {
           </div>
 
           {/* Only show the file input for school_logo in editing mode */}
-          {isEditing && (
-            <div className="space-y-2 mt-6">
-              <label className="text-sm font-medium text-gray-600">
-                Upload School Logo
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => handleFileChange("school_logo", e)}
-                className="block"
-              />
-              {schoolLogoPreview && (
-                <img
-                  src={schoolLogoPreview}
-                  alt="School Logo Preview"
-                  className="w-40 h-auto mt-2 border rounded"
-                />
-              )}
-            </div>
-          )}
 
           <div className="mt-6">
             <Button

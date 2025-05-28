@@ -24,7 +24,7 @@ const EditParentInfo = () => {
         if (parentResponse.status === 200) {
           setParent(parentResponse.data);
           if (parentResponse.data.user.profile_image) {
-            setPreviewImage(`https://learnerapp.site/${parentResponse.data.user.profile_image}`);
+            setPreviewImage(`http://localhost:8000${parentResponse.data.user.profile_image}`);
           }
         }
       } catch (error) {

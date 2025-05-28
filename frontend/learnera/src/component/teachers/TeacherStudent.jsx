@@ -98,7 +98,7 @@ const TeacherStudent = () => {
               {student.user.profile_image ? (
                 <img
                   className="w-32 h-32 rounded-full object-cover border-4 border-blue-100"
-                  src={`https://learnerapp.site${student.user.profile_image}`}
+                  src={`http://localhost:8000${student.user.profile_image}`}
                   alt={`${student.user.first_name} ${student.user.last_name}`}
                 />
               ) : (

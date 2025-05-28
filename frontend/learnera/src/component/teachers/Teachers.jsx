@@ -3,7 +3,6 @@ import Sidebar from './layout/sidebar/SideBar';
 import Nav from './layout/header/Nav';
 import Sections from './Sections';
 import BackToTop from '../BackToTop';
-import PasswordResetModal from '../passwordResetModal';
 
 const Teachers = () => {
   const [activeMenu, setActiveMenu] = useState(false);
@@ -81,7 +80,6 @@ const Teachers = () => {
           </div>
         </div>
 
-        <PasswordResetModal />
       </div>
     </div>
   );

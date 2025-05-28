@@ -198,7 +198,7 @@ const TeacherInfo = () => {
               {teacher.user.profile_image ? (
                 <img
                   className="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-blue-100"
-                  src={`https://learnerapp.site/${teacher.user.profile_image}`}
+                  src={`http://localhost:8000${teacher.user.profile_image}`}
                   alt={`${teacher.user.first_name} ${teacher.user.last_name}`}
                 />
               ) : (
@@ -302,7 +302,7 @@ const TeacherInfo = () => {
                   >
                     <FileText className="h-5 w-5 text-blue-500" />
                     <a
-                      href={`https://learnerapp.site/${doc.document}`}
+                      href={`http://localhost:8000/${doc.document}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-600 hover:underline"
