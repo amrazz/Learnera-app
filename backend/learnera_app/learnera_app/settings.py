@@ -189,20 +189,16 @@ AUTH_USER_MODEL = "users.CustomUser"
 
 
 CORS_ALLOWED_ORIGINS = [
-    "https://51.21.221.205",
-    "https://learnerapp.site",
     "https://www.learnerapp.site",
     "http://localhost:5173",
 ]
 CSRF_TRUSTED_ORIGINS = [
-    "http://localhost",
     "http://localhost:5173",
-    "https://learnerapp.site",
     "https://www.learnerapp.site",
-    "https://51.21.221.205",
+    "https://api.learnerapp.site",
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_CREDENTIALS = True
 
 EMAIL_BACKEND = os.getenv("EMAIL_BACKEND")
