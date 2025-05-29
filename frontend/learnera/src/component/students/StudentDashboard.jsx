@@ -53,7 +53,7 @@ const StudentDashboard = () => {
       {/* Personal Info Header */}
       <div className="bg-gradient-to-r from-[#0D2E76] to-[#1842DC] text-white p-6 rounded-xl flex items-center gap-4">
         <Avatar className="h-16 w-16 border-2 border-white">
-          <AvatarImage className="bg-white border object-cover" src={`http://localhost:8000${dashboardData.student.profile_image}`} />
+          <AvatarImage className="bg-white border object-cover" src={`${import.meta.env(IMAGE_LOADING_URL)}${dashboardData.student.profile_image}`} />
           <AvatarFallback>{dashboardData.student.initials}</AvatarFallback>
         </Avatar>
         <div>

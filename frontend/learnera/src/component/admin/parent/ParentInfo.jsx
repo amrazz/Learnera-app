@@ -189,7 +189,7 @@ const ParentInfo = () => {
               {parent.user.profile_image ? (
                 <img
                   className="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-blue-100"
-                  src={`http://localhost:8000${parent.user.profile_image}`}
+                  src={`${import.meta.env(IMAGE_LOADING_URL)}${parent.user.profile_image}`}
                   alt={`${parent.user.first_name} ${parent.user.last_name}`}
                 />
               ) : (

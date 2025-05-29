@@ -65,7 +65,7 @@ const UserList = ({ users, onSelectUser, selectedUser, onBackPress }) => {
                   group-hover:bg-white transition-colors shadow-sm`}
             >
               <Avatar className="">
-                <AvatarImage className="object-cover" src={`http://localhost:8000${user.profile_image}`} />
+                <AvatarImage className="object-cover" src={`${import.meta.env(IMAGE_LOADING_URL)}${user.profile_image}`} />
                 <AvatarFallback>{user.first_name[0]} {user.last_name[0]}</AvatarFallback>
               </Avatar>
             </div>
@@ -349,7 +349,7 @@ const ChatPage = () => {
     }
   
     try {
-      const wsUrl = `wss://learnerapp.site/ws/chat/${token}/`;
+      const wsUrl = `wss://api.learnerapp.site/ws/chat/${token}/`;
       const ws = new W3CWebSocket(wsUrl);
       console.log("Connecting to WebSocket:", wsUrl); 
   

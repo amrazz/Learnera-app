@@ -32,7 +32,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-# ALLOWED_HOSTS = ['65.1.213.104', 'learnerapp.site', 'www.learnerapp.site', 'localhost', '127.0.0.1']
+# ALLOWED_HOSTS = ['51.21.221.205', 'learnerapp.site', 'www.learnerapp.site', 'localhost', '127.0.0.1']
 ALLOWED_HOSTS = ["*"]
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
@@ -189,7 +189,7 @@ AUTH_USER_MODEL = "users.CustomUser"
 
 
 CORS_ALLOWED_ORIGINS = [
-    "https://65.1.213.104",
+    "https://51.21.221.205",
     "https://learnerapp.site",
     "https://www.learnerapp.site",
     "http://localhost:5173",
@@ -199,7 +199,7 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
     "https://learnerapp.site",
     "https://www.learnerapp.site",
-    "https://65.1.213.104",
+    "https://51.21.221.205",
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True

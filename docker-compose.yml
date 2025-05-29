@@ -1,19 +1,4 @@
 services:
-  frontend:
-    build:
-      context: ./frontend/learnera
-      dockerfile: Dockerfile
-    ports:
-      - "80:80"
-    volumes:
-      - ./frontend/learnera:/app
-      - ./frontend/learnera/node_modules:/app/node_modules
-      - static_volume:/app/static
-    environment:
-      NODE_ENV: production
-    stdin_open: true
-    tty: true
-
   backend:
     build:
       context: ./backend/learnera_app
@@ -61,7 +46,8 @@ services:
       - DJANGO_SETTINGS_MODULE=learnera_app.settings
 
   redis:
-    image: redis:alpine
+    image: redis:7
+    restart: always
     ports:
       - "6379:6379"
     volumes:
