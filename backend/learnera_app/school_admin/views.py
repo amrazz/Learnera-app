@@ -60,7 +60,7 @@ User = get_user_model()
 def set_password_link(user):
     uid = urlsafe_base64_encode(force_bytes(user.id))
     token = default_token_generator.make_token(user)
-    set_password_link = f"http://localhost:5173/set-password/{uid}/{token}/"
+    set_password_link = f"https://learnerapp.site/set-password/{uid}/{token}/"
     return set_password_link
 
 

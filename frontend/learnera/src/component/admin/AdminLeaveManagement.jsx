@@ -118,7 +118,7 @@ const AdminLeaveManagement = () => {
 
   const handleViewDocument = (request) => {
     const correctedUrl = request.document_url.startsWith('/media')
-      ? `http://localhost:5173${request.document_url}`
+      ? `https://learnerapp.site${request.document_url}`
       : request.document_url;
   
     setSelectedDocument({
