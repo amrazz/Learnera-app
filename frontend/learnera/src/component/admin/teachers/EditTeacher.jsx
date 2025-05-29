@@ -42,7 +42,7 @@ const EditTeacher = () => {
           setTeacher(response.data);
           if (response.data.user.profile_image) {
             setPreviewImage(
-              `${import.meta.env(IMAGE_LOADING_URL)}${response.data.user.profile_image}`
+              `${import.meta.env.VITE_IMAGE_LOADING_URL}${response.data.user.profile_image}`
             );
           }
           if (response.data.documents) {
@@ -333,7 +333,7 @@ const EditTeacher = () => {
                         <span>{doc.title}</span>
                         <div className="flex space-x-2">
                           <a
-                            href={`${import.meta.env(IMAGE_LOADING_URL)}/${doc.document}`}
+                            href={`${import.meta.env.VITE_IMAGE_LOADING_URL}/${doc.document}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-blue-600 hover:underline"

@@ -198,7 +198,7 @@ const TeacherInfo = () => {
               {teacher.user.profile_image ? (
                 <img
                   className="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-blue-100"
-                  src={`${import.meta.env(IMAGE_LOADING_URL)}${teacher.user.profile_image}`}
+                  src={`${import.meta.env.VITE_IMAGE_LOADING_URL}${teacher.user.profile_image}`}
                   alt={`${teacher.user.first_name} ${teacher.user.last_name}`}
                 />
               ) : (
@@ -302,7 +302,7 @@ const TeacherInfo = () => {
                   >
                     <FileText className="h-5 w-5 text-blue-500" />
                     <a
-                      href={`${import.meta.env(IMAGE_LOADING_URL)}/${doc.document}`}
+                      href={`${import.meta.env.VITE_IMAGE_LOADING_URL}/${doc.document}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-600 hover:underline"

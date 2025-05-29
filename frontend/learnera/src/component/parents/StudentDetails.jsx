@@ -214,7 +214,7 @@ const StudentDetails = () => {
               >
                 <div className="relative">
                   <img 
-                    src={`${import.meta.env(IMAGE_LOADING_URL)}${user.profile_image}` || '/api/placeholder/400/320'} 
+                    src={`${import.meta.env.VITE_IMAGE_LOADING_URL}${user.profile_image}` || '/api/placeholder/400/320'} 
                     alt={`${user.first_name} ${user.last_name}`}
                     className="w-full h-48 object-cover"
                   />

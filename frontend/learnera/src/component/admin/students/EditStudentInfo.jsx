@@ -55,7 +55,7 @@ const EditStudentInfo = () => {
         setStudent(response.data);
         if (response.data.user.profile_image) {
           setPreviewImage(
-            `${import.meta.env(IMAGE_LOADING_URL)}${response.data.user.profile_image}`
+            `${import.meta.env.VITE_IMAGE_LOADING_URL}${response.data.user.profile_image}`
           );
         }
       } catch (error) {

@@ -96,7 +96,7 @@ const ShowTeachers = () => {
                         {teacher.user.profile_image ? (
                           <img
                             className="h-10 w-10 rounded-full object-cover"
-                            src={`${import.meta.env(IMAGE_LOADING_URL)}${teacher.user.profile_image}`}
+                            src={`${import.meta.env.VITE_IMAGE_LOADING_URL}${teacher.user.profile_image}`}
                             alt=""
                           />
                         ) : (

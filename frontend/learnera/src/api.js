@@ -4,7 +4,7 @@ import { ACCESS_TOKEN } from "./constants";
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL || "/api/",
 });
-console.log("VITE_API_URL loaded as:", import.meta.env.VITE_API_URL); import.meta.env(IMAGE_LOADING_URL)
+console.log("VITE_API_URL loaded as:", import.meta.env.VITE_API_URL);
 
 api.interceptors.request.use(
     (config) => {
