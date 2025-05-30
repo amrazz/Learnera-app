@@ -110,6 +110,8 @@ const UserProfile = () => {
   const [gradientEnd, setGradientEnd] = useState("#1842DC");
   const [profileData, setProfileData] = useState({
     username: "",
+    first_name: "",
+    last_name: "",
     email: "",
     profile_image: null,
     phone_number: "",
@@ -227,6 +229,8 @@ const UserProfile = () => {
   const renderFields = () => {
     const fields = [
       { key: "username", label: "Username" },
+      { key: "first_name", label: "First Name" },
+      { key: "last_name", label: "Last Name" },
       { key: "email", label: "Email" },
       { key: "phone_number", label: "Phone Number" },
       { key: "gender", label: "Gender", type: "select", options: [

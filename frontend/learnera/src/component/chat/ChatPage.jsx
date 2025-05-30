@@ -367,7 +367,8 @@ const ChatPage = () => {
       ws.onclose = (event) => {
         console.log("WebSocket Closed:", event.code, event.reason);
         // Reconnect only if not a normal closure
-        if (event.code !== 1000 && event.code !== 1001) {
+        if (event.code !== 1000 && event.code !== 1001 && currentUser) {
+          console.log("Attempting to reconnect in 3 seconds...");
           setTimeout(() => {
             if (currentUser) {
               initializeWebSocket();
