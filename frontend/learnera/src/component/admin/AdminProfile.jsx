@@ -116,9 +116,7 @@ const AdminProfile = () => {
     district: "",
     country: "",
     profile_image: null,
-    profile_image_url: null,
     school_logo: null,
-    school_logo_url: null,
     username: "",
     email: "",
   });
@@ -139,9 +137,7 @@ const AdminProfile = () => {
     district: data.district || "",
     country: data.country || "",
     profile_image: data.profile_image || null,
-    profile_image_url: data.profile_image_url || null,
     school_logo: data.school_logo || null,
-    school_logo_url: data.school_logo_url || null,
     username: data.username || "",
     email: data.email || "",
   });
@@ -445,7 +441,7 @@ const AdminProfile = () => {
             </div>
             {Object.entries(profileData).map(([key, value]) => {
               if (
-                ["school_logo", "username", "email", "profile_image", "profile_image_url", "school_logo_url"].includes(
+                ["school_logo", "username", "email", "profile_image",].includes(
                   key
                 )
               )

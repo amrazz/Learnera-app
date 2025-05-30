@@ -298,10 +298,15 @@ const UserProfile = () => {
     : "/api/placeholder/1200/400";
 
 
-  const getProfileImageUrl = () => {
-    const { profile_image } = profileData;
-    return profile_image || "";
-  };
+    const getProfileImageUrl = () => {
+      let url = profileData.profile_image;
+    
+      if (!url) return "";
+    
+      url = url.replace("https://learnerapp.site", "https://api.learnerapp.site");
+    
+      return url;
+    };
 
   return (
     <div className="min-h-screen bg-gray-100 p-4">
