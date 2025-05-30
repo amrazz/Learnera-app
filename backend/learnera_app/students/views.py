@@ -41,6 +41,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
+# handler = logging.FileHandler("media/logs/student_views_log.log")
 handler = logging.FileHandler("student_views_log.log")
 handler.setLevel(logging.DEBUG)
 

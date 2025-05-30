@@ -53,6 +53,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
+# handler = logging.FileHandler('media/logs/parent_views_log.log')
 handler = logging.FileHandler('parent_views_log.log')
 handler.setLevel(logging.DEBUG)
 
