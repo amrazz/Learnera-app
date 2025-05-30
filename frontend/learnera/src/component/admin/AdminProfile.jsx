@@ -319,7 +319,7 @@ const AdminProfile = () => {
                 src={
                   profileImagePreview
                     ? profileImagePreview
-                    : `http://127.0.0.1:8000${profileData.profile_image_url}`
+                    : `${profileData.profile_image}`
                 }
                 alt="Profile"
                 className="w-full h-full object-cover"
@@ -371,7 +371,7 @@ const AdminProfile = () => {
                 src={
                   schoolLogoPreview
                     ? schoolLogoPreview
-                    :`http://127.0.0.1:8000${profileData.school_logo_url}`
+                    :`${profileData.school_logo}`
                 }
                 alt="school log"
                 className="w-full h-full object-cover"
