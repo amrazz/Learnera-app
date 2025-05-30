@@ -901,8 +901,7 @@ from rest_framework import serializers
 from .models import CustomUser  # Adjust import as needed
 
 class SchoolAdminProfileSerializer(serializers.ModelSerializer):
-    profile_image = serializers.SerializerMethodField()
-    school_logo = serializers.SerializerMethodField()
+
 
     class Meta:
         model = CustomUser
@@ -917,15 +916,9 @@ class SchoolAdminProfileSerializer(serializers.ModelSerializer):
             "state",
             "district",
             "country",
-            "profile_image",
-            "school_logo",
+            "profile_image",         
+            "school_logo",               
         ]
-
-    def get_profile_image(self, obj):
-        return obj.profile_image.url if obj.profile_image else None
-
-    def get_school_logo(self, obj):
-        return obj.school_logo.url if obj.school_logo else None
 
     def validate_email(self, value):
         user = self.context["request"].user
@@ -938,4 +931,3 @@ class SchoolAdminProfileSerializer(serializers.ModelSerializer):
         if CustomUser.objects.exclude(pk=user.pk).filter(username=value).exists():
             raise serializers.ValidationError("This username is already in use.")
         return value
-

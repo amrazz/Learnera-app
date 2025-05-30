@@ -189,11 +189,14 @@ AUTH_USER_MODEL = "users.CustomUser"
 
 
 CORS_ALLOWED_ORIGINS = [
+    "https://learnerapp.site",
     "https://www.learnerapp.site",
+    "https://api.learnerapp.site",
     "http://localhost:5173",
 ]
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
+    "https://learnerapp.site",
     "https://www.learnerapp.site",
     "https://api.learnerapp.site",
 ]

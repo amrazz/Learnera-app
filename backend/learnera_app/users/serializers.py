@@ -53,7 +53,7 @@ class BaseUserProfileSerializer(serializers.ModelSerializer):
             if request:
                 return request.build_absolute_uri(obj.profile_image.url)
             else:
-                return f"https://learnerapp.site{obj.profile_image.url}"
+                return f"https://api.learnerapp.site{obj.profile_image.url}"
         return None
 
     def validate_email(self, value):
