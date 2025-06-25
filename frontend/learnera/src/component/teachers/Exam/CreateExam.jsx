@@ -95,7 +95,6 @@ const CreateExam = () => {
   };
 
   const calculateDuration = (startTime, endTime) => {
-    console.log(startTime, endTime);
     
     return Math.round((new Date(endTime) - new Date(startTime)) / (1000 * 60))
   }

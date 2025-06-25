@@ -80,7 +80,6 @@ const ExamQuestions = () => {
     try {
       const response = await api.get(`teachers/exams/${examId}/`);
       if (response.status === 200) {
-        console.log("Exam Details Response:", response.data);
         setExam(response.data);
         const totalMarks = response.data.question.reduce(
           (sum, q) => sum + q.marks,
@@ -100,7 +99,6 @@ const ExamQuestions = () => {
     try {
       const response = await api.get(`teachers/exams/${examId}/questions/`);
       if (response.status === 200) {
-        console.log("Questions Response:", response.data);
         const totalMarks = response.data.reduce((sum, q) => sum + q.marks, 0);
         setCurrentMarks(totalMarks);
       }

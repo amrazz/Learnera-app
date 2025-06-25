@@ -380,7 +380,6 @@ const ChatPage = () => {
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          console.log("Received WebSocket Message:", data); 
   
           if (data.status === "send") {
             setMessages((prev) =>

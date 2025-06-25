@@ -23,7 +23,6 @@ const TeacherStudent = () => {
   const [error, setError] = useState("");
 
   const navigate = useNavigate();
-  console.log(`hello tyhis is the student id ${studentId}`);
 
   useEffect(() => {
     const fetchStudentDetails = async () => {

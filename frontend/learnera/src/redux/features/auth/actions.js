@@ -4,10 +4,8 @@ import { ACCESS_TOKEN, REFRESH_TOKEN } from "../../../constants";
 
 export const login = createAsyncThunk('auth/login', async (credentials, { rejectWithValue }) => {
     try {
-        console.log(credentials);
 
         const response = await api.post('users/user_login/', credentials);
-        console.log(response);
         if (response.status === 200) {
             const { access_token, refresh_token, role, resetPassword, userEmail } = response.data;
 
@@ -32,11 +30,9 @@ export const login = createAsyncThunk('auth/login', async (credentials, { reject
 
 export const schooladmin_login = createAsyncThunk('auth/login', async (credentials, { rejectWithValue }) => {
     try {
-        console.log(credentials);
 
 
         const response = await api.post('school_admin/login/', credentials);
-        console.log(response);
 
         if (response.status === 200) {
 

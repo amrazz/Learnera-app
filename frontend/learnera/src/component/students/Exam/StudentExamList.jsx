@@ -81,9 +81,63 @@ const ExamCard = ({ exam, navigate }) => {
 
   return (
     <Card className="transform hover:scale-[1.02] transition-all duration-200 hover:shadow-xl bg-white border-2 border-blue-50">
-      <CardContent className="p-6 relative">
+      <CardContent className="p-4 sm:p-6 relative">
         {getStatusBadge()}
-        <div className="flex items-start gap-4">
+        
+        {/* Mobile Layout */}
+        <div className="block sm:hidden">
+          <div className="flex items-start gap-3 mb-4">
+            <div className="flex-shrink-0 p-2 bg-blue-50 rounded-lg">
+              <SubjectIcon subject={exam.subject_name} />
+            </div>
+            <div className="flex-grow pr-16">
+              <h3 className="text-lg font-bold text-blue-900 mb-1">
+                {exam.title}
+              </h3>
+              <p className="text-blue-600 font-medium text-sm">{exam.subject_name}</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            <div className="flex items-center gap-2 bg-blue-50 p-2 rounded">
+              <Clock className="w-3 h-3 text-blue-600 flex-shrink-0" />
+              <span className="text-xs font-medium">{exam.duration} mins</span>
+            </div>
+            <div className="flex items-center gap-2 bg-blue-50 p-2 rounded">
+              <Award className="w-3 h-3 text-blue-600 flex-shrink-0" />
+              <span className="text-xs font-medium">{exam.total_mark} marks</span>
+            </div>
+            <div className="flex items-center gap-2 bg-blue-50 p-2 rounded">
+              <BookOpen className="w-3 h-3 text-blue-600 flex-shrink-0" />
+              <span className="text-xs font-medium">{exam.total_questions} ques.</span>
+            </div>
+            <div className="flex items-center gap-2 bg-blue-50 p-2 rounded">
+              <Calendar className="w-3 h-3 text-blue-600 flex-shrink-0" />
+              <span className="text-xs font-medium">
+                {format(startTime, "dd MMM")}
+              </span>
+            </div>
+          </div>
+
+          <div className="text-center text-xs text-blue-600 mb-3">
+            {format(startTime, "dd MMM, h:mm a")}
+          </div>
+
+          <Button
+            onClick={() => navigate(`/students/exam-preparation/${exam.id}`)}
+            disabled={isExamOver || isExamUpcoming}
+            className={`w-full text-sm ${
+              isExamInProgress
+                ? "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+                : "bg-gray-100 text-gray-600"
+            }`}
+          >
+            {getButtonText()}
+          </Button>
+        </div>
+
+        {/* Desktop Layout */}
+        <div className="hidden sm:flex items-start gap-4">
           <div className="flex-shrink-0 p-3 bg-blue-50 rounded-lg">
             <SubjectIcon subject={exam.subject_name} />
           </div>
@@ -95,7 +149,7 @@ const ExamCard = ({ exam, navigate }) => {
               <p className="text-blue-600 font-medium">{exam.subject_name}</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="flex items-center gap-2 bg-blue-50 p-2 rounded">
                 <Clock className="w-4 h-4 text-blue-600" />
                 <span className="text-sm font-medium">{exam.duration} mins</span>
@@ -176,49 +230,55 @@ const StudentExamList = () => {
     }
   };
 
+  
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <HashLoader color="#1842DC" size={50} />
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="text-center">
+          <HashLoader color="#1842DC" size={50} />
+          <p className="mt-4 text-blue-600">Loading your exams...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="p-6 text-center">
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <Card className="p-6 text-center max-w-md w-full">
           <div className="text-4xl mb-4">😕</div>
           <h3 className="text-xl font-bold text-red-600 mb-2">{error}</h3>
-          <Button onClick={() => fetchExams(1)}>Try Again</Button>
+          <Button onClick={() => fetchExams(1)} className="w-full">
+            Try Again
+          </Button>
         </Card>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-blue-900 mb-2">
+    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="text-center mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-blue-900 mb-2">
           Your Exam Dashboard
         </h1>
-        <p className="text-blue-600">
+        <p className="text-sm sm:text-base text-blue-600">
           View and manage all your upcoming and ongoing exams
         </p>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {exams.length > 0 ? (
           exams.map((exam) => (
             <ExamCard key={exam.id} exam={exam} navigate={navigate} />
           ))
         ) : (
-          <Card className="p-12 text-center bg-blue-50">
-            <div className="text-6xl mb-4">🎯</div>
-            <h3 className="text-2xl font-bold text-blue-900 mb-2">
+          <Card className="p-8 sm:p-12 text-center bg-blue-50">
+            <div className="text-4xl sm:text-6xl mb-4">🎯</div>
+            <h3 className="text-xl sm:text-2xl font-bold text-blue-900 mb-2">
               No Exams Available
             </h3>
-            <p className="text-blue-600">
+            <p className="text-sm sm:text-base text-blue-600">
               Check back later for upcoming exams!
             </p>
           </Card>
@@ -226,38 +286,108 @@ const StudentExamList = () => {
       </div>
 
       {pagination.totalPages > 1 && (
-        <div className="mt-8 flex justify-center">
+        <div className="mt-6 sm:mt-8 flex justify-center">
           <Pagination>
-            <PaginationContent>
+            <PaginationContent className="flex-wrap justify-center gap-1">
               <PaginationItem>
                 <PaginationPrevious
                   onClick={() => handlePageChange(pagination.currentPage - 1)}
                   disabled={pagination.currentPage === 1}
-                  className={pagination.currentPage === 1 ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
+                  className={`${
+                    pagination.currentPage === 1 
+                      ? "opacity-50 cursor-not-allowed" 
+                      : "cursor-pointer hover:bg-blue-50"
+                  } text-sm px-2 py-1`}
                 />
               </PaginationItem>
 
-              {[...Array(pagination.totalPages)].map((_, index) => (
-                <PaginationItem key={index + 1}>
-                  <PaginationLink
-                    onClick={() => handlePageChange(index + 1)}
-                    isActive={pagination.currentPage === index + 1}
-                    className={
-                      pagination.currentPage === index + 1
-                        ? "bg-blue-600 text-white hover:bg-blue-700"
-                        : "hover:bg-blue-50"
+              {/* Show limited page numbers on mobile */}
+              {pagination.totalPages <= 5 ? (
+                [...Array(pagination.totalPages)].map((_, index) => (
+                  <PaginationItem key={index + 1}>
+                    <PaginationLink
+                      onClick={() => handlePageChange(index + 1)}
+                      isActive={pagination.currentPage === index + 1}
+                      className={`text-sm px-3 py-1 ${
+                        pagination.currentPage === index + 1
+                          ? "bg-blue-600 text-white hover:bg-blue-700"
+                          : "hover:bg-blue-50"
+                      }`}
+                    >
+                      {index + 1}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))
+              ) : (
+                <>
+                  {/* First page */}
+                  <PaginationItem>
+                    <PaginationLink
+                      onClick={() => handlePageChange(1)}
+                      isActive={pagination.currentPage === 1}
+                      className={`text-sm px-3 py-1 ${
+                        pagination.currentPage === 1
+                          ? "bg-blue-600 text-white hover:bg-blue-700"
+                          : "hover:bg-blue-50"
+                      }`}
+                    >
+                      1
+                    </PaginationLink>
+                  </PaginationItem>
+                  
+                  {pagination.currentPage > 3 && <span className="px-2">...</span>}
+                  
+                  {/* Current page and neighbors */}
+                  {[...Array(3)].map((_, i) => {
+                    const pageNum = pagination.currentPage - 1 + i;
+                    if (pageNum > 1 && pageNum < pagination.totalPages) {
+                      return (
+                        <PaginationItem key={pageNum}>
+                          <PaginationLink
+                            onClick={() => handlePageChange(pageNum)}
+                            isActive={pagination.currentPage === pageNum}
+                            className={`text-sm px-3 py-1 ${
+                              pagination.currentPage === pageNum
+                                ? "bg-blue-600 text-white hover:bg-blue-700"
+                                : "hover:bg-blue-50"
+                            }`}
+                          >
+                            {pageNum}
+                          </PaginationLink>
+                        </PaginationItem>
+                      );
                     }
-                  >
-                    {index + 1}
-                  </PaginationLink>
-                </PaginationItem>
-              ))}
+                    return null;
+                  })}
+                  
+                  {pagination.currentPage < pagination.totalPages - 2 && <span className="px-2">...</span>}
+                  
+                  {/* Last page */}
+                  <PaginationItem>
+                    <PaginationLink
+                      onClick={() => handlePageChange(pagination.totalPages)}
+                      isActive={pagination.currentPage === pagination.totalPages}
+                      className={`text-sm px-3 py-1 ${
+                        pagination.currentPage === pagination.totalPages
+                          ? "bg-blue-600 text-white hover:bg-blue-700"
+                          : "hover:bg-blue-50"
+                      }`}
+                    >
+                      {pagination.totalPages}
+                    </PaginationLink>
+                  </PaginationItem>
+                </>
+              )}
 
               <PaginationItem>
                 <PaginationNext
                   onClick={() => handlePageChange(pagination.currentPage + 1)}
                   disabled={pagination.currentPage === pagination.totalPages}
-                  className={pagination.currentPage === pagination.totalPages ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
+                  className={`${
+                    pagination.currentPage === pagination.totalPages 
+                      ? "opacity-50 cursor-not-allowed" 
+                      : "cursor-pointer hover:bg-blue-50"
+                  } text-sm px-2 py-1`}
                 />
               </PaginationItem>
             </PaginationContent>
