@@ -50,7 +50,6 @@ const AddClass = () => {
 
   const handleSubmit = async (values, { setSubmitting, resetForm }) => {
     try {
-      console.log(`this is the class data ${values}`)
       const response = await api.post("school_admin/add_class/", values);
       if (response.status === 201) {
         toast.success("New Class Created Successfully!", {

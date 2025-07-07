@@ -16,7 +16,6 @@ const ShowTeachers = () => {
         const response = await api.get("school_admin/teachers/");
 
         if (response.status === 200) {
-          console.log(`this is the teacher data ${response.data}`);
           setTeachers(response.data);
         } else {
           setError("Failed to fetch teachers. Please try again.");

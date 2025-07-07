@@ -4,7 +4,6 @@ export const deleteStudent = async (studentId) => {
     try {
     
         const response = await api.delete(`school_admin/student_delete/${studentId}/`);
-        console.log('this is the delete response', response);
 
         if (response.status === 204) {
             return true;
@@ -30,7 +29,6 @@ export const BlockStudent = async (studentId, action) => {
 
             
         if (response.status === 200) {
-            console.log(`Student ${action === "Block" ? "Blocked" : "Unblocked"} successfully!!`);
             return true;
         }
     } catch (error) {

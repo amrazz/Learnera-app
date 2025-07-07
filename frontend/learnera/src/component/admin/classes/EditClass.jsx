@@ -83,7 +83,6 @@ const EditClass = () => {
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
       setIsLoading(true);
-      console.log(`Edited data: ${JSON.stringify(values)}`);
 
       const payload = {
         class_name: values.class_name,

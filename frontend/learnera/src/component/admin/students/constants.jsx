@@ -437,7 +437,6 @@ export const EditForm = ({ isSubmitting, errors, touched, student, previewImage,
       <ParentRelationship
         existingParents={student.parents}
         onParentUpdate={(relationships) => {
-          console.log("Parent relationships updated:", relationships);
         }}
         studentId={student.id}
       />

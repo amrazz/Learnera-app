@@ -21,7 +21,6 @@ const ShowParents = () => {
       const response = await api.get(url);
 
       if (response.status === 200) {
-        console.log(response.data);
         
 
         setParents(response.data.results);
