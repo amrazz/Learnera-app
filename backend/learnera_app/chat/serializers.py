@@ -20,6 +20,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
             'is_teacher', 
             'is_student', 
             'is_parent',
+            'is_online',
             'profile_image',
             'display_name',
             'last_message',

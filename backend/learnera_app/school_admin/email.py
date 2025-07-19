@@ -1,6 +1,7 @@
 from django.core.mail import EmailMultiAlternatives
 from django.conf import settings
 from django.template.loader import render_to_string
+from loguru import logger
 from django.utils.html import strip_tags
 
 class EmailService:
@@ -19,10 +20,10 @@ class EmailService:
             
             email.attach_alternative(html_message, "text/html")
             email.send(False)
-            print(f"Email sent successfully to {', '.join(recipient_list)}")
+            logger.debug(f"Email sent successfully to {', '.join(recipient_list)}")
             return True
         except Exception as e:
-            print(f"Failed to send email to {', '.join(recipient_list)}: {str(e)}")
+            logger.debug(f"Failed to send email to {', '.join(recipient_list)}: {str(e)}")
             return False
 
     @staticmethod
@@ -51,5 +52,5 @@ class EmailService:
                 recipient_list=[email]
             )
         except Exception as e:
-            print(f"Failed to prepare welcome email for {email}: {str(e)}")
+            logger.debug(f"Failed to prepare welcome email for {email}: {str(e)}")
             raise

@@ -68,7 +68,7 @@ urlpatterns = [
     path('teacher-leave-request/<int:pk>/', AdminTeacherLeaveRequestDetailView.as_view(), name='admin-teacher-leave-request-detail'),
     path('teacher-leave-response/<int:pk>/', AdminLeaveResponseView.as_view(), name='admin-leave-response'),
     
- path('profile/', SchoolAdminProfileView.as_view(), name="school_admin_profile"),
+    path('profile/', SchoolAdminProfileView.as_view(), name="school_admin_profile"),
     path('change_password/', PasswordChangeView.as_view(), name="change_password"),]
 
 urlpatterns += [

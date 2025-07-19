@@ -13,9 +13,36 @@ import {
   Send,
   SendHorizonal,
   Video,
+  MessageCircle,
+  Users,
+  Settings,
+  X,
 } from "lucide-react";
 import { MdEmojiEmotions } from "react-icons/md";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+// Avatar component
+const Avatar = ({ children, className = "" }) => (
+  <div className={`relative inline-block ${className}`}>
+    {children}
+  </div>
+);
+
+const AvatarImage = ({ src, alt = "", className = "" }) => (
+  <img
+    src={src}
+    alt={alt}
+    className={`w-full h-full object-cover ${className}`}
+    onError={(e) => {
+      e.target.style.display = 'none';
+    }}
+  />
+);
+
+const AvatarFallback = ({ children, className = "" }) => (
+  <div className={`w-full h-full flex items-center justify-center bg-gray-200 text-gray-600 font-medium ${className}`}>
+    {children}
+  </div>
+);
 
 const UserList = ({ users, onSelectUser, selectedUser, onBackPress }) => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -27,78 +54,117 @@ const UserList = ({ users, onSelectUser, selectedUser, onBackPress }) => {
   );
 
   return (
-    <div className="w-full md:w-[100%] border-r max-h-[32rem] bg-gradient-to-b from-indigo-50 to-blue-50 overflow-y-auto shadow-xl max-md:mt-36">
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-indigo-600">Messages</h1>
-          <div className="p-2 hover:bg-indigo-100 rounded-full cursor-pointer">
-            <MoreVertical className="text-indigo-600" size={24} />
+    <div className="w-full h-full flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      {/* Header */}
+      <div className="flex-none p-4 lg:p-6 bg-white/80 backdrop-blur-md border-b border-gray-100 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+              <MessageCircle className="text-white" size={20} />
+            </div>
+            <h1 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+              Messages
+            </h1>
+          </div>
+          <div className="flex gap-2">
+            <button className="p-2 hover:bg-gray-100 rounded-xl transition-all duration-200 hover:scale-105">
+              <Users className="text-gray-600" size={18} />
+            </button>
+            <button className="p-2 hover:bg-gray-100 rounded-xl transition-all duration-200 hover:scale-105">
+              <Settings className="text-gray-600" size={18} />
+            </button>
           </div>
         </div>
-        <div className="relative">
+        
+        {/* Search Bar */}
+        <div className="relative group">
           <input
             type="text"
-            placeholder="Search contacts..."
+            placeholder="Search conversations..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-white rounded-2xl border-0 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+            className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-2xl border-0 transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:bg-white focus:shadow-md focus:outline-none"
           />
-          <Search className="absolute left-4 top-3.5 text-gray-400" size={20} />
+          <Search className="absolute left-4 top-3.5 text-gray-400 transition-colors" size={18} />
         </div>
       </div>
-      <div className="p-2">
-        {filteredUsers.map((user) => (
-          <div
-            key={user.id}
-            onClick={() => onSelectUser(user)}
-            className={`group flex items-center p-4 mb-2 rounded-2xl transition-all duration-300 ${
-              selectedUser?.id === user.id
-                ? "bg-indigo-600 shadow-lg"
-                : "hover:bg-white hover:shadow-md"
-            } cursor-pointer`}
-          >
-            <div
-              className={` w-14 h-14 rounded-full flex items-center justify-center 
-                  ${
-                    selectedUser?.id === user.id ? "bg-white" : "bg-indigo-100"
-                  } 
-                  group-hover:bg-white transition-colors shadow-sm`}
-            >
-              <Avatar className="">
-                <AvatarImage className="object-cover" src={`${import.meta.env.VITE_IMAGE_LOADING_URL}${user.profile_image}`} />
-                <AvatarFallback>{user.first_name[0]} {user.last_name[0]}</AvatarFallback>
-              </Avatar>
+
+      {/* User List */}
+      <div className="flex-1 overflow-y-auto p-2 lg:p-4 space-y-1">
+        {filteredUsers.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+              <Users className="text-gray-400" size={24} />
             </div>
-            <div className="ml-4 flex-1">
-              <h3
-                className={`font-semibold ${
-                  selectedUser?.id === user.id ? "text-white" : "text-gray-800"
-                }`}
-              >
-                {user.display_name}
-              </h3>
-              <p
-                className={`text-sm ${
-                  selectedUser?.id === user.id
-                    ? "text-indigo-100"
-                    : "text-gray-500"
-                } truncate`}
-              >
-                {user.last_message || ""}
-              </p>
-            </div>
-            <ChevronRight
-              className={`ml-2 ${
-                selectedUser?.id === user.id ? "text-white" : "text-gray-400"
-              }`}
-              size={20}
-            />
+            <p className="text-gray-500 text-sm">No conversations found</p>
           </div>
-        ))}
+        ) : (
+          filteredUsers.map((user) => (
+            <div
+              key={user.id}
+              onClick={() => onSelectUser(user)}
+              className={`group flex items-center p-3 lg:p-4 rounded-2xl transition-all duration-300 cursor-pointer relative overflow-hidden ${
+                selectedUser?.id === user.id
+                  ? "bg-gradient-to-r from-blue-500 to-indigo-600 shadow-lg shadow-blue-200 scale-[1.02]"
+                  : "hover:bg-white hover:shadow-md hover:scale-[1.01]"
+              }`}
+            >
+              {selectedUser?.id === user.id && (
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-700 opacity-10 rounded-2xl"></div>
+              )}
+              
+              <div className="relative flex-shrink-0">
+                <div className={`w-12 h-12 lg:w-14 lg:h-14 rounded-full overflow-hidden ring-2 transition-all ${
+                  selectedUser?.id === user.id ? "ring-white/50" : "ring-gray-200"
+                }`}>
+                  <Avatar className="w-full h-full">
+                    <AvatarImage
+                      className="object-cover"
+                      src={`${import.meta.env.VITE_IMAGE_LOADING_URL}${user.profile_image}`}
+                    />
+                    <AvatarFallback className={`text-sm font-semibold ${
+                      selectedUser?.id === user.id ? "bg-white text-blue-600" : "bg-gray-100"
+                    }`}>
+                      {user.first_name[0]}{user.last_name[0]}
+                    </AvatarFallback>
+                  </Avatar>
+                </div>
+                {user.is_online && (
+                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full shadow-sm animate-pulse" />
+                )}
+              </div>
+
+              <div className="ml-3 lg:ml-4 flex-1 min-w-0">
+                <h3 className={`font-semibold text-sm lg:text-base truncate ${
+                  selectedUser?.id === user.id ? "text-white" : "text-gray-900"
+                }`}>
+                  {user.display_name}
+                </h3>
+                <p className={`text-xs lg:text-sm mt-1 truncate ${
+                  selectedUser?.id === user.id ? "text-blue-100" : "text-gray-500"
+                }`}>
+                  {user.last_message || "Start a conversation"}
+                </p>
+              </div>
+
+              <div className="flex-shrink-0 ml-2">
+                <ChevronRight
+                  className={`transition-all duration-200 ${
+                    selectedUser?.id === user.id 
+                      ? "text-white transform rotate-90" 
+                      : "text-gray-400 group-hover:text-gray-600"
+                  }`}
+                  size={18}
+                />
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
 };
+
 const ChatWindow = ({
   selectedUser,
   messages,
@@ -108,20 +174,20 @@ const ChatWindow = ({
 }) => {
   const [messageInput, setMessageInput] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const emojiPickerRef = useRef(null)
-  const buttonRef = useRef(null)
-  const endOfMessageRef = useRef(null)
+  const emojiPickerRef = useRef(null);
+  const buttonRef = useRef(null);
+  const endOfMessageRef = useRef(null);
 
   useEffect(() => {
     if (endOfMessageRef.current) {
-      endOfMessageRef.current.scrollIntoView({ behaviour : "smooth" })
+      endOfMessageRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages])
+  }, [messages]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
-        emojiPickerRef.current && 
+        emojiPickerRef.current &&
         !emojiPickerRef.current.contains(event.target) &&
         !buttonRef.current.contains(event.target)
       ) {
@@ -129,9 +195,9 @@ const ChatWindow = ({
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
@@ -153,155 +219,214 @@ const ChatWindow = ({
 
   const handleEmojiSelect = (emoji) => {
     setMessageInput((prev) => prev + emoji.native);
+    setShowEmojiPicker(false);
   };
 
   return (
-    <div className="flex-1 flex flex-col h-[32rem] bg-gradient-to-br from-gray-50 to-blue-50 -z-10 max-md:mt-36">
+    <div className="flex-1 flex flex-col h-full bg-gradient-to-br from-gray-50 to-blue-50/30">
       {selectedUser ? (
         <>
           {/* Chat Header */}
-          <div className="p-4 border-b border-gray-200 bg-white/80 backdrop-blur-sm shadow-sm">
+          <div className="flex-none p-4 lg:p-6 bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm">
             <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <div
-                  className="md:hidden mr-4 p-2 hover:bg-gray-100 rounded-full cursor-pointer"
+              <div className="flex items-center gap-4">
+                <button
+                  className="md:hidden p-2 hover:bg-gray-100 rounded-full transition-all duration-200 hover:scale-105"
                   onClick={onBackToContacts}
                 >
-                  <ArrowLeft className="text-gray-600" size={24} />
-                </div>
+                  <ArrowLeft className="text-gray-600" size={20} />
+                </button>
+                
                 <div className="relative">
-                  <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center shadow-sm">
-                    <span className="text-xl font-bold text-indigo-600">
-                      {selectedUser.first_name[0]}
-                      {selectedUser.last_name[0]}
-                    </span>
+                  <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-full overflow-hidden ring-2 ring-gray-200">
+                    <Avatar className="w-full h-full">
+                      <AvatarImage
+                        className="object-cover"
+                        src={`${import.meta.env.VITE_IMAGE_LOADING_URL}${selectedUser.profile_image}`}
+                      />
+                      <AvatarFallback className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold">
+                        {selectedUser.first_name[0]}{selectedUser.last_name[0]}
+                      </AvatarFallback>
+                    </Avatar>
                   </div>
+                  {selectedUser.is_online && (
+                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full" />
+                  )}
                 </div>
-                <div className="ml-4">
-                  <h2 className="font-semibold text-gray-800">
+
+                <div>
+                  <h2 className="font-semibold text-gray-900 text-lg">
                     {selectedUser.first_name} {selectedUser.last_name}
                   </h2>
-                  <p className="text-sm text-green-500 flex items-center">
-                    <span className="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
-                    Online
-                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className={`w-2 h-2 rounded-full ${selectedUser.is_online ? 'bg-green-400' : 'bg-gray-400'}`} />
+                    <p className={`text-sm ${selectedUser.is_online ? 'text-green-600' : 'text-gray-500'}`}>
+                      {selectedUser.is_online ? "Online" : "Offline"}
+                    </p>
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center space-x-4">
-                {/* <button className="p-2 hover:bg-gray-100 rounded-full text-indigo-600">
-                  <Video size={24} />
+
+              <div className="flex items-center gap-2">
+                <button className="p-2 hover:bg-gray-100 rounded-full transition-all duration-200 hover:scale-105 text-gray-600">
+                  <Video size={20} />
                 </button>
-                <button className="p-2 hover:bg-gray-100 rounded-full text-indigo-600">
-                  <Phone size={24} />
-                </button> */}
-                <button className="p-2 hover:bg-gray-100 rounded-full text-indigo-600">
-                  <MoreVertical size={24} />
+                <button className="p-2 hover:bg-gray-100 rounded-full transition-all duration-200 hover:scale-105 text-gray-600">
+                  <Phone size={20} />
+                </button>
+                <button className="p-2 hover:bg-gray-100 rounded-full transition-all duration-200 hover:scale-105 text-gray-600">
+                  <MoreVertical size={20} />
                 </button>
               </div>
             </div>
           </div>
 
           {/* Messages Area */}
-          <div className="flex-1 p-6 overflow-y-auto space-y-4">
-            {messages?.map((msg, index) => (
-              <div
-                key={msg.id || index}
-                className={`flex ${
-                  msg.sender.id === currentUser.id
-                    ? "justify-end"
-                    : "justify-start"
-                }`}
-              >
+          <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4 bg-gradient-to-b from-transparent to-blue-50/20">
+            {messages?.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-center">
+                <div className="w-20 h-20 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mb-4">
+                  <MessageCircle className="text-blue-500" size={32} />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-700 mb-2">Start the conversation</h3>
+                <p className="text-gray-500 text-sm">Send a message to get started</p>
+              </div>
+            ) : (
+              messages?.map((msg, index) => (
                 <div
-                  className={`relative max-w-[75%] p-3 rounded-md shadow-sm ${
-                    msg.sender.id === currentUser.id
-                      ? "bg-indigo-600 text-white"
-                      : "bg-white text-gray-800"
-                  }`}
+                  key={msg.id || index}
+                  className={`flex ${msg.sender.id === currentUser.id ? "justify-end" : "justify-start"}`}
                 >
-                  <div className="text-sm">{msg.message}</div>
                   <div
-                    className={`text-[10px] mt-1 text-right ${
+                    className={`relative max-w-[85%] lg:max-w-[75%] p-3 lg:p-4 rounded-2xl shadow-sm transition-all duration-200 hover:shadow-md ${
                       msg.sender.id === currentUser.id
-                        ? "text-indigo-100"
-                        : "text-gray-500"
+                        ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white ml-auto"
+                        : "bg-white text-gray-800 border border-gray-100"
                     }`}
                   >
-                    {new Date(msg.timestamp).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                    <div ref={endOfMessageRef} />
+                    <div className="text-sm lg:text-base leading-relaxed break-words">
+                      {msg.message}
+                    </div>
+                    <div
+                      className={`text-[10px] lg:text-xs mt-2 text-right ${
+                        msg.sender.id === currentUser.id
+                          ? "text-blue-100"
+                          : "text-gray-500"
+                      }`}
+                    >
+                      {new Date(msg.timestamp).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </div>
+                    {msg.isOptimistic && (
+                      <div className="absolute top-1 right-1 w-2 h-2 bg-yellow-400 rounded-full animate-pulse" />
+                    )}
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
+            <div ref={endOfMessageRef} />
           </div>
 
           {/* Message Input */}
-          <div className="p-4 border-t border-gray-200 bg-white/80 backdrop-blur-sm">
-            <div className="flex items-center space-x-4">
-              <input
-                type="text"
-                value={messageInput}
-                onChange={(e) => setMessageInput(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-                placeholder="Type your message..."
-                className="flex-1 p-3 pl-6 bg-gray-100 rounded-full border-0 focus:ring-2 focus:ring-indigo-500 focus:outline-none shadow-sm"
-              />
-              <div className="absolute flex item-center right-24 gap-3">
-                {/* <button>
-                  <Paperclip color="gray" size={18} />
-                </button> */}
-                <button 
-                  ref={buttonRef}
-                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                >
-                  <MdEmojiEmotions
-                    className="text-gray-500 hover:text-yellow-400"
-                    size={18}
-                  />
-                </button>
+          <div className="flex-none p-4 lg:p-6 bg-white/90 backdrop-blur-md border-t border-gray-100">
+            <div className="flex items-end gap-3 relative">
+              <div className="flex-1 relative">
+                <textarea
+                  value={messageInput}
+                  onChange={(e) => setMessageInput(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                  placeholder="Type your message..."
+                  rows="1"
+                  className="w-full p-3 lg:p-4 pr-20 bg-gray-50 rounded-2xl border-0 resize-none focus:ring-2 focus:ring-blue-500 focus:bg-white focus:shadow-md focus:outline-none transition-all duration-200 text-sm lg:text-base"
+                  style={{
+                    minHeight: '48px',
+                    maxHeight: '120px',
+                    overflowY: messageInput.length > 100 ? 'auto' : 'hidden'
+                  }}
+                />
+                
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
+                  <button className="p-1 hover:bg-gray-200 rounded-full transition-all duration-200">
+                    <Paperclip className="text-gray-500" size={16} />
+                  </button>
+                  <button
+                    ref={buttonRef}
+                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                    className="p-1 hover:bg-gray-200 rounded-full transition-all duration-200"
+                  >
+                    <MdEmojiEmotions className="text-gray-500 hover:text-yellow-500 transition-colors" size={16} />
+                  </button>
+                </div>
               </div>
 
-              {showEmojiPicker && (
-                <div 
-                ref={emojiPickerRef}
-                className="absolute bottom-14 right-24 z-50">
-                  <Picker onEmojiSelect={handleEmojiSelect} />
-                </div>
-              )}
               <button
                 onClick={handleSendMessage}
-                className="p-3 bg-indigo-600 text-white rounded-full shadow-lg hover:bg-indigo-700 transition-colors"
+                disabled={!messageInput.trim()}
+                className={`p-3 lg:p-4 rounded-2xl shadow-lg transition-all duration-200 hover:scale-105 ${
+                  messageInput.trim()
+                    ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700"
+                    : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                }`}
               >
-                <SendHorizonal size={24} className="" />
+                <SendHorizonal size={20} />
               </button>
+
+              {showEmojiPicker && (
+                <div
+                  ref={emojiPickerRef}
+                  className="absolute bottom-full right-0 mb-2 z-50 shadow-2xl rounded-2xl overflow-hidden"
+                >
+                  <div className="bg-white p-2 rounded-t-2xl border-b flex justify-between items-center">
+                    <span className="text-sm font-medium text-gray-700">Choose emoji</span>
+                    <button
+                      onClick={() => setShowEmojiPicker(false)}
+                      className="p-1 hover:bg-gray-100 rounded-full"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                  <Picker 
+                    onEmojiSelect={handleEmojiSelect}
+                    theme="light"
+                    set="native"
+                  />
+                </div>
+              )}
             </div>
           </div>
         </>
       ) : (
-        <div className="flex-1 flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50">
-          <div className="text-center space-y-4">
-            <div className="w-48 h-48 bg-indigo-100 rounded-full flex items-center justify-center mx-auto">
-              <svg
-                className="w-24 h-24 text-indigo-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-                />
-              </svg>
+        <div className="flex-1 flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50/30 p-8">
+          <div className="text-center space-y-6 max-w-md">
+            <div className="w-32 h-32 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto shadow-lg">
+              <MessageCircle className="w-16 h-16 text-blue-500" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-800">Select a chat</h2>
-            <p className="text-gray-500">
-              Start a new conversation or continue an existing one
-            </p>
+            <div className="space-y-3">
+              <h2 className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+                Welcome to Chat
+              </h2>
+              <p className="text-gray-500 text-sm lg:text-base leading-relaxed">
+                Select a conversation from the sidebar to start messaging, or begin a new conversation with someone.
+              </p>
+            </div>
+            <div className="flex gap-4 justify-center pt-4">
+              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                <Users className="text-blue-500" size={20} />
+              </div>
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                <MessageCircle className="text-green-500" size={20} />
+              </div>
+              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                <Settings className="text-purple-500" size={20} />
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -315,28 +440,55 @@ const ChatPage = () => {
   const [messages, setMessages] = useState([]);
   const [websocket, setWebsocket] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
-  const [isMobileView, setIsMobileView] = useState(true);
+  const [isMobileView, setIsMobileView] = useState(window.innerWidth < 768);
 
   const websocketRef = useRef(null);
+
+  // Handle responsive behavior
+  useEffect(() => {
+    const handleResize = () => {
+      const isMobile = window.innerWidth < 768;
+      setIsMobileView(isMobile);
+      if (!isMobile) {
+        setIsMobileView(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     fetchData();
   }, []);
 
   const updateUserLastMessage = (userId, message, timestamp) => {
-    setUsers(prevUsers => {
-      const updatedUsers = prevUsers.map(user => {
+    setUsers((prevUsers) => {
+      const updatedUsers = prevUsers.map((user) => {
         if (user.id === userId) {
           return {
             ...user,
             last_message: message,
-            last_message_timestamp: timestamp
+            last_message_timestamp: timestamp,
           };
         }
         return user;
       });
       return sortContactList(updatedUsers);
     });
+  };
+
+  const updateUserStatus = (userId, isOnline) => {
+    setUsers((prevUsers) =>
+      prevUsers.map((user) =>
+        user.id === userId ? { ...user, is_online: isOnline } : user
+      )
+    );
+    setSelectedUser((prevSelectedUser) =>
+      prevSelectedUser && prevSelectedUser.id === userId
+        ? { ...prevSelectedUser, is_online: isOnline }
+        : prevSelectedUser
+    );
   };
 
   const initializeWebSocket = () => {
@@ -347,26 +499,24 @@ const ChatPage = () => {
     if (websocketRef.current) {
       websocketRef.current.close();
     }
-  
+
     try {
-      const wsUrl = `wss://api.learnerapp.site/ws/chat/${token}/`;
+      // const wsUrl = `wss://api.learnerapp.site/ws/chat/${token}/`;
+      const wsUrl = `ws://localhost:8000/ws/chat/${token}/`;
       const ws = new W3CWebSocket(wsUrl);
-      console.log("Connecting to WebSocket:", wsUrl); 
-  
+
       websocketRef.current = ws;
-  
+
       ws.onopen = () => {
         console.log("WebSocket Connected Successfully");
         setWebsocket(ws);
       };
-  
+
       ws.onerror = (error) => {
-        console.error("WebSocket Error:", error);  
+        console.error("WebSocket Error:", error);
       };
-  
+
       ws.onclose = (event) => {
-        console.log("WebSocket Closed:", event.code, event.reason);
-        // Reconnect only if not a normal closure
         if (event.code !== 1000 && event.code !== 1001 && currentUser) {
           console.log("Attempting to reconnect in 3 seconds...");
           setTimeout(() => {
@@ -376,16 +526,20 @@ const ChatPage = () => {
           }, 3000);
         }
       };
-  
+
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-  
+
           if (data.status === "send") {
             setMessages((prev) =>
               prev.map((msg) => {
                 if (msg.isOptimistic && msg.message === data.message) {
-                  updateUserLastMessage(data.receiver_id, data.message, data.timestamp);
+                  updateUserLastMessage(
+                    data.receiver_id,
+                    data.message,
+                    data.timestamp
+                  );
                   return {
                     id: data.message_id,
                     sender: { id: data.sender_id },
@@ -399,7 +553,9 @@ const ChatPage = () => {
           } else if (data.status === "received") {
             updateUserLastMessage(data.sender_id, data.message, data.timestamp);
             setMessages((prev) => {
-              const messageExists = prev.some((msg) => msg.id === data.message_id);
+              const messageExists = prev.some(
+                (msg) => msg.id === data.message_id
+              );
               if (!messageExists) {
                 return [
                   ...prev,
@@ -413,6 +569,9 @@ const ChatPage = () => {
               }
               return prev;
             });
+          } else if (data.type === "user_status") {
+            console.log("User status update:", data.user_id, data.is_online);
+            updateUserStatus(data.user_id, data.is_online);
           }
         } catch (error) {
           console.error("Error processing message:", error);
@@ -424,10 +583,13 @@ const ChatPage = () => {
   };
 
   useEffect(() => {
-    if (currentUser && (!websocketRef.current || websocketRef.current.readyState !== WebSocket.OPEN)) {
+    if (
+      currentUser &&
+      (!websocketRef.current ||
+        websocketRef.current.readyState !== WebSocket.OPEN)
+    ) {
       initializeWebSocket();
     }
-
     return () => {
       if (websocketRef.current) {
         websocketRef.current.close(1000, "Component unmounting");
@@ -440,7 +602,9 @@ const ChatPage = () => {
       if (!a.last_message_timestamp && !b.last_message_timestamp) return 0;
       if (!a.last_message_timestamp) return 1;
       if (!b.last_message_timestamp) return -1;
-      return new Date(b.last_message_timestamp) - new Date(a.last_message_timestamp);
+      return (
+        new Date(b.last_message_timestamp) - new Date(a.last_message_timestamp)
+      );
     });
   };
 
@@ -498,42 +662,70 @@ const ChatPage = () => {
   const handleSelectUser = (user) => {
     setSelectedUser(user);
     fetchChatHistory(user.id);
-    setIsMobileView(false);
+    if (window.innerWidth < 768) {
+      setIsMobileView(false);
+    }
   };
 
   const handleBackToContacts = () => {
-    setIsMobileView(true);
-    setSelectedUser(null);
+    if (window.innerWidth < 768) {
+      setIsMobileView(true);
+      setSelectedUser(null);
+    }
   };
 
   return (
-    <div className="flex md:h-[28rem]  h-[10rem]">
-      <ToastContainer/>
-      <div
-        className={`absolute inset-0 bg-white 
-        ${isMobileView ? "block" : "hidden md:block"} 
-        md:static md:w-1/3 md:block`}
-      >
-        <UserList
-          users={users}
-          onSelectUser={handleSelectUser}
-          selectedUser={selectedUser}
-        />
+    <div className="w-full h-[calc(100vh-21vh)] flex bg-gray-100 overflow-hidden">
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        className="z-50"
+      />
+      
+      {/* Mobile: Toggle between user list and chat */}
+      <div className="md:hidden w-full h-full">
+        {isMobileView ? (
+          <UserList
+            users={users}
+            onSelectUser={handleSelectUser}
+            selectedUser={selectedUser}
+          />
+        ) : (
+          <ChatWindow
+            selectedUser={selectedUser}
+            messages={messages}
+            sendMessage={sendMessage}
+            currentUser={currentUser}
+            onBackToContacts={handleBackToContacts}
+          />
+        )}
       </div>
 
-      <div
-        className={`absolute inset-0 bg-white 
-        ${!isMobileView ? "block" : "hidden md:block"} 
-        md:static md:w-2/3`}
-      >
-        <ChatWindow
-          selectedUser={selectedUser}
-          messages={messages}
-          sendMessage={sendMessage}
-          currentUser={currentUser}
-          onBackToContacts={handleBackToContacts}
-          fetchChatHistory={fetchChatHistory}
-        />
+      {/* Desktop: Side by side layout */}
+      <div className="hidden md:flex w-full h-full">
+        <div className="w-1/3 border-r border-gray-200 bg-white shadow-lg">
+          <UserList
+            users={users}
+            onSelectUser={handleSelectUser}
+            selectedUser={selectedUser}
+          />
+        </div>
+        <div className="flex-1 bg-white">
+          <ChatWindow
+            selectedUser={selectedUser}
+            messages={messages}
+            sendMessage={sendMessage}
+            currentUser={currentUser}
+            onBackToContacts={handleBackToContacts}
+          />
+        </div>
       </div>
     </div>
   );

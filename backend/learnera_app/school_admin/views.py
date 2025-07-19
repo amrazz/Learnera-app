@@ -33,21 +33,7 @@ from parents.serializers import ExamSerializer, StudentSerializer
 from rest_framework import permissions, status, viewsets, generics
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.db.models import Sum, Count, Case, When, F, DecimalField, Count, Q, Sum
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
-
-# handler = logging.FileHandler("media/logs/admin_views_log.log")
-handler = logging.FileHandler("admin_views_log.log")
-handler.setLevel(logging.DEBUG)
-
-
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-handler.setFormatter(formatter)
-
-if not logger.hasHandlers():
-    logger.addHandler(handler)
+from loguru import logger
 
 
 User = get_user_model()
@@ -61,8 +47,8 @@ User = get_user_model()
 def set_password_link(user):
     uid = urlsafe_base64_encode(force_bytes(user.id))
     token = default_token_generator.make_token(user)
-    # set_password_link = f"https://learnerapp.site/set-password/{uid}/{token}/"
-    set_password_link = f"https://localhost:5173/set-password/{uid}/{token}/"
+    set_password_link = f"https://learnerapp.site/set-password/{uid}/{token}/"
+    # set_password_link = f"https://localhost:5173/set-password/{uid}/{token}/"
     return set_password_link
 
 
@@ -543,7 +529,6 @@ class DeleteClassSectionView(APIView):
     permission_classes = [permissions.IsAdminUser]
 
     def delete(self, request, class_id, section_id, *args, **kwargs):
-        print(f"this is the class id{class_id} this is the section ID {section_id}")
         try:
             section = Section.objects.get(school_class_id=class_id, id=section_id)
             section.delete()
@@ -627,9 +612,9 @@ class ParentViewSet(viewsets.ModelViewSet):
                     username=user_data["username"],
                     set_password_link=password_link,
                 )
-                print("Welcome email initiated for:", user_data["email"])
+                logger.info("Welcome email initiated for:", user_data["email"])
             except Exception as email_error:
-                print(f"Failed to send welcome email: {str(email_error)}")
+                logger.info(f"Failed to send welcome email: {str(email_error)}")
 
             headers = self.get_success_headers(serializer.data)
             return Response(
@@ -654,7 +639,7 @@ class ParentDetailView(APIView):
         student_relationship = StudentParentRelationship.objects.select_related(
             "student"
         ).filter(parent=parent)
-        print("This is the student parent relation", student_relationship)
+        logger.info("This is the student parent relation", student_relationship)
         serializer = ParentSerializer(
             parent, context={"student_relationship": student_relationship}
         )
@@ -680,7 +665,7 @@ class ParentDetailView(APIView):
             if serializer.is_valid():
 
                 parent = serializer.save()
-                print(f"this is the validated parent", parent)
+                logger.info(f"this is the validated parent", parent)
                 return Response(
                     ParentSerializer(parent, context={"request": request}).data,
                     status=status.HTTP_200_OK,
@@ -761,7 +746,7 @@ class ParentBlockUnblockView(APIView):
     def post(self, request, pk, *args, **kwargs):
         try:
             parent = self.get_object(pk)
-            print("This is the parent", parent)
+            logger.info("This is the parent", parent)
 
             if not parent.user.is_active:
                 return Response(
@@ -874,9 +859,9 @@ class TeacherListCreateView(APIView):
                     username=user_data["username"],
                     set_password_link=password_link,
                 )
-                print("Welcome email initiated for:", user_data["email"])
+                logger.info("Welcome email initiated for:", user_data["email"])
             except Exception as email_error:
-                print(f"Failed to send welcome email: {str(email_error)}")
+                logger.info(f"Failed to send welcome email: {str(email_error)}")
 
             return Response(
                 TeacherSerializer(teacher).data, status=status.HTTP_201_CREATED
@@ -904,7 +889,7 @@ class TeacherDetailView(APIView):
 
         try:
             data = json.loads(request.data.get("data", "{}"))
-            print("This is the teacher data to patch", data)
+            logger.info("This is the teacher data to patch", data)
             # Handle profile image upload
             if "profile_image" in request.FILES:
                 data["user"] = data.get("user", {})

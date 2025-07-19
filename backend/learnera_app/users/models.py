@@ -37,6 +37,7 @@ class CustomUser(AbstractUser):
     is_parent = models.BooleanField(default=False)
     
     otp_verified = models.BooleanField(default=False)
+    is_online = models.BooleanField(default=False)
 
     # Added School Admin fields
     school_name = models.CharField(max_length=200, null=True, blank=True)

@@ -7,132 +7,137 @@ from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from django.core.exceptions import ValidationError
 from .serializers import UserChatMessageSerializer
 from chat.models import UserChatMessage
+from loguru import logger  # type: ignore
 
 User = get_user_model()
 
+
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        print("Connection attempt started")
+        logger.info("WebSocket connection initiated")
+
         try:
-            token_str = self.scope['url_route']['kwargs']['token']
-            print(f"Received token: {token_str}")
+            # Get token from URL
+            token_str = self.scope["url_route"]["kwargs"]["token"]
+            access_token = AccessToken(token_str)
+            user_id = access_token["user_id"]
 
-            try:
-                access_token = AccessToken(token_str)
-                user_id = access_token['user_id']
-                print(f"Token decoded, user_id: {user_id}")
-                self.user = await self.get_user(user_id)
-
-                if not self.user:
-                    print("User not found")
-                    await self.close(code=4001)
-                    return
-
-                print(f"User authenticated: {self.user.id}")
-                self.room_group_name = f"chat_user_{self.user.id}"
-
-                await self.channel_layer.group_add(
-                    self.room_group_name,
-                    self.channel_name
-                )
-                await self.accept()
-                print(f"WebSocket connected for user {self.user.id}")
-
-            except (InvalidToken, TokenError) as e:
-                print(f"Token validation failed: {str(e)}")
-                await self.close(code=4002)
+            self.user = await self.get_user(user_id)
+            if not self.user:
+                await self.close(code=4001)
                 return
 
+            self.room_group_name = f"chat_user_{self.user.id}"
+            await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+
+            # Join global user status group
+            await self.channel_layer.group_add("user_status", self.channel_name)
+
+            # Mark user online in DB
+            await self.set_user_online(True)
+
+            # Notify everyone that user is online
+            await self.channel_layer.group_send(
+                "user_status",
+                {
+                    "type": "user_status_update",
+                    "user_id": self.user.id,
+                    "is_online": True,
+                },
+            )
+
+            await self.accept()
+            logger.info(f"User {self.user.username} connected and marked online.")
+
+        except (InvalidToken, TokenError) as e:
+            logger.error(f"Invalid token: {str(e)}")
+            await self.close(code=4002)
         except Exception as e:
-            print(f"Connection error: {str(e)}")
+            logger.error(f"Unexpected error: {str(e)}")
             await self.close(code=4000)
 
     async def disconnect(self, close_code):
-        print(f"Disconnected with code: {close_code}")
-        if hasattr(self, 'room_group_name'):
+        logger.info(
+            f"User {getattr(self.user, 'username', 'unknown')} disconnected with code {close_code}"
+        )
+
+        if hasattr(self, "room_group_name"):
             await self.channel_layer.group_discard(
-                self.room_group_name,
-                self.channel_name
+                self.room_group_name, self.channel_name
+            )
+
+        # Leave user_status group
+        await self.channel_layer.group_discard("user_status", self.channel_name)
+
+        if hasattr(self, "user"):
+            await self.set_user_online(False)
+
+            # Broadcast offline status
+            await self.channel_layer.group_send(
+                "user_status",
+                {
+                    "type": "user_status_update",
+                    "user_id": self.user.id,
+                    "is_online": False,
+                },
             )
 
     async def receive(self, text_data=None):
-        print(f"Received data: {text_data}")
+        logger.info(f"Received message: {text_data}")
+
         try:
             data = json.loads(text_data)
-
-            if not all(key in data for key in ['receiver_id', 'message']):
-                await self.send(text_data=json.dumps({
-                    'status': 'error',
-                    'message': 'Missing required fields'
-                }))
+            if not all(key in data for key in ["receiver_id", "message"]):
+                await self.send(
+                    json.dumps(
+                        {"status": "error", "message": "Missing required fields"}
+                    )
+                )
                 return
 
             message_info = await self.save_message(data)
             sender = await self.get_user(self.user.id)
 
             message_data = {
-                'type': "chat_message",
-                'sender_id': self.user.id,
-                'sender_name': f"{sender.first_name} {sender.last_name}",
-                'message': data['message'],
-                'message_id': message_info['id'],
-                'timestamp': message_info['timestamp'],
+                "type": "chat_message",
+                "sender_id": self.user.id,
+                "sender_name": f"{sender.first_name} {sender.last_name}",
+                "message": data["message"],
+                "message_id": message_info["id"],
+                "timestamp": message_info["timestamp"],
             }
 
-            # Send to receiver
             receiver_group = f"chat_user_{data['receiver_id']}"
-            print(f"Sending to receiver group: {receiver_group}")
-            await self.channel_layer.group_send(
-                receiver_group,
-                message_data
-            )
+            await self.channel_layer.group_send(receiver_group, message_data)
 
-            # Echo to sender
-            print(f"Sending to sender group: {self.room_group_name}")
             await self.channel_layer.group_send(
-                self.room_group_name,
-                {**message_data, 'status': 'send'}
+                self.room_group_name, {**message_data, "status": "send"}
             )
 
         except json.JSONDecodeError:
-            await self.send(text_data=json.dumps({
-                'status': 'error',
-                'message': 'Invalid JSON format'
-            }))
+            await self.send(
+                json.dumps({"status": "error", "message": "Invalid JSON format"})
+            )
         except Exception as e:
-            print(f"Receive error: {str(e)}")
-            await self.send(text_data=json.dumps({
-                'status': 'error',
-                'message': str(e)
-            }))
+            logger.error(f"Error processing message: {str(e)}")
+            await self.send(json.dumps({"status": "error", "message": str(e)}))
 
     async def chat_message(self, event):
-        print(f"Broadcasting message: {event}")
-        event_data = {k: v for k, v in event.items() if k != 'type'}
-        if 'status' not in event_data:
-            event_data['status'] = 'received'
+        event_data = {k: v for k, v in event.items() if k != "type"}
+        if "status" not in event_data:
+            event_data["status"] = "received"
         await self.send(text_data=json.dumps(event_data))
 
-    @database_sync_to_async
-    def save_message(self, message_data):
-        try:
-            save_data = {
-                'sender': self.user.id,
-                'receiver': int(message_data['receiver_id']),
-                'message': message_data['message']
-            }
-            serializer = UserChatMessageSerializer(data=save_data)
-            if serializer.is_valid():
-                message = serializer.save()
-                return {
-                    'id': message.id,
-                    'timestamp': message.timestamp.isoformat(),
-                    'sender_name': f"{message.sender.first_name} {message.sender.last_name}",
-                    'receiver_name': f"{message.receiver.first_name} {message.receiver.last_name}",
+    async def user_status_update(self, event):
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "type": "user_status",
+                    "user_id": event["user_id"],
+                    "is_online": event["is_online"],
                 }
-            raise ValidationError(serializer.errors)
-        except Exception as e:
-            raise ValidationError(str(e))
+            )
+        )
 
     @database_sync_to_async
     def get_user(self, user_id):
@@ -140,3 +145,27 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return User.objects.get(id=user_id)
         except User.DoesNotExist:
             return None
+
+    @database_sync_to_async
+    def set_user_online(self, online):
+        self.user.is_online = online
+        self.user.save()
+
+    @database_sync_to_async
+    def save_message(self, message_data):
+        save_data = {
+            "sender": self.user.id,
+            "receiver": int(message_data["receiver_id"]),
+            "message": message_data["message"],
+        }
+        serializer = UserChatMessageSerializer(data=save_data)
+        if serializer.is_valid():
+            message = serializer.save()
+            return {
+                "id": message.id,
+                "timestamp": message.timestamp.isoformat(),
+                "sender_name": f"{message.sender.first_name} {message.sender.last_name}",
+                "receiver_name": f"{message.receiver.first_name} {message.receiver.last_name}",
+            }
+        else:
+            raise ValidationError(serializer.errors)

@@ -9,12 +9,14 @@ import Teachers from './component/teachers/Teachers';
 import LandingPage from './component/landing_page/LandingPage';
 import SetUserPassword from './component/login_page/SetUserPassword';
 import RoleBasedProtectedRoute from './component/RoleBasedProtectedRoute';
+import PageNotFound from './component/PageNotFound';
 
 const App = () => {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="*" element={<PageNotFound />} />
         <Route path="/login" element={<Login />} />
         <Route path="/set-password/:uid/:token" element={<SetUserPassword />} />
         <Route path="/logout" element={<Logout />} />

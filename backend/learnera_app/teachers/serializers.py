@@ -59,7 +59,6 @@ class StudentInfoSerializer(serializers.ModelSerializer):
             relationship = StudentParentRelationship.objects.filter(
                 parent=parent
             ).first()
-            print("this is the relationship", relationship.relationship_type)
             return {
                 "id": parent.id,
                 "parent_name": f"{parent.user.first_name} {parent.user.last_name}",
@@ -530,7 +529,6 @@ class EvaluationSerializer(serializers.ModelSerializer):
         extra_kwargs = {"evaluation_comment": {"required": False}}
 
     def validate_marks_obtained(self, value):
-        print("this is the value : ", value)
         if float(value) < 0:
             raise serializers.ValidationError("Marks cannot be negative")
         if float(value) > self.instance.question.marks:

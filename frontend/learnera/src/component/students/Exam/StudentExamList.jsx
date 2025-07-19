@@ -233,12 +233,9 @@ const StudentExamList = () => {
   
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="text-center">
-          <HashLoader color="#1842DC" size={50} />
-          <p className="mt-4 text-blue-600">Loading your exams...</p>
-        </div>
-      </div>
+      <div className="flex justify-center items-center h-screen">
+            <HashLoader color="#0b43ff" size={50} speedMultiplier={2} />
+          </div>
     );
   }
 
