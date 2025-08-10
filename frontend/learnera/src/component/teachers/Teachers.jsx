@@ -3,6 +3,7 @@ import Sidebar from './layout/sidebar/SideBar';
 import Nav from './layout/header/Nav';
 import Sections from './Sections';
 import BackToTop from '../BackToTop';
+import { ToastContainer } from 'react-toastify';
 
 const Teachers = () => {
   const [activeMenu, setActiveMenu] = useState(false);
@@ -38,6 +39,7 @@ const Teachers = () => {
 
   return (
     <div className="relative min-h-screen">
+       <ToastContainer />
       {isMobile && activeMenu && (
         <div
           className="fixed inset-0 bg-black/50 z-20 transition-opacity duration-300"

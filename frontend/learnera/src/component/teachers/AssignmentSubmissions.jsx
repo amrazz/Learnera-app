@@ -26,6 +26,7 @@ const AssignmentSubmissions = () => {
   const [submissions, setSubmissions] = useState([]);
   const [assignment, setAssignment] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [grades, setGrades] = useState({});
   const [feedback, setFeedback] = useState({});
@@ -77,6 +78,8 @@ const AssignmentSubmissions = () => {
   }
 
   const handleSaveGrade = async (submissionId) => {
+    if (saving) return;
+    setSaving(true)
     try {
       const response = await api.patch(`teachers/submissions/${submissionId}/grade/`, {
         grade : Number(grades[submissionId]),
@@ -84,12 +87,16 @@ const AssignmentSubmissions = () => {
       })
       if (response.status === 200) {
         toast.success("Grade saved successfully")
+        navigate("/teachers/show-assignment")
       }
 
       await fetchData()
     }  catch (error) {
       toast.error(error.response?.data?.error || 'Failed to save grade')
+    } finally {
+      setSaving(false)
     }
+
   }
 
   if (loading) {
@@ -192,7 +199,7 @@ const AssignmentSubmissions = () => {
                         disabled={!grades[submission.id]}
                       >
                         <Save className="h-4 w-4 mr-2" />
-                        Save
+                        {saving ? "SAVING...." : "SAVE"}
                       </Button>
                     </TableCell>
                   </TableRow>

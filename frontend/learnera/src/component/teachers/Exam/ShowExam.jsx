@@ -1,17 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { FileQuestion, Plus, Edit, Trash2, MoreVertical, FileEdit, FileCheck2, Calendar } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  FileQuestion,
+  Plus,
+  Edit,
+  Trash2,
+  MoreVertical,
+  FileEdit,
+  FileCheck2,
+  Calendar,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Dialog,
   DialogContent,
@@ -19,7 +34,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -27,18 +42,18 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { toast, ToastContainer } from 'react-toastify';
-import api from '../../../api';
-import { MdChecklist } from 'react-icons/md';
-import { HashLoader } from 'react-spinners';
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { toast, ToastContainer } from "react-toastify";
+import api from "../../../api";
+import { MdChecklist } from "react-icons/md";
+import { HashLoader } from "react-spinners";
 
 const ShowExam = () => {
   const navigate = useNavigate();
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [selectedExam, setSelectedExam] = useState(null);
   const [examToDelete, setExamToDelete] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -64,13 +79,15 @@ const ShowExam = () => {
     try {
       setLoading(true);
       // Assuming your API supports pagination with a "page" param
-      const response = await api.get('teachers/exams/', { params: { page: currentPage } });
+      const response = await api.get("teachers/exams/", {
+        params: { page: currentPage },
+      });
       // If your API returns paginated data in a "results" field and total "count":
       setExams(response.data.results);
       setTotalPage(Math.ceil(response.data.count / pageSize));
     } catch (err) {
-      setError('Failed to load exams');
-      toast.error('Failed to load exams');
+      setError("Failed to load exams");
+      toast.error("Failed to load exams");
     } finally {
       setLoading(false);
     }
@@ -79,12 +96,12 @@ const ShowExam = () => {
   const handleDelete = async () => {
     try {
       await api.delete(`teachers/exams/${examToDelete}/`);
-      setExams(exams.filter(exam => exam.id !== examToDelete));
-      toast.success('Exam deleted successfully');
+      setExams(exams.filter((exam) => exam.id !== examToDelete));
+      toast.success("Exam deleted successfully");
       setDeleteDialogOpen(false);
       setExamToDelete(null);
     } catch (err) {
-      toast.error('Failed to delete exam');
+      toast.error("Failed to delete exam");
     }
   };
 
@@ -94,18 +111,18 @@ const ShowExam = () => {
     const endTime = new Date(exam.end_time);
 
     if (now < startTime) {
-      return { label: 'Upcoming', color: 'bg-yellow-500' };
+      return { label: "Upcoming", color: "bg-yellow-500" };
     } else if (now >= startTime && now <= endTime) {
-      return { label: 'In Progress', color: 'bg-green-500' };
+      return { label: "In Progress", color: "bg-green-500" };
     } else {
-      return { label: 'Completed', color: 'bg-gray-500' };
+      return { label: "Completed", color: "bg-gray-500" };
     }
   };
 
   const formatDateTime = (dateString) => {
-    return new Date(dateString).toLocaleString('en-US', {
-      dateStyle: 'medium',
-      timeStyle: 'short'
+    return new Date(dateString).toLocaleString("en-US", {
+      dateStyle: "medium",
+      timeStyle: "short",
     });
   };
 
@@ -123,7 +140,10 @@ const ShowExam = () => {
 
   const handleEditExam = async () => {
     try {
-      const response = await api.put(`teachers/exams/${selectedExam.id}/`, updatedExam);
+      const response = await api.put(
+        `teachers/exams/${selectedExam.id}/`,
+        updatedExam
+      );
       setExams((prev) =>
         prev.map((exam) =>
           exam.id === selectedExam.id ? { ...exam, ...response.data } : exam
@@ -152,7 +172,10 @@ const ShowExam = () => {
           <FileQuestion className="h-6 w-6 text-primary" />
           My Exams
         </h1>
-        <Button onClick={() => navigate('/teachers/create-exam')} className="flex items-center gap-2">
+        <Button
+          onClick={() => navigate("/teachers/create-exam")}
+          className="flex items-center gap-2"
+        >
           <Plus className="h-4 w-4" />
           Create New Exam
         </Button>
@@ -171,7 +194,8 @@ const ShowExam = () => {
         <CardContent>
           {exams.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
-              No exams created yet. Click the button above to create your first exam.
+              No exams created yet. Click the button above to create your first
+              exam.
             </div>
           ) : (
             <>
@@ -193,62 +217,100 @@ const ShowExam = () => {
                     const status = getExamStatus(exam);
                     return (
                       <TableRow key={exam.id}>
-                        <TableCell className="text-center">{(currentPage - 1) * pageSize + index + 1}</TableCell>
-                        <TableCell className="font-medium text-center">{exam.title}</TableCell>
+                        <TableCell className="text-center">
+                          {(currentPage - 1) * pageSize + index + 1}
+                        </TableCell>
+                        <TableCell className="font-medium text-center">
+                          {exam.title}
+                        </TableCell>
                         <TableCell className="font-medium text-center">
                           {exam.class_name} - {exam.section_name}
                         </TableCell>
-                        <TableCell className="text-center">{formatDateTime(exam.start_time)}</TableCell>
-                        <TableCell className="text-center">{formatDateTime(exam.end_time)}</TableCell>
                         <TableCell className="text-center">
-                          <Badge variant="secondary" className={`${status.color} text-white`}>
+                          {formatDateTime(exam.start_time)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {formatDateTime(exam.end_time)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge
+                            variant="secondary"
+                            className={`${status.color} text-white`}
+                          >
                             {status.label}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-center">{exam.total_mark}</TableCell>
                         <TableCell className="text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                  onClick={() => navigate(`/teachers/create-exam/${exam.id}/questions`)}
-                                  className="cursor-pointer"
-                                >
-                                  <FileEdit className="h-4 w-4 mr-2" />
-                                  Edit Questions
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => handleOpenEditDialog(exam)}
-                                  className="cursor-pointer"
-                                >
-                                  <Edit className="h-4 w-4 mr-2" />
-                                  Edit Details
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    setExamToDelete(exam.id);
-                                    setDeleteDialogOpen(true);
-                                  }}
-                                  className="cursor-pointer text-red-600"
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                            <div>
-                              <FileCheck2
-                                onClick={() => navigate(`/teachers/exam-evaluation/${exam.id}`)}
-                                className='cursor-pointer hover:text-green-500 transition-all ease-in-out duration-500'
-                              />
-                            </div>
-                          </div>
+                          {exam.total_mark}
                         </TableCell>
+                        <TooltipProvider>
+                          <TableCell className="text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              {/* More actions tooltip */}
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="icon">
+                                        <MoreVertical className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem
+                                        onClick={() =>
+                                          navigate(
+                                            `/teachers/create-exam/${exam.id}/questions`
+                                          )
+                                        }
+                                        className="cursor-pointer"
+                                      >
+                                        <FileEdit className="h-4 w-4 mr-2" />
+                                        Edit Questions
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={() =>
+                                          handleOpenEditDialog(exam)
+                                        }
+                                        className="cursor-pointer"
+                                      >
+                                        <Edit className="h-4 w-4 mr-2" />
+                                        Edit Details
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={() => {
+                                          setExamToDelete(exam.id);
+                                          setDeleteDialogOpen(true);
+                                        }}
+                                        className="cursor-pointer text-red-600"
+                                      >
+                                        <Trash2 className="h-4 w-4 mr-2" />
+                                        Delete
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </TooltipTrigger>
+                                <TooltipContent>More Actions</TooltipContent>
+                              </Tooltip>
+
+                              {/* Exam evaluation tooltip */}
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div>
+                                    <FileCheck2
+                                      onClick={() =>
+                                        navigate(
+                                          `/teachers/exam-evaluation/${exam.id}`
+                                        )
+                                      }
+                                      className="cursor-pointer hover:text-green-500 transition-all ease-in-out duration-500"
+                                    />
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>Evaluate Exam</TooltipContent>
+                              </Tooltip>
+                            </div>
+                          </TableCell>
+                        </TooltipProvider>
                       </TableRow>
                     );
                   })}
@@ -257,8 +319,8 @@ const ShowExam = () => {
 
               {/* Pagination UI */}
               <div className="flex justify-center items-center mt-4 space-x-2">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   disabled={currentPage === 1}
                   onClick={() => setCurrentPage(currentPage - 1)}
                 >
@@ -273,8 +335,8 @@ const ShowExam = () => {
                     {i + 1}
                   </Button>
                 ))}
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   disabled={currentPage === totalPage}
                   onClick={() => setCurrentPage(currentPage + 1)}
                 >
@@ -296,14 +358,21 @@ const ShowExam = () => {
               <Label>Title</Label>
               <Input
                 value={updatedExam.title}
-                onChange={(e) => setUpdatedExam({ ...updatedExam, title: e.target.value })}
+                onChange={(e) =>
+                  setUpdatedExam({ ...updatedExam, title: e.target.value })
+                }
               />
             </div>
             <div>
               <Label>Description</Label>
               <Input
                 value={updatedExam.description}
-                onChange={(e) => setUpdatedExam({ ...updatedExam, description: e.target.value })}
+                onChange={(e) =>
+                  setUpdatedExam({
+                    ...updatedExam,
+                    description: e.target.value,
+                  })
+                }
               />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -317,7 +386,12 @@ const ShowExam = () => {
                     name="start_time"
                     type="datetime-local"
                     value={updatedExam.start_time}
-                    onChange={(e) => setUpdatedExam({ ...updatedExam, start_time: e.target.value })}
+                    onChange={(e) =>
+                      setUpdatedExam({
+                        ...updatedExam,
+                        start_time: e.target.value,
+                      })
+                    }
                   />
                 </div>
               </div>
@@ -331,7 +405,12 @@ const ShowExam = () => {
                     name="end_time"
                     type="datetime-local"
                     value={updatedExam.end_time}
-                    onChange={(e) => setUpdatedExam({ ...updatedExam, end_time: e.target.value })}
+                    onChange={(e) =>
+                      setUpdatedExam({
+                        ...updatedExam,
+                        end_time: e.target.value,
+                      })
+                    }
                   />
                 </div>
               </div>
@@ -341,7 +420,9 @@ const ShowExam = () => {
               <Input
                 type="number"
                 value={updatedExam.total_mark}
-                onChange={(e) => setUpdatedExam({ ...updatedExam, total_mark: e.target.value })}
+                onChange={(e) =>
+                  setUpdatedExam({ ...updatedExam, total_mark: e.target.value })
+                }
               />
             </div>
           </div>
@@ -360,11 +441,15 @@ const ShowExam = () => {
           <DialogHeader>
             <DialogTitle>Delete Exam</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this exam? This action cannot be undone.
+              Are you sure you want to delete this exam? This action cannot be
+              undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+            >
               Cancel
             </Button>
             <Button variant="destructive" onClick={handleDelete}>

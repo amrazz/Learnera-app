@@ -40,11 +40,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { toast, ToastContainer } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
 const ShowAssignment = () => {
-
   const navigate = useNavigate();
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -112,8 +117,8 @@ const ShowAssignment = () => {
       description: assignment.description,
       status: assignment.status,
       last_date: assignment.last_date.split("T")[0],
-      class_section: assignment.class_section, 
-      subject: assignment.subject, 
+      class_section: assignment.class_section,
+      subject: assignment.subject,
     });
     setIsEditMode(true);
   };
@@ -125,8 +130,8 @@ const ShowAssignment = () => {
         `teachers/assignments/${selectedAssignment.id}/`,
         {
           ...editForm,
-          class_section: editForm.class_section.id, 
-          subject: editForm.subject.id, 
+          class_section: editForm.class_section.id,
+          subject: editForm.subject.id,
         }
       );
       if (response.status === 200) {
@@ -284,39 +289,68 @@ const ShowAssignment = () => {
                         {assignment.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-center">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setSelectedAssignment(assignment)}
-                      >
-                        <Eye className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleEdit(assignment)}
-                      >
-                        <Pencil className="w-3 h-3" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          setAssignmentToDelete(assignment);
-                          setIsDelete(true);
-                        }}
-                      >
-                        <Trash className="w-3 h-3" />
-                      </Button>
-                      <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => navigate(`/teachers/assignment-submissions/${assignment.id}/submissions`)}
-                      >
-                        <BookCheck className="w-3 h-3" />
-                      </Button>
-                    </TableCell>
+                    <TooltipProvider>
+                      <TableCell className="text-center">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setSelectedAssignment(assignment)}
+                            >
+                              <Eye className="h-3 w-3" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>View Assignment</TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleEdit(assignment)}
+                            >
+                              <Pencil className="w-3 h-3" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Edit Assignment</TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setAssignmentToDelete(assignment);
+                                setIsDelete(true);
+                              }}
+                            >
+                              <Trash className="w-3 h-3" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Delete Assignment</TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() =>
+                                navigate(
+                                  `/teachers/assignment-submissions/${assignment.id}/submissions`
+                                )
+                              }
+                            >
+                              <BookCheck className="w-3 h-3" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>View Submissions</TooltipContent>
+                        </Tooltip>
+                      </TableCell>
+                    </TooltipProvider>
                   </TableRow>
                 ))}
               </TableBody>

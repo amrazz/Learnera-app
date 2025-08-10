@@ -36,6 +36,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
 import api from "../../api";
@@ -91,7 +92,7 @@ const TeacherLeaveRequest = () => {
 
   const fetchLeaveRequests = async (page) => {
     try {
-        const response = await api.get(`teachers/leaves/?page=${page}`);
+      const response = await api.get(`teachers/leaves/?page=${page}`);
       setLeaveRequests(response.data.results);
       setPagination({
         ...pagination,
@@ -111,62 +112,71 @@ const TeacherLeaveRequest = () => {
 
   const handleSubmit = async (values, { setSubmitting, resetForm }) => {
     const formData = new FormData();
-    
+
     // Add all fields to formData
     Object.keys(values).forEach((key) => {
-        if (key === 'supporting_document' && values[key]) {
-            formData.append(key, values[key]);
-        } else if (values[key]) {
-            formData.append(key, values[key]);
-        }
+      if (key === "supporting_document" && values[key]) {
+        formData.append(key, values[key]);
+      } else if (values[key]) {
+        formData.append(key, values[key]);
+      }
     });
 
     try {
-        const response = await api.post("teachers/leaves/", formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-        });
+      const response = await api.post("teachers/leaves/", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
-        if (response.status === 201) {
-            toast.success("Leave request submitted successfully");
-            resetForm();
-            fetchLeaveRequests(1);
-        }
+      if (
+        response.status === 201 ||
+        response.status === 200 ||
+        response.data.status_code === 201
+      ) {
+        console.log("Leave request submitted successfully. ")
+        toast.success("Leave request submitted successfully");
+        resetForm();
+        fetchLeaveRequests(1);
+      }
     } catch (error) {
-        const errorMessage = error.response?.data?.detail || 
-                           error.response?.data?.non_field_errors?.[0] || 
-                           "Failed to submit leave request";
-        toast.error(errorMessage);
+      const errorMessage =
+        error.response?.data?.detail ||
+        error.response?.data?.non_field_errors?.[0] ||
+        "Failed to submit leave request";
+      toast.error(errorMessage);
     } finally {
-        setSubmitting(false);
+      setSubmitting(false);
     }
-};
+  };
 
-const openDetailDialog = async (request) => {
+  const openDetailDialog = async (request) => {
     try {
-        const response = await api.get(`teachers/leaves/${request.id}/`);
-        const updatedRequest = response.data;
-        setSelectedRequest(updatedRequest);
-        setIsDetailDialogOpen(true);
+      const response = await api.get(`teachers/leaves/${request.id}/`);
+      const updatedRequest = response.data;
+      setSelectedRequest(updatedRequest);
+      setIsDetailDialogOpen(true);
 
-        if (updatedRequest.supporting_document) {
-            try {
-                const documentResponse = await api.get(updatedRequest.supporting_document, {
-                    responseType: 'blob'
-                });
-                const url = URL.createObjectURL(documentResponse.data);
-                setDocumentUrl(url);
-            } catch (error) {
-                toast.error("Failed to load supporting document");
-                console.error('Document fetch error:', error);
+      if (updatedRequest.supporting_document) {
+        try {
+          const documentResponse = await api.get(
+            updatedRequest.supporting_document,
+            {
+              responseType: "blob",
             }
+          );
+          const url = URL.createObjectURL(documentResponse.data);
+          setDocumentUrl(url);
+        } catch (error) {
+          toast.error("Failed to load supporting document");
+          console.error("Document fetch error:", error);
         }
+      }
     } catch (error) {
-        toast.error("Failed to fetch request details");
-        console.error('Request details fetch error:', error);
+      toast.error("Failed to fetch request details");
+      console.error("Request details fetch error:", error);
     }
-};
+  };
 
   const closeDetailDialog = () => {
     setIsDetailDialogOpen(false);
@@ -178,7 +188,7 @@ const openDetailDialog = async (request) => {
 
   return (
     <div className="container mx-auto p-6 max-w-5xl">
-        <ToastContainer />
+      <ToastContainer />
       <Tabs defaultValue="new" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="new">New Request</TabsTrigger>
@@ -258,7 +268,9 @@ const openDetailDialog = async (request) => {
                       <div className="space-y-2">
                         <label className="text-sm font-medium">End Date</label>
                         <Field name="end_date">
-                          {({ field }) => <Input type="date" {...field} />}
+                          {({ field }) => (
+                            <Input type="date" {...field} min={today} />
+                          )}
                         </Field>
                         {touched.end_date && errors.end_date && (
                           <p className="text-red-500 text-sm">
@@ -418,106 +430,155 @@ const openDetailDialog = async (request) => {
         </TabsContent>
       </Tabs>
 
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+        style={{ zIndex: 9999 }}
+      />
+
       {/* Detail Dialog */}
-<Dialog open={isDetailDialogOpen} onOpenChange={closeDetailDialog}>
-  <DialogContent className="max-w-2xl">
-    <DialogHeader>
-      <DialogTitle className="text-xl font-semibold border-b pb-2">Leave Request Details</DialogTitle>
-    </DialogHeader>
-    {selectedRequest && (
-      <div className="space-y-6 overflow-y-auto max-h-[calc(100vh-200px)] pr-2">
-        {/* Status Banner */}
-        <div className={`p-4 rounded-lg ${
-          selectedRequest.status === 'APPROVED' ? 'bg-green-50 border border-green-200' :
-          selectedRequest.status === 'REJECTED' ? 'bg-red-50 border border-red-200' :
-          'bg-yellow-50 border border-yellow-200'
-        }`}>
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-medium">Request Status</h3>
-              <div className="mt-1">{getStatusBadge(selectedRequest.status)}</div>
-            </div>
-            <div className="text-right">
-              <h3 className="text-sm font-medium">Date Applied</h3>
-              <p className="mt-1 text-sm">
-                {new Date(selectedRequest.applied_on).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}
-              </p>
-            </div>
-          </div>
-        </div>
+      <Dialog open={isDetailDialogOpen} onOpenChange={closeDetailDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold border-b pb-2">
+              Leave Request Details
+            </DialogTitle>
+          </DialogHeader>
+          {selectedRequest && (
+            <div className="space-y-6 overflow-y-auto max-h-[calc(100vh-200px)] pr-2">
+              {/* Status Banner */}
+              <div
+                className={`p-4 rounded-lg ${
+                  selectedRequest.status === "APPROVED"
+                    ? "bg-green-50 border border-green-200"
+                    : selectedRequest.status === "REJECTED"
+                    ? "bg-red-50 border border-red-200"
+                    : "bg-yellow-50 border border-yellow-200"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-medium">Request Status</h3>
+                    <div className="mt-1">
+                      {getStatusBadge(selectedRequest.status)}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <h3 className="text-sm font-medium">Date Applied</h3>
+                    <p className="mt-1 text-sm">
+                      {new Date(selectedRequest.applied_on).toLocaleDateString(
+                        "en-US",
+                        {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        }
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-        {/* Main Content */}
-        <div className="grid gap-6">
-          {/* Leave Type & Duration */}
-          <div className="grid grid-cols-2 gap-6">
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <label className="text-sm font-medium text-gray-600">Leave Type</label>
-              <p className="mt-1 font-medium">{selectedRequest.leave_type}</p>
-            </div>
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <label className="text-sm font-medium text-gray-600">Duration</label>
-              <p className="mt-1 font-medium">
-                {new Date(selectedRequest.start_date).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric'
-                })} - {new Date(selectedRequest.end_date).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric'
-                })}
-              </p>
-            </div>
-          </div>
+              {/* Main Content */}
+              <div className="grid gap-6">
+                {/* Leave Type & Duration */}
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <label className="text-sm font-medium text-gray-600">
+                      Leave Type
+                    </label>
+                    <p className="mt-1 font-medium">
+                      {selectedRequest.leave_type}
+                    </p>
+                  </div>
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <label className="text-sm font-medium text-gray-600">
+                      Duration
+                    </label>
+                    <p className="mt-1 font-medium">
+                      {new Date(selectedRequest.start_date).toLocaleDateString(
+                        "en-US",
+                        {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        }
+                      )}{" "}
+                      -{" "}
+                      {new Date(selectedRequest.end_date).toLocaleDateString(
+                        "en-US",
+                        {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        }
+                      )}
+                    </p>
+                  </div>
+                </div>
 
-          {/* Reason */}
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <label className="text-sm font-medium text-gray-600">Reason</label>
-            <p className="mt-2 whitespace-pre-wrap">{selectedRequest.reason}</p>
-          </div>
+                {/* Reason */}
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <label className="text-sm font-medium text-gray-600">
+                    Reason
+                  </label>
+                  <p className="mt-2 whitespace-pre-wrap">
+                    {selectedRequest.reason}
+                  </p>
+                </div>
 
-          {/* Admin Response (if exists) */}
-          {selectedRequest.response_comment && (
-            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <label className="text-sm font-medium text-blue-800">Admin Response</label>
-              <p className="mt-2 text-blue-700">{selectedRequest.response_comment}</p>
-            </div>
-          )}
+                {/* Admin Response (if exists) */}
+                {selectedRequest.response_comment && (
+                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <label className="text-sm font-medium text-blue-800">
+                      Admin Response
+                    </label>
+                    <p className="mt-2 text-blue-700">
+                      {selectedRequest.response_comment}
+                    </p>
+                  </div>
+                )}
 
-          {/* Supporting Document */}
-          {documentUrl && (
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <label className="text-sm font-medium text-gray-600 block mb-3">
-                Supporting Document
-              </label>
-              <div className="mt-2 border rounded-lg overflow-hidden">
-                {selectedRequest.supporting_document.toLowerCase().endsWith('.pdf') ? (
-                  <iframe
-                    src={documentUrl}
-                    className="w-full h-[400px]"
-                    title="Supporting Document"
-                  />
-                ) : (
-                  <div className="flex justify-center p-4 bg-white">
-                    <img
-                      src={documentUrl}
-                      alt="Supporting Document"
-                      className="max-w-full max-h-[400px] object-contain"
-                    />
+                {/* Supporting Document */}
+                {documentUrl && (
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <label className="text-sm font-medium text-gray-600 block mb-3">
+                      Supporting Document
+                    </label>
+                    <div className="mt-2 border rounded-lg overflow-hidden">
+                      {selectedRequest.supporting_document
+                        .toLowerCase()
+                        .endsWith(".pdf") ? (
+                        <iframe
+                          src={documentUrl}
+                          className="w-full h-[400px]"
+                          title="Supporting Document"
+                        />
+                      ) : (
+                        <div className="flex justify-center p-4 bg-white">
+                          <img
+                            src={documentUrl}
+                            alt="Supporting Document"
+                            className="max-w-full max-h-[400px] object-contain"
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
             </div>
           )}
-        </div>
-      </div>
-    )}
-  </DialogContent>
-</Dialog>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

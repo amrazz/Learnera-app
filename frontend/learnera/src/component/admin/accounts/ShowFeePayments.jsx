@@ -80,14 +80,17 @@ const ShowFeePayments = () => {
   const fetchPayments = async (page = 1) => {
     try {
       setLoading(true);
-      const response = await api.get(`school_admin/student-fee-payments/?page=${page}`, {
-        params: {
-          ...filters,
-          status: filters.status === "ALL" ? "" : filters.status,
-        },
-      });
+      const response = await api.get(
+        `school_admin/student-fee-payments/?page=${page}`,
+        {
+          params: {
+            ...filters,
+            status: filters.status === "ALL" ? "" : filters.status,
+          },
+        }
+      );
       setPayments(response.data.results);
-      
+
       // Use the summary from backend directly
       setSummary({
         totalAmount: parseFloat(response.data.summary.total_amount),
@@ -97,7 +100,7 @@ const ShowFeePayments = () => {
         paidStudents: response.data.summary.paid_students,
         pendingStudents: response.data.summary.pending_students,
       });
-      
+
       const pageSize = 10;
       const totalCount = response.data.count;
       setTotalPages(Math.ceil(totalCount / pageSize));
@@ -107,15 +110,13 @@ const ShowFeePayments = () => {
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
       fetchPayments(newPage);
     }
   };
-
- 
 
   const getStatusBadge = (status) => {
     const variants = {
@@ -164,7 +165,9 @@ const ShowFeePayments = () => {
             </div>
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm">Status: {getStatusBadge(payment.status)}</span>
+              <span className="text-sm">
+                Status: {getStatusBadge(payment.status)}
+              </span>
             </div>
           </div>
 
@@ -177,23 +180,38 @@ const ShowFeePayments = () => {
               <TableBody>
                 <TableRow>
                   <TableCell className="font-medium">Fee Category</TableCell>
-                  <TableCell>{payment.fee_structure_details.fee_category_name}</TableCell>
+                  <TableCell>
+                    {payment.fee_structure_details.fee_category_name}
+                  </TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell className="font-medium">Base Amount</TableCell>
-                  <TableCell>₹{parseFloat(payment.fee_structure_details.amount).toFixed(2)}</TableCell>
+                  <TableCell>
+                    ₹
+                    {parseFloat(payment.fee_structure_details.amount).toFixed(
+                      2
+                    )}
+                  </TableCell>
                 </TableRow>
                 {payment.fee_structure_details.tax_amount && (
                   <TableRow>
                     <TableCell className="font-medium">Tax</TableCell>
-                    <TableCell>₹{parseFloat(payment.fee_structure_details.tax_amount).toFixed(2)}</TableCell>
+                    <TableCell>
+                      ₹
+                      {parseFloat(
+                        payment.fee_structure_details.tax_amount
+                      ).toFixed(2)}
+                    </TableCell>
                   </TableRow>
                 )}
                 {payment.fee_structure_details.discount_amount && (
                   <TableRow>
                     <TableCell className="font-medium">Discount</TableCell>
                     <TableCell className="text-green-600">
-                      -₹{parseFloat(payment.fee_structure_details.discount_amount).toFixed(2)}
+                      -₹
+                      {parseFloat(
+                        payment.fee_structure_details.discount_amount
+                      ).toFixed(2)}
                     </TableCell>
                   </TableRow>
                 )}
@@ -215,17 +233,20 @@ const ShowFeePayments = () => {
                   <TableRow>
                     <TableCell className="font-medium">Payment Date</TableCell>
                     <TableCell>
-                      {new Date(payment.payment_date).toLocaleDateString()}
+                      {new Date(payment.created_at).toLocaleDateString("en-GB", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                      })}
                     </TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="font-medium">Transaction ID</TableCell>
-                    <TableCell>{payment.transaction_id || "N/A"}</TableCell>
+                    <TableCell className="font-medium">
+                      Transaction ID
+                    </TableCell>
+                    <TableCell>{payment.stripe_payment_intent_id || "N/A"}</TableCell>
                   </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">Payment Method</TableCell>
-                    <TableCell>{payment.payment_method || "N/A"}</TableCell>
-                  </TableRow>
+
                 </TableBody>
               </Table>
             </div>
@@ -253,7 +274,8 @@ const ShowFeePayments = () => {
               of ₹{summary.totalAmount.toFixed(2)}
             </p>
             <div className="mt-2 text-xs font-medium text-green-500">
-              {((summary.paidAmount / summary.totalAmount) * 100).toFixed(1)}% collected
+              {((summary.paidAmount / summary.totalAmount) * 100).toFixed(1)}%
+              collected
             </div>
           </CardContent>
         </Card>
@@ -271,7 +293,10 @@ const ShowFeePayments = () => {
             </div>
             <p className="text-sm text-blue-600/80">Students Paid</p>
             <div className="mt-2 text-xs font-medium text-blue-500">
-              {((summary.paidStudents / summary.totalStudents) * 100).toFixed(1)}% of students paid
+              {((summary.paidStudents / summary.totalStudents) * 100).toFixed(
+                1
+              )}
+              % of students paid
             </div>
           </CardContent>
         </Card>
@@ -291,7 +316,11 @@ const ShowFeePayments = () => {
               From {summary.pendingStudents} students
             </p>
             <div className="mt-2 text-xs font-medium text-amber-500">
-              {((summary.pendingStudents / summary.totalStudents) * 100).toFixed(1)}% pending payments
+              {(
+                (summary.pendingStudents / summary.totalStudents) *
+                100
+              ).toFixed(1)}
+              % pending payments
             </div>
           </CardContent>
         </Card>
@@ -367,7 +396,14 @@ const ShowFeePayments = () => {
                         {payment.student_class} - {payment.student_section}
                       </TableCell>
                       <TableCell>
-                        {new Date(payment.due_date).toLocaleDateString()}
+                        {new Date(payment.due_date).toLocaleDateString(
+                          "en-GB",
+                          {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                          }
+                        )}
                       </TableCell>
                       <TableCell>
                         ₹{parseFloat(payment.total_amount).toFixed(2)}
@@ -388,7 +424,7 @@ const ShowFeePayments = () => {
               <Pagination>
                 <PaginationContent>
                   <PaginationItem>
-                    <PaginationPrevious 
+                    <PaginationPrevious
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
                     />
@@ -400,8 +436,8 @@ const ShowFeePayments = () => {
                         onClick={() => handlePageChange(i + 1)}
                         isActive={currentPage === i + 1}
                         className={
-                          currentPage === i + 1
-                            && "bg-gradient-to-b from-[#0D2E76] to-[#1842DC] text-white"
+                          currentPage === i + 1 &&
+                          "bg-gradient-to-b from-[#0D2E76] to-[#1842DC] text-white"
                         }
                       >
                         {i + 1}
@@ -410,7 +446,7 @@ const ShowFeePayments = () => {
                   ))}
 
                   <PaginationItem>
-                    <PaginationNext 
+                    <PaginationNext
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalPages}
                     />

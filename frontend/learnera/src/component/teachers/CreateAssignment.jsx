@@ -32,6 +32,7 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { toast, ToastContainer } from "react-toastify";
 import { HashLoader } from "react-spinners";
 import api from "../../api";
+import { useNavigate } from "react-router-dom";
 
 const validationSchema = Yup.object().shape({
   title: Yup.string()
@@ -55,6 +56,8 @@ const CreateAssignment = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
+
+  const navigate = useNavigate()
 
   useEffect(() => {
     const fetchData = async () => {
@@ -89,9 +92,10 @@ const CreateAssignment = () => {
         is_active: true,
       };
       const response = await api.post("teachers/assignments/", data);
-      if (response.status === 200) {
+      if (response.status === 201) {
         toast.success("New Assignment Created Successfully");
         resetForm();
+        navigate("/teachers/show-assignment")
       } else {
         toast.error(response.error || "Failed to create assignment.");
       }

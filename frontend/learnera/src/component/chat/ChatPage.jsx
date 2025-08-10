@@ -219,7 +219,6 @@ const ChatWindow = ({
 
   const handleEmojiSelect = (emoji) => {
     setMessageInput((prev) => prev + emoji.native);
-    setShowEmojiPicker(false);
   };
 
   return (
@@ -268,7 +267,7 @@ const ChatWindow = ({
               </div>
 
               <div className="flex items-center gap-2">
-                <button className="p-2 hover:bg-gray-100 rounded-full transition-all duration-200 hover:scale-105 text-gray-600">
+                {/* <button className="p-2 hover:bg-gray-100 rounded-full transition-all duration-200 hover:scale-105 text-gray-600">
                   <Video size={20} />
                 </button>
                 <button className="p-2 hover:bg-gray-100 rounded-full transition-all duration-200 hover:scale-105 text-gray-600">
@@ -276,7 +275,7 @@ const ChatWindow = ({
                 </button>
                 <button className="p-2 hover:bg-gray-100 rounded-full transition-all duration-200 hover:scale-105 text-gray-600">
                   <MoreVertical size={20} />
-                </button>
+                </button> */}
               </div>
             </div>
           </div>
@@ -353,9 +352,9 @@ const ChatWindow = ({
                 />
                 
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
-                  <button className="p-1 hover:bg-gray-200 rounded-full transition-all duration-200">
+                  {/* <button className="p-1 hover:bg-gray-200 rounded-full transition-all duration-200">
                     <Paperclip className="text-gray-500" size={16} />
-                  </button>
+                  </button> */}
                   <button
                     ref={buttonRef}
                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
@@ -501,8 +500,8 @@ const ChatPage = () => {
     }
 
     try {
-      // const wsUrl = `wss://api.learnerapp.site/ws/chat/${token}/`;
-      const wsUrl = `ws://localhost:8000/ws/chat/${token}/`;
+      const wsUrl = `wss://api.learnerapp.site/ws/chat/${token}/`;
+      // const wsUrl = `ws://localhost:8000/ws/chat/${token}/`;
       const ws = new W3CWebSocket(wsUrl);
 
       websocketRef.current = ws;

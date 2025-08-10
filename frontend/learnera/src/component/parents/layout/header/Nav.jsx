@@ -50,7 +50,7 @@ const Nav = ({ setActiveMenu, isMobile, isMenuOpen }) => {
 
         {/* Action Icons */}
         <div className="flex items-center gap-4 order-2 md:order-3">
-          <button className="relative p-2 text-gray-600 hover:text-blue-600">
+          {/* <button className="relative p-2 text-gray-600 hover:text-blue-600">
             <CiMail size={26} />
             <span className="absolute top-0 right-0 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
               5
@@ -62,7 +62,7 @@ const Nav = ({ setActiveMenu, isMobile, isMenuOpen }) => {
             <span className="absolute top-0 right-0 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
               3
             </span>
-          </button>
+          </button> */}
 
           <button
             onClick={() => setShowLogoutModal(true)}

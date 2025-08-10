@@ -3,6 +3,7 @@ import SideBar from "./layout/sidebar/SideBar";
 import Nav from "./layout/header/Nav";
 import Sections from "./Sections";
 import BackToTop from "../BackToTop";
+import { ToastContainer } from "react-toastify";
 
 const Admin = () => {
   const [activeMenu, setActiveMenu] = useState(false);
@@ -67,6 +68,7 @@ const Admin = () => {
 
         {/* Main content container */}
         <div className="flex flex-col z-10 w-[130%] h-screen overflow-y-auto">
+          <ToastContainer />
           <div className="sticky top-0  bg-white shadow-md z-30">
             <Nav
               setActiveMenu={setActiveMenu}
