@@ -90,7 +90,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
         ]
 
     def validate_username(self, value):
-        if not value.strip():
+        if not str(value).strip():
             raise serializers.ValidationError("Username is required.")
 
         if value.startswith("__") or value.startswith("  "):
@@ -111,7 +111,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
     def validate_password(self, value):
         import re
 
-        if not value.strip():
+        if not str(value).strip():
             raise serializers.ValidationError("Password is required.")
         if not re.search(r"[A-Z]", value):
             raise serializers.ValidationError(
@@ -132,20 +132,6 @@ class CustomUserSerializer(serializers.ModelSerializer):
             r"^\+?\d{10,15}$", "Enter a valid phone number."
         )
         phone_validator(value)
-        return value
-
-    def validate_date_of_birth(self, value: date):
-        today = timezone.now().date()
-        age = (
-            today.year
-            - value.year
-            - ((today.month, today.day) < (value.month, value.day))
-        )
-
-        # student role
-        if self.initial_data.get("is_student") and age < 5:
-            raise serializers.ValidationError("Students must be at least 5 years old.")
-
         return value
 
     def create(self, validated_data):
@@ -169,10 +155,6 @@ class SchoolAdminStudentSerializers(serializers.ModelSerializer):
             "class_assigned",
         ]
 
-    def validate_admission_number(self, value):
-        if not value.strip():
-            raise serializers.ValidationError("Admission number cannot be empty.")
-        return value
 
     def validate_class_assigned(self, value):
         if not value:

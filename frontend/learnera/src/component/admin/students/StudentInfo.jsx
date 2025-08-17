@@ -220,33 +220,46 @@ const StudentInfo = () => {
 
       <div className="flex-row space-y-6 md:flex justify-center  gap-6">
         <ToastContainer />
-        <div className="md:col-span-1 bg-white shadow-md rounded-lg p-6 h-fit">
-          <div className="flex flex-col items-center">
-            <div className="w-32 h-32 mb-4">
+        <div className="md:col-span-1 bg-white shadow-md rounded-2xl p-6 h-fit">
+          <div className="flex flex-col items-center p-6">
+            {/* Profile Image */}
+            <div className="relative w-32 h-32 mb-4">
               {student.user.profile_image ? (
                 <img
-                  className="w-32 h-32 rounded-full object-cover border-4 border-blue-100"
-                  src={`${import.meta.env.VITE_IMAGE_LOADING_URL}${student.user.profile_image}`}
+                  className="w-32 h-32 rounded-full object-cover border-4 border-blue-200 shadow-md"
+                  src={`${import.meta.env.VITE_IMAGE_LOADING_URL}${
+                    student.user.profile_image
+                  }`}
                   alt={`${student.user.first_name} ${student.user.last_name}`}
                 />
               ) : (
-                <div className="w-32 h-32 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-4xl font-bold text-blue-600">
+                <div className="w-32 h-32 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center shadow-md">
+                  <span className="text-4xl font-bold text-blue-700">
                     {student.user.first_name && student.user.first_name[0]}
                     {student.user.last_name && student.user.last_name[0]}
                   </span>
                 </div>
               )}
             </div>
-            <h2 className="text-2xl font-semibold text-gray-800 mb-2 flex items-center gap-3">
-              <div className="w-7 h-7 flex items-center justify-center bg-blue-800 rounded-full">
-                <span className="font-montserrat text-white text-sm">
+
+            {/* Username + Roll Number */}
+            <h2 className="text-2xl font-semibold text-gray-800 mb-1 flex items-center gap-2">
+              <div className="w-8 h-8 flex items-center justify-center bg-blue-700 rounded-full shadow">
+                <span className="font-montserrat text-white text-xs font-bold">
                   {student.roll_number}
                 </span>
               </div>
-              {student.user.username}
+              <span>{student.user.username}</span>
             </h2>
-            <p className="text-gray-500">{student.user.email}</p>
+
+            {/* Email */}
+            <p className="text-sm text-gray-500 mb-1">{student.user.email}</p>
+
+            {/* Class Info */}
+            <p className="font-medium text-blue-700 bg-blue-50 px-3 py-1 rounded-full mt-2 shadow-sm">
+              {student.class_assigned.class_name} -{" "}
+              {student.class_assigned.section_name}
+            </p>
           </div>
         </div>
 

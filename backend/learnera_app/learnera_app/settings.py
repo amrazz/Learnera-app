@@ -114,21 +114,20 @@ ASGI_APPLICATION = "learnera_app.asgi.application"
 # CACHES = {
 #     "default": {
 #         "BACKEND": "django_redis.cache.RedisCache",
-#         "LOCATION": "redis://redis:6379/1",  # Using redis service name in Docker
+#         "LOCATION": "redis://redis:6379/1",
 #         "OPTIONS": {
 #             "CLIENT_CLASS": "django_redis.client.DefaultClient",
 #         },
 #         "KEY_PREFIX": "learnera_cache",
-#         "TIMEOUT": 300,  # Default timeout in seconds
+#         "TIMEOUT": 300,  
 #     }
 # }
 
-# Your existing WebSocket configuration (keep this)
 # CHANNEL_LAYERS = {
 #     "default": {
 #         "BACKEND": "channels_redis.core.RedisChannelLayer",
 #         "CONFIG": {
-#             "hosts": [("redis", 6379)],  # This uses database 0
+#             "hosts": [("redis", 6379)],
 #         },
 #     },
 # }
@@ -138,7 +137,7 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],  # Use localhost instead of "redis"
+            "hosts": [("127.0.0.1", 6379)], 
         },
     },
 }
