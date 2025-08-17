@@ -82,18 +82,6 @@ const SetUserPassword = () => {
           </p>
         </div>
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6 text-sm flex items-center gap-2">
-            <CheckCircle className="w-4 h-4" />
-            {success}
-          </div>
-        )}
-
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* New Password Field */}
           <div className="space-y-2">
