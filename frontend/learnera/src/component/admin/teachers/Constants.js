@@ -4,6 +4,7 @@ const validationSchema = Yup.object({
   username: Yup.string()
     .trim()
     .matches(/^(?!\s{2,})/, "Username cannot start with two spaces")
+    .matches(/^(?!_{2,3})/, "First name cannot start with underscores")
     .required("Username is required"),
   email: Yup.string()
     .email("Invalid email format")
@@ -11,12 +12,14 @@ const validationSchema = Yup.object({
   firstName: Yup.string()
     .trim()
     .matches(/^(?!\s{2,})/, "First name cannot start with two spaces")
+    .matches(/^(?!_{2,3})/, "First name cannot start with underscores")
     .matches(/^[a-zA-Z]+$/, "First name can only contain letters")
     .required("First name is required"),
   lastName: Yup.string()
     .trim()
     .matches(/^(?!\s{2,})/, "Last name cannot start with two spaces")
     .matches(/^[a-zA-Z]+$/, "Last name can only contain letters")
+    .matches(/^(?!_{2,3})/, "First name cannot start with underscores")
     .required("Last name is required"),
   phoneNumber: Yup.string()
     .matches(/^\d{10}$/, "Phone number must be exactly 10 digits")
@@ -26,22 +29,16 @@ const validationSchema = Yup.object({
     .nullable(),
   dateOfBirth: Yup.date()
     .required("Date of birth is required")
-    .test(
-      "is-10-years-old",
-      "You must be at least 10 years old",
-      (value) => {
-        const today = new Date();
-        const birthDate = new Date(value);
-        const age = today.getFullYear() - birthDate.getFullYear();
-        const monthDifference = today.getMonth() - birthDate.getMonth();
-        const dayDifference = today.getDate() - birthDate.getDate();
-
-        return (
-          age > 10 ||
-          (age === 10 && (monthDifference > 0 || (monthDifference === 0 && dayDifference >= 0)))
-        );
-      }
-    ),
+    .max(new Date(), "Date of birth cannot be in the future.")
+    .test("min-age", "Parent must be at least 18 years old", (value) => {
+      if (!value) return false;
+      const today = new Date();
+      const birthDate = new Date(value);
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const m = today.getMonth() - birthDate.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
+      return age >= 18;
+    }),
   gender: Yup.string()
     .required("Gender is required"),
   address: Yup.string()

@@ -4,6 +4,7 @@ const validationSchema = Yup.object({
   username: Yup.string()
     .trim()
     .matches(/^(?!\s{2,})/, "Username cannot start with two spaces")
+    .matches(/^(?!_{2,3})/, "First name cannot start with underscores")
     .required("Username is required"),
   email: Yup.string()
     .email("Invalid email format")
@@ -11,11 +12,13 @@ const validationSchema = Yup.object({
   firstName: Yup.string()
     .trim()
     .matches(/^(?!\s{2,})/, "First name cannot start with two spaces")
+    .matches(/^(?!_{2,3})/, "First name cannot start with underscores")
     .matches(/^[a-zA-Z]+$/, "First name can only contain letters")
     .required("First name is required"),
   lastName: Yup.string()
     .trim()
     .matches(/^(?!\s{2,})/, "Last name cannot start with two spaces")
+    .matches(/^(?!_{2,3})/, "First name cannot start with underscores")
     .matches(/^[a-zA-Z]+$/, "Last name can only contain letters")
     .required("Last name is required"),
   phoneNumber: Yup.string()
@@ -26,22 +29,7 @@ const validationSchema = Yup.object({
     .nullable(),
   dateOfBirth: Yup.date()
     .required("Date of birth is required")
-    .test(
-      "is-10-years-old",
-      "You must be at least 10 years old",
-      (value) => {
-        const today = new Date();
-        const birthDate = new Date(value);
-        const age = today.getFullYear() - birthDate.getFullYear();
-        const monthDifference = today.getMonth() - birthDate.getMonth();
-        const dayDifference = today.getDate() - birthDate.getDate();
-
-        return (
-          age > 10 ||
-          (age === 10 && (monthDifference > 0 || (monthDifference === 0 && dayDifference >= 0)))
-        );
-      }
-    ),
+    .max(new Date(), "Date of birth cannot be in the future"),
   gender: Yup.string()
     .required("Gender is required"),
   address: Yup.string()
@@ -125,29 +113,37 @@ export { inputs, validationSchema, initialValues }
 export const ParentEditSchema = Yup.object().shape({
   first_name: Yup.string()
     .required("First name is required")
-    .min(2, "First name must be at least 2 characters"),
+    .min(2, "First name must be at least 2 characters")
+    .matches(/^(?!_{2,3})/, "First name cannot start with underscores"),
   last_name: Yup.string()
     .required("Last name is required")
+    .matches(/^(?!_{2,3})/, "First name cannot start with underscores")
     .min(2, "Last name must be at least 2 characters"),
   username: Yup.string()
     .required("Username is required")
+    .matches(/^(?!_{2,3})/, "First name cannot start with underscores")
     .min(3, "Username must be at least 3 characters"),
   email: Yup.string()
     .email("Invalid email address")
     .required("Email is required"),
   occupation: Yup.string()
+  .matches(/^(?!_{2,3})/, "First name cannot start with underscores")
     .required("Occupation is required"),
   phone_number: Yup.string()
     .matches(/^(99|62|9)[0-9]{8}$/, "Phone number must start with 99, 62, or 9 and be exactly 10 digits")
     .required("Phone number is required"),
   address: Yup.string()
-    .required("Address is required"),
+  .required("Address is required")
+  .matches(/^(?!_{2,3})/, "First name cannot start with underscores"),
   city: Yup.string()
-    .required("City is required"),
+    .required("City is required")
+    .matches(/^(?!_{2,3})/, "First name cannot start with underscores"),
   state: Yup.string()
-    .required("State is required"),
+    .required("State is required")
+    .matches(/^(?!_{2,3})/, "First name cannot start with underscores"),
   district: Yup.string()
-    .required("District is required"),
+    .required("District is required")
+    .matches(/^(?!_{2,3})/, "First name cannot start with underscores"),
   country: Yup.string()
     .required("Country is required"),
   emergency_contact_number: Yup.string()

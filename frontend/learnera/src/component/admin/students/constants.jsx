@@ -40,6 +40,7 @@ export const validationSchema = Yup.object({
   username: Yup.string()
     .trim()
     .matches(/^(?!\s{2,})/, "Username cannot start with two spaces")
+    .matches(/^(?!_{2,3})/, "First name cannot start with underscores")
     .required("Username is required"),
   email: Yup.string()
     .email("Invalid email format")
@@ -47,11 +48,13 @@ export const validationSchema = Yup.object({
   firstName: Yup.string()
     .trim()
     .matches(/^(?!\s{2,})/, "First name cannot start with two spaces")
+    .matches(/^(?!_{2,3})/, "First name cannot start with underscores")
     .matches(/^[a-zA-Z]+$/, "First name can only contain letters")
     .required("First name is required"),
   lastName: Yup.string()
     .trim()
     .matches(/^(?!\s{2,})/, "Last name cannot start with two spaces")
+    .matches(/^(?!_{2,3})/, "First name cannot start with underscores")
     .matches(/^[a-zA-Z]+$/, "Last name can only contain letters")
     .required("Last name is required"),
   phoneNumber: Yup.string()
@@ -62,40 +65,32 @@ export const validationSchema = Yup.object({
     .nullable(),
   dateOfBirth: Yup.date()
     .required("Date of birth is required")
-    .test("is-10-years-old", "You must be at least 10 years old", (value) => {
-      const today = new Date();
-      const birthDate = new Date(value);
-      const age = today.getFullYear() - birthDate.getFullYear();
-      const monthDifference = today.getMonth() - birthDate.getMonth();
-      const dayDifference = today.getDate() - birthDate.getDate();
-
-      return (
-        age > 10 ||
-        (age === 10 &&
-          (monthDifference > 0 ||
-            (monthDifference === 0 && dayDifference >= 0)))
-      );
-    }),
+    .max(new Date(), "Date of birth cannot be in the future."),
   gender: Yup.string().required("Gender is required"),
   address: Yup.string()
     .trim()
     .matches(/^(?!\s{2,})/, "Address cannot start with two spaces")
+    .matches(/^(?!_{2,3})/, "First name cannot start with underscores")
     .required("Address is required"),
   city: Yup.string()
     .trim()
     .matches(/^(?!\s{2,})/, "City cannot start with two spaces")
+    .matches(/^(?!_{2,3})/, "First name cannot start with underscores")
     .required("City is required"),
   state: Yup.string()
     .trim()
     .matches(/^(?!\s{2,})/, "State cannot start with two spaces")
+    .matches(/^(?!_{2,3})/, "First name cannot start with underscores")
     .required("State is required"),
   district: Yup.string()
     .trim()
     .matches(/^(?!\s{2,})/, "District cannot start with two spaces")
+    .matches(/^(?!_{2,3})/, "First name cannot start with underscores")
     .required("District is required"),
   country: Yup.string()
     .trim()
     .matches(/^(?!\s{2,})/, "Country cannot start with two spaces")
+    .matches(/^(?!_{2,3})/, "First name cannot start with underscores")
     .required("Country is required"),
   profileImage: Yup.mixed()
     .required("Profile image is required")
@@ -132,7 +127,15 @@ export const inputs = [
   },
 ];
 
-export const EditForm = ({ isSubmitting, errors, touched, student, previewImage, setPreviewImage, setFieldValue }) => {
+export const EditForm = ({
+  isSubmitting,
+  errors,
+  touched,
+  student,
+  previewImage,
+  setPreviewImage,
+  setFieldValue,
+}) => {
   const navigate = useNavigate();
 
   if (!student) {
@@ -185,7 +188,6 @@ export const EditForm = ({ isSubmitting, errors, touched, student, previewImage,
           </label>
         </div>
         <div className="grid md:grid-cols-2 gap-4 mt-6">
-
           <div>
             <label className="block text-sm font-medium text-gray-700">
               First Name
@@ -436,8 +438,7 @@ export const EditForm = ({ isSubmitting, errors, touched, student, previewImage,
       {/* Parent Relationship Section */}
       <ParentRelationship
         existingParents={student.parents}
-        onParentUpdate={(relationships) => {
-        }}
+        onParentUpdate={(relationships) => {}}
         studentId={student.id}
       />
 

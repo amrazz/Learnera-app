@@ -7,6 +7,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { motion, AnimatePresence } from "framer-motion";
 import { login_image } from "../../assets/landing_page";
 import { login, schooladmin_login } from "../../redux/features/auth/actions";
+import {resetError} from '../../redux/features/auth/authSlice'
 import { useLocation, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, LogIn, User, Lock, UserCheck } from "lucide-react";
 import { SyncLoader } from "react-spinners";
@@ -67,8 +68,9 @@ const Login = () => {
     if (currentPath === "/login") {
       localStorage.removeItem(ACCESS_TOKEN);
       localStorage.removeItem(REFRESH_TOKEN);
+      dispatch(resetError())
     }
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
     if (isAuthenticated && Role) {
@@ -357,7 +359,7 @@ const Login = () => {
                       </AnimatePresence>
                     </motion.div>
 
-                    <AnimatePresence>
+                    {/* <AnimatePresence>
                       {error && (
                         <motion.div
                           initial={{ opacity: 0, scale: 0.8, y: -10 }}
@@ -370,7 +372,7 @@ const Login = () => {
                             : "Authentication Failed"}
                         </motion.div>
                       )}
-                    </AnimatePresence>
+                    </AnimatePresence> */}
 
                     <motion.div className="pt-4" variants={itemVariants}>
                       <motion.button
