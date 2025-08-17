@@ -1,7 +1,7 @@
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from students.models import Student
-from loguru import logger # type: ignore
+from loguru import logger  # type: ignore
 
 
 class RollNumberService:
@@ -16,11 +16,15 @@ class RollNumberService:
             logger.info(
                 f"Starting roll number assignment for student: {student.user.first_name} {student.user.last_name}"
             )
-            logger.info(f"Section ID: {section.id}, Academic Year ID: {academic_year.id}")
+            logger.info(
+                f"Section ID: {section.id}, Academic Year ID: {academic_year.id}"
+            )
 
             # Save the student if not already saved
             if not student.pk:
-                logger.info(f"New student detected, saving first: {student.user.first_name}")
+                logger.info(
+                    f"New student detected, saving first: {student.user.first_name}"
+                )
                 student.save()
 
             # Get all students in the EXACT same section and academic year

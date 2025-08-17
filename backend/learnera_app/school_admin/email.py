@@ -4,26 +4,29 @@ from django.template.loader import render_to_string
 from loguru import logger
 from django.utils.html import strip_tags
 
+
 class EmailService:
     @staticmethod
     def send_email_sync(subject, html_message, recipient_list, reply_to=None):
         plain_message = strip_tags(html_message)
-        
+
         try:
             email = EmailMultiAlternatives(
                 subject=subject,
                 body=plain_message,
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 to=recipient_list,
-                reply_to=[reply_to] if reply_to else []
+                reply_to=[reply_to] if reply_to else [],
             )
-            
+
             email.attach_alternative(html_message, "text/html")
             email.send(False)
             logger.debug(f"Email sent successfully to {', '.join(recipient_list)}")
             return True
         except Exception as e:
-            logger.debug(f"Failed to send email to {', '.join(recipient_list)}: {str(e)}")
+            logger.debug(
+                f"Failed to send email to {', '.join(recipient_list)}: {str(e)}"
+            )
             return False
 
     @staticmethod
@@ -33,23 +36,23 @@ class EmailService:
             "Teacher": "Welcome to Learnera - Your Teacher Account Details",
             "Parent": "Welcome to Learnera - Your Parent Account Details",
         }
-        
+
         if user_type not in subject_mapping:
             raise ValueError(f"Invalid user type: {user_type}")
-            
+
         context = {
-            'username': username,
-            'user_type': user_type,
-            'app_name': 'Learnera',
-            'set_password_link': set_password_link,
+            "username": username,
+            "user_type": user_type,
+            "app_name": "Learnera",
+            "set_password_link": set_password_link,
         }
 
         try:
-            html_message = render_to_string('emails/welcome_email.html', context)
+            html_message = render_to_string("emails/welcome_email.html", context)
             return EmailService.send_email_sync(
                 subject=subject_mapping[user_type],
                 html_message=html_message,
-                recipient_list=[email]
+                recipient_list=[email],
             )
         except Exception as e:
             logger.debug(f"Failed to prepare welcome email for {email}: {str(e)}")

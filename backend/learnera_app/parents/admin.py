@@ -1,5 +1,12 @@
 from django.contrib import admin
-from .models import FeeCategory, FeeStructure, Parent, PaymentTransaction, StudentFeePayment, StudentParentRelationship
+from .models import (
+    FeeCategory,
+    FeeStructure,
+    Parent,
+    PaymentTransaction,
+    StudentFeePayment,
+    StudentParentRelationship,
+)
 
 # Register your models here.
 

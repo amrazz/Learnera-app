@@ -12,13 +12,15 @@ def generate_otp():
 
 def send_otp(email, otp, purpose="Verification"):
     try:
-        
+
         subject = f"Learnera - {purpose}"
         context = {
             "otp": otp,
             "purpose": purpose,
             "app_name": "LEARNERA APP",
-            "support_email": getattr(settings, "EMAIL_HOST_USER", "learnerapp999@gmail.com"),
+            "support_email": getattr(
+                settings, "EMAIL_HOST_USER", "learnerapp999@gmail.com"
+            ),
         }
 
         try:
@@ -41,19 +43,21 @@ Best regards,
 If you need help, contact us at {context['support_email']}
             """.strip()
             html_message = None
-            
+
             send_mail(
                 subject=subject,
                 message=plain_message,
-                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'learnerapp999@gmail.com'),
+                from_email=getattr(
+                    settings, "DEFAULT_FROM_EMAIL", "learnerapp999@gmail.com"
+                ),
                 recipient_list=[email],
                 html_message=html_message,
                 fail_silently=False,
             )
-            
+
             logger.info(f"OTP email sent successfully to {email}")
             return True
-        
+
     except Exception as e:
         logger.error(f"Failed to send OTP email to {email}: {str(e)}")
         raise e

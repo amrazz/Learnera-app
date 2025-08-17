@@ -28,6 +28,7 @@ def auth_client(user, client):
     client.credentials(HTTP_AUTHORIZATION=f"Bearer {str(access)}")
     return client
 
+
 @pytest.fixture
 def auth_client_tokens(user, client):
     refresh = RefreshToken.for_user(user)

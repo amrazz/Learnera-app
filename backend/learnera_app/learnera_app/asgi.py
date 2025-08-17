@@ -17,7 +17,7 @@ from django.conf.urls.static import static
 import django
 
 # Set the Django settings module
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'learnera_app.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "learnera_app.settings")
 
 # Initialize Django (loads the app registry)
 django.setup()
@@ -28,13 +28,11 @@ from chat.routing import websocket_urlpatterns
 django_asgi_app = get_asgi_application()
 
 # Define the ASGI application with protocol routing
-application = ProtocolTypeRouter({
-    "http": django_asgi_app,
-    "websocket": AllowedHostsOriginValidator(
-        AuthMiddlewareStack(
-            URLRouter(
-                websocket_urlpatterns
-            )
-        )
-    ),
-})
+application = ProtocolTypeRouter(
+    {
+        "http": django_asgi_app,
+        "websocket": AllowedHostsOriginValidator(
+            AuthMiddlewareStack(URLRouter(websocket_urlpatterns))
+        ),
+    }
+)

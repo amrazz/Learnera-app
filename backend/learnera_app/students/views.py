@@ -35,23 +35,7 @@ from django.db.models import Avg
 from django.db.models import Avg, Count, Q
 
 from django.db.models.functions import ExtractMonth
-import logging
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
-
-# handler = logging.FileHandler("media/logs/student_views_log.log")
-handler = logging.FileHandler("student_views_log.log")
-handler.setLevel(logging.DEBUG)
-
-
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-handler.setFormatter(formatter)
-
-if not logger.hasHandlers():
-    logger.addHandler(handler)
-
+from loguru import logger
 
 # Create your views here.
 

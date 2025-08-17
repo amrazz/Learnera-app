@@ -11,7 +11,6 @@ from django.shortcuts import get_object_or_404
 
 from students.serializers import StudentLeaveRequestSerializer
 from .serializers import (
-
     AssignmentListSerializer,
     AssignmentSerializer,
     AttendanceHistorySerializer,
@@ -51,22 +50,7 @@ from rest_framework.pagination import PageNumberPagination
 from django.db import transaction
 from django.db.models.functions import TruncMonth
 from django.db.models import Count, Q
-import logging
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
-
-# handler = logging.FileHandler('media/logs/teacher_views_log.log')
-handler = logging.FileHandler('teacher_views_log.log')
-handler.setLevel(logging.DEBUG)
-
-
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-
-if not logger.hasHandlers():
-    logger.addHandler(handler)
+from loguru import logger
 
 
 # Create your views here.
@@ -401,242 +385,237 @@ class AssignmentRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView)
 
     def get_queryset(self):
         return self.queryset.filter(teacher=self.request.user.teacher)
-    
+
 
 class AssignmentSubmissionListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
     queryset = AssignmentSubmission.objects.all()
     serializer_class = AssignmentSubmissionListSerializer
     pagination_class = None
-    
+
     def get_queryset(self):
-        assignment_id = self.kwargs.get('assignment_id')
-        return AssignmentSubmission.objects.filter(
-            assignment_id = assignment_id,
-            assignment__teacher = self.request.user.teacher,
-            is_submitted = True
-        ).select_related(
-            'student', 'student__user'
-        ).order_by('student__roll_number')
+        assignment_id = self.kwargs.get("assignment_id")
+        return (
+            AssignmentSubmission.objects.filter(
+                assignment_id=assignment_id,
+                assignment__teacher=self.request.user.teacher,
+                is_submitted=True,
+            )
+            .select_related("student", "student__user")
+            .order_by("student__roll_number")
+        )
 
 
 class AssignmentGradeSubmissionView(generics.UpdateAPIView):
     serializer_class = AssignmentGradeSubmissionSerlaizer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = None
-    
+
     def get_queryset(self):
         return AssignmentSubmission.objects.filter(
-            assignment__teacher = self.request.user.teacher, is_submitted = True)
-        
+            assignment__teacher=self.request.user.teacher, is_submitted=True
+        )
+
     def update(self, request, *args, **kwargs):
         try:
             submission = self.get_object()
-            serializer = self.get_serializer(submission, data = request.data, partial = True)
+            serializer = self.get_serializer(
+                submission, data=request.data, partial=True
+            )
             if serializer.is_valid():
                 serializer.save()
-                return Response(serializer.data, status = status.HTTP_200_OK)
+                return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response({'error' : str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
-        
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 # ---------------------------------------------------
+
 
 class TeacherExamListCreateView(generics.ListCreateAPIView):
     serializer_class = ExamSerializer
     permission_classes = [permissions.IsAuthenticated]
-    
+
     def get_queryset(self):
-        if hasattr(self.request.user, 'teacher'):
+        if hasattr(self.request.user, "teacher"):
             return Exam.objects.filter(teacher=self.request.user.teacher)
         return Exam.objects.none()
-    
+
     def perform_create(self, serializer):
         exam = serializer.save(teacher=self.request.user.teacher)
-        
+
         if exam.status == "PUBLISHED":
             students = exam.class_section.students.all()
             student_exams = [
-                StudentExam(
-                    student=student,
-                    exam=exam,
-                    status='NOT_STARTED'
-                )
+                StudentExam(student=student, exam=exam, status="NOT_STARTED")
                 for student in students
             ]
             StudentExam.objects.bulk_create(student_exams)
 
+
 class TeacherExamDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ExamSerializer
     permission_classes = [permissions.IsAuthenticated]
-    
+
     def get_queryset(self):
-        if hasattr(self.request.user, 'teacher'):
+        if hasattr(self.request.user, "teacher"):
             return Exam.objects.filter(teacher=self.request.user.teacher)
         return Exam.objects.none()
+
 
 class QuestionListCreateView(generics.ListCreateAPIView):
     serializer_class = QuestionSerializer
     permission_classes = [permissions.IsAuthenticated]
-    
+
     def get_queryset(self):
-        exam_id = self.kwargs.get('exam_id')
-        if hasattr(self.request.user, 'teacher'):
+        exam_id = self.kwargs.get("exam_id")
+        if hasattr(self.request.user, "teacher"):
             return Question.objects.filter(
-                exam_id=exam_id, 
-                exam__teacher=self.request.user.teacher
+                exam_id=exam_id, exam__teacher=self.request.user.teacher
             )
         return Question.objects.none()
-    
+
     def perform_create(self, serializer):
         exam = get_object_or_404(
-            Exam, 
-            id=self.kwargs.get('exam_id'), 
-            teacher=self.request.user.teacher
+            Exam, id=self.kwargs.get("exam_id"), teacher=self.request.user.teacher
         )
         serializer.save(exam=exam)
+
 
 class QuestionDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = QuestionSerializer
     permission_classes = [permissions.IsAuthenticated]
-    
+
     def get_queryset(self):
-        if hasattr(self.request.user, 'teacher'):
-            return Question.objects.filter(
-                exam__teacher=self.request.user.teacher
-            )
+        if hasattr(self.request.user, "teacher"):
+            return Question.objects.filter(exam__teacher=self.request.user.teacher)
         return Question.objects.none()
-    
-    
+
+
 class EvaluateExamView(generics.UpdateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = EvaluationSerializer
-    
+
     def get_queryset(self):
-        if not hasattr(self.request.user, 'teacher'):
+        if not hasattr(self.request.user, "teacher"):
             return StudentAnswer.objects.none()
-        
+
         return StudentAnswer.objects.filter(
-            student_exam__id=self.kwargs.get('pk'),
+            student_exam__id=self.kwargs.get("pk"),
             student_exam__exam__teacher=self.request.user.teacher,
-            student_exam__status__in=['SUBMITTED', 'EVALUATED']
-        ).select_related(
-            'student_exam',
-            'question'
-        )
+            student_exam__status__in=["SUBMITTED", "EVALUATED"],
+        ).select_related("student_exam", "question")
 
     @transaction.atomic
     def update(self, request, pk=None, *args, **kwargs):
-        answers_data = request.data.get('answers', [])
-        
+        answers_data = request.data.get("answers", [])
+
         if not answers_data or not isinstance(answers_data, list):
             return Response(
                 {"detail": "No answers provided for evaluation"},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         student_exam = get_object_or_404(
-            StudentExam.objects.select_related('exam__teacher'),
+            StudentExam.objects.select_related("exam__teacher"),
             id=pk,
             exam__teacher=request.user.teacher,
-            status__in=['SUBMITTED', 'EVALUATED']
+            status__in=["SUBMITTED", "EVALUATED"],
         )
 
         student_answers = self.get_queryset()
         if not student_answers:
             return Response(
                 {"detail": "No submitted answers found for evaluation"},
-                status=status.HTTP_404_NOT_FOUND
+                status=status.HTTP_404_NOT_FOUND,
             )
 
         answer_dict = {str(answer.id): answer for answer in student_answers}
         updated_answers = []
-        total_score = Decimal('0.0')
+        total_score = Decimal("0.0")
 
         try:
             for answer_data in answers_data:
-                answer_id = str(answer_data.get('id'))
+                answer_id = str(answer_data.get("id"))
                 if answer_id not in answer_dict:
                     raise ValueError(f"Invalid answer ID: {answer_id}")
 
                 # Ensure marks_obtained is a valid number or 0
-                marks = answer_data.get('marks_obtained')
-                if marks is None or marks == '':
-                    answer_data['marks_obtained'] = 0
+                marks = answer_data.get("marks_obtained")
+                if marks is None or marks == "":
+                    answer_data["marks_obtained"] = 0
                 else:
                     try:
-                        answer_data['marks_obtained'] = float(marks)
+                        answer_data["marks_obtained"] = float(marks)
                     except (TypeError, ValueError):
-                        answer_data['marks_obtained'] = 0
+                        answer_data["marks_obtained"] = 0
 
                 answer = answer_dict[answer_id]
                 serializer = self.get_serializer(answer, data=answer_data, partial=True)
                 serializer.is_valid(raise_exception=True)
                 updated_answer = serializer.save(evaluated_by=request.user.teacher)
-                
+
                 updated_answers.append(serializer.data)
                 # Ensure we're converting a valid number to Decimal
                 marks_obtained = updated_answer.marks_obtained or 0
                 total_score += Decimal(str(marks_obtained))
 
-            student_exam.status = 'EVALUATED'
+            student_exam.status = "EVALUATED"
             student_exam.total_score = total_score
             student_exam.save()
 
-            return Response({
-                'detail': 'Evaluation submitted successfully',
-                'student_exam_id': student_exam.id,
-                'total_score': float(total_score),
-                'answers': updated_answers
-            }, status=status.HTTP_200_OK)
+            return Response(
+                {
+                    "detail": "Evaluation submitted successfully",
+                    "student_exam_id": student_exam.id,
+                    "total_score": float(total_score),
+                    "answers": updated_answers,
+                },
+                status=status.HTTP_200_OK,
+            )
 
         except ValueError as e:
-            return Response(
-                {"detail": str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response(
                 {"detail": f"An error occurred: {str(e)}"},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
-        
+
+
 class TeacherExamSubmissionsView(generics.ListAPIView):
     serializer_class = StudentExamDetailSerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = None
-    
+
     def get_queryset(self):
-        exam_id = self.kwargs.get('exam_id')
-        if hasattr(self.request.user, 'teacher'):
-            return StudentExam.objects.filter(
-                exam_id=exam_id,
-                exam__teacher=self.request.user.teacher,
-                status__in=['SUBMITTED', 'EVALUATED']
-            ).select_related(
-                'student__user',
-                'exam__subject'
-            ).prefetch_related(
-                'student_answers__question',
-                'student_answers__selected_choice'
+        exam_id = self.kwargs.get("exam_id")
+        if hasattr(self.request.user, "teacher"):
+            return (
+                StudentExam.objects.filter(
+                    exam_id=exam_id,
+                    exam__teacher=self.request.user.teacher,
+                    status__in=["SUBMITTED", "EVALUATED"],
+                )
+                .select_related("student__user", "exam__subject")
+                .prefetch_related(
+                    "student_answers__question", "student_answers__selected_choice"
+                )
             )
         return StudentExam.objects.none()
-    
+
 
 class TeacherExamResultsView(generics.ListAPIView):
     serializer_class = ExamResultSerializer
     permission_classes = [permissions.IsAuthenticated]
-    
+
     def get_queryset(self):
-        if hasattr(self.request.user, 'teacher'):
+        if hasattr(self.request.user, "teacher"):
             return StudentExam.objects.filter(
-                exam__teacher = self.request.user.teacher
-            ).select_related('student__user', 'exam')
+                exam__teacher=self.request.user.teacher
+            ).select_related("student__user", "exam")
         return StudentExam.objects.none()
-    
-    
-    
+
 
 class TeacherStatsAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -648,7 +627,9 @@ class TeacherStatsAPIView(APIView):
             return Response({"error": "Teacher profile not found."}, status=404)
 
         # Count students where the section's class_teacher is the current teacher
-        total_students = Student.objects.filter(class_assigned__class_teacher=teacher).count()
+        total_students = Student.objects.filter(
+            class_assigned__class_teacher=teacher
+        ).count()
 
         data = {
             "total_students": total_students,
@@ -666,17 +647,18 @@ class TeacherRecentSubmissionsAPIView(APIView):
             return Response({"error": "Teacher profile not found."}, status=404)
 
         submissions = AssignmentSubmission.objects.filter(
-            assignment__teacher=teacher,
-            is_submitted=True
-        ).order_by('-submitted_at')[:5]
+            assignment__teacher=teacher, is_submitted=True
+        ).order_by("-submitted_at")[:5]
 
         submissions_data = []
         for sub in submissions:
-            submissions_data.append({
-                "student_name": f"{sub.student.user.first_name} {sub.student.user.last_name}",
-                "assignment_title": sub.assignment.title,
-                "submitted_at": sub.submitted_at,
-            })
+            submissions_data.append(
+                {
+                    "student_name": f"{sub.student.user.first_name} {sub.student.user.last_name}",
+                    "assignment_title": sub.assignment.title,
+                    "submitted_at": sub.submitted_at,
+                }
+            )
 
         return Response(submissions_data)
 
@@ -691,18 +673,18 @@ class TeacherPendingAssignmentsAPIView(APIView):
             return Response({"error": "Teacher profile not found."}, status=404)
 
         pending = AssignmentSubmission.objects.filter(
-            assignment__teacher=teacher,
-            is_submitted=True,
-            grade__isnull=True
-        ).order_by('submitted_at')
+            assignment__teacher=teacher, is_submitted=True, grade__isnull=True
+        ).order_by("submitted_at")
 
         pending_data = []
         for sub in pending:
-            pending_data.append({
-                "student_name": f"{sub.student.user.first_name} {sub.student.user.last_name}",
-                "assignment_title": sub.assignment.title,
-                "submitted_at": sub.submitted_at,
-            })
+            pending_data.append(
+                {
+                    "student_name": f"{sub.student.user.first_name} {sub.student.user.last_name}",
+                    "assignment_title": sub.assignment.title,
+                    "submitted_at": sub.submitted_at,
+                }
+            )
 
         return Response(pending_data)
 
@@ -715,7 +697,7 @@ class TeacherAttendanceOverviewAPIView(APIView):
             teacher = request.user.teacher
         except Teacher.DoesNotExist:
             return Response({"error": "Teacher profile not found."}, status=404)
-        
+
         today = timezone.now().date()
         records = Attendance.objects.filter(marked_by=teacher, date=today)
         # Group attendance by class name
@@ -736,18 +718,17 @@ class TeacherAttendanceOverviewAPIView(APIView):
         for class_name, counts in overview.items():
             total = counts["present"] + counts["absent"] + counts["late"]
             total_attendance += total
-            details.append({
-                "class_name": class_name,
-                "present": counts["present"],
-                "absent": counts["absent"],
-                "late": counts["late"],
-                "total": total,
-            })
+            details.append(
+                {
+                    "class_name": class_name,
+                    "present": counts["present"],
+                    "absent": counts["absent"],
+                    "late": counts["late"],
+                    "total": total,
+                }
+            )
 
-        data = {
-            "total": total_attendance,
-            "details": details
-        }
+        data = {"total": total_attendance, "details": details}
         return Response(data)
 
 
@@ -759,58 +740,60 @@ class TeacherUpcomingExamsAPIView(APIView):
             teacher = request.user.teacher
         except Teacher.DoesNotExist:
             return Response({"error": "Teacher profile not found."}, status=404)
-        
+
         now = timezone.now()
         exams_qs = Exam.objects.filter(
-            teacher=teacher,
-            start_time__gte=now,
-            status="PUBLISHED"
+            teacher=teacher, start_time__gte=now, status="PUBLISHED"
         ).order_by("start_time")[:3]
 
         exams_data = []
         for exam in exams_qs:
             days_remaining = (exam.start_time.date() - now.date()).days
-            exams_data.append({
-                "exam_title": exam.title,
-                "exam_date": exam.start_time,
-                "class_name": str(exam.class_section),
-                "days_remaining": days_remaining,
-            })
+            exams_data.append(
+                {
+                    "exam_title": exam.title,
+                    "exam_date": exam.start_time,
+                    "class_name": str(exam.class_section),
+                    "days_remaining": days_remaining,
+                }
+            )
         return Response(exams_data)
 
+
 # ----------------------------------------------\
-    
+
 
 class StudentLeaveRequestListView(generics.ListAPIView):
     serializer_class = StudentLeaveRequestSerializer
     permission_classes = [permissions.IsAuthenticated]
-    
+
     def get_queryset(self):
         return StudentLeaveRequest.objects.filter(class_teacher__user=self.request.user)
+
 
 class StudentLeaveRequestDetailView(generics.RetrieveAPIView):
     serializer_class = StudentLeaveRequestSerializer
     permission_classes = [permissions.IsAuthenticated]
-    
+
     def get_queryset(self):
         return StudentLeaveRequest.objects.filter(class_teacher__user=self.request.user)
-            
+
+
 class StudentLeaveResponseView(generics.UpdateAPIView):
     serializer_class = TeacherLeaveResponseSerializer
     permission_classes = [permissions.IsAuthenticated]
-    
+
     def get_queryset(self):
         return StudentLeaveRequest.objects.filter(
-            class_teacher__user=self.request.user,
-            status='PENDING'
+            class_teacher__user=self.request.user, status="PENDING"
         )
-    
+
     def perform_update(self, serializer):
-        if serializer.instance.status != 'PENDING':
+        if serializer.instance.status != "PENDING":
             raise PermissionDenied("This leave request has already been processed")
         serializer.save()
-        
-        
+
+
 # ------------------------------------------
 
 
@@ -818,23 +801,26 @@ class TeacherLeaveRequestListCreateView(generics.ListCreateAPIView):
     serializer_class = TeacherLeaveRequestSerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = PageNumberPagination
-    
+
     def get_queryset(self):
-        return TeacherLeaveRequest.objects.filter(teacher__user=self.request.user).order_by('-applied_on')
+        return TeacherLeaveRequest.objects.filter(
+            teacher__user=self.request.user
+        ).order_by("-applied_on")
+
 
 class TeacherLeaveRequestDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = TeacherLeaveRequestSerializer
     permission_classes = [permissions.IsAuthenticated]
-    
+
     def get_queryset(self):
         return TeacherLeaveRequest.objects.filter(teacher__user=self.request.user)
-    
+
     def perform_destroy(self, instance):
-        if instance.status != 'PENDING':
+        if instance.status != "PENDING":
             raise PermissionDenied("Cannot delete a processed leave request")
         instance.delete()
-    
+
     def perform_update(self, serializer):
-        if serializer.instance.status != 'PENDING':
+        if serializer.instance.status != "PENDING":
             raise PermissionDenied("Cannot update a processed leave request")
         serializer.save()

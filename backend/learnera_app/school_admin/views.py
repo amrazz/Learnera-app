@@ -1,5 +1,4 @@
 import json
-import logging
 import calendar
 from .serializers import *
 from decimal import Decimal

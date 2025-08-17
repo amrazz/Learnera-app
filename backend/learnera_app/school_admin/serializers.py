@@ -7,6 +7,9 @@ from parents.models import (
     StudentFeePayment,
     StudentParentRelationship,
 )
+from django.core.validators import RegexValidator
+from django.utils import timezone
+from datetime import date
 from users.models import CustomUser
 from students.models import Student
 from datetime import datetime
@@ -86,6 +89,65 @@ class CustomUserSerializer(serializers.ModelSerializer):
             "is_active",
         ]
 
+    def validate_username(self, value):
+        if not value.strip():
+            raise serializers.ValidationError("Username is required.")
+
+        if value.startswith("__") or value.startswith("  "):
+            raise serializers.ValidationError(
+                "Username cannot start with spaces or underscores."
+            )
+
+        if CustomUser.objects.filter(username=value).exists():
+            raise serializers.ValidationError("User with same username already exists.")
+
+        return value
+
+    def validate_email(self, value):
+        if CustomUser.objects.filter(email=value).exists():
+            raise serializers.ValidationError("This email is already registered.")
+        return value
+
+    def validate_password(self, value):
+        import re
+
+        if not value.strip():
+            raise serializers.ValidationError("Password is required.")
+        if not re.search(r"[A-Z]", value):
+            raise serializers.ValidationError(
+                "Password must contain at least 1 uppercase letter."
+            )
+        if not re.search(r"\d", value):
+            raise serializers.ValidationError(
+                "Password must contain at least 1 number."
+            )
+        if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", value):
+            raise serializers.ValidationError(
+                "Password must contain at least 1 special character."
+            )
+        return value
+
+    def validate_phone_number(self, value):
+        phone_validator = RegexValidator(
+            r"^\+?\d{10,15}$", "Enter a valid phone number."
+        )
+        phone_validator(value)
+        return value
+
+    def validate_date_of_birth(self, value: date):
+        today = timezone.now().date()
+        age = (
+            today.year
+            - value.year
+            - ((today.month, today.day) < (value.month, value.day))
+        )
+
+        # student role
+        if self.initial_data.get("is_student") and age < 5:
+            raise serializers.ValidationError("Students must be at least 5 years old.")
+
+        return value
+
     def create(self, validated_data):
         password = validated_data.pop("password")
         user = CustomUser(**validated_data)
@@ -106,6 +168,16 @@ class SchoolAdminStudentSerializers(serializers.ModelSerializer):
             "admission_number",
             "class_assigned",
         ]
+
+    def validate_admission_number(self, value):
+        if not value.strip():
+            raise serializers.ValidationError("Admission number cannot be empty.")
+        return value
+
+    def validate_class_assigned(self, value):
+        if not value:
+            raise serializers.ValidationError("Class is not provided.")
+        return value
 
     def create(self, validated_data):
         user_data = validated_data.pop("user", {})
@@ -899,8 +971,8 @@ class PasswordChangeSerializer(serializers.Serializer):
 from rest_framework import serializers
 from .models import CustomUser  # Adjust import as needed
 
-class SchoolAdminProfileSerializer(serializers.ModelSerializer):
 
+class SchoolAdminProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
@@ -915,8 +987,8 @@ class SchoolAdminProfileSerializer(serializers.ModelSerializer):
             "state",
             "district",
             "country",
-            "profile_image",         
-            "school_logo",               
+            "profile_image",
+            "school_logo",
         ]
 
     def validate_email(self, value):

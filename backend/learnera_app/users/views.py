@@ -3,6 +3,8 @@ from loguru import logger  # type: ignore
 from rest_framework import generics, status, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
 from rest_framework_simplejwt.tokens import RefreshToken
 from .utils import generate_otp, send_otp
 from .serializers import (
@@ -175,34 +177,50 @@ class ForgetPasswordView(APIView):
         serializer = ForgetPasswordSerializer(data=request.data)
         if serializer.is_valid():
             email = serializer.validated_data["email"]
+
+            # Validate email format
+            try:
+                validate_email(email)
+            except ValidationError:
+                return Response(
+                    {"error": "Please enter a valid email address"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
             try:
                 user = User.objects.get(email=email)
                 logger.info(f"Password reset OTP request for user: {user.username}")
 
-                otp = generate_otp()
-
-                cache_key = f"password_reset_otp_{email}"
-                cache.set(cache_key, otp)
-
+                # Check rate limiting first
                 attempt_key = f"password_reset_attempts_{email}"
-                attempt = cache.set(attempt_key, 0)
-                
-                if not attempt:
-                    attempt = 0
+                attempt = cache.get(attempt_key, 0)
 
                 if attempt >= 5:
                     logger.warning(
-                        f"To many password reset attemps for email : {email}"
+                        f"Too many password reset attempts for email: {email}"
                     )
                     return Response(
                         {"error": "Too many attempts. Please try again later."},
                         status=status.HTTP_429_TOO_MANY_REQUESTS,
                     )
+
+                # Generate and store OTP with explicit timeout
+                otp = generate_otp()
+                cache_key = f"password_reset_otp_{email}"
+                cache.set(cache_key, str(otp), timeout=600)  # 10 minutes timeout
+
+                # Debug: Verify OTP was stored
+                stored_check = cache.get(cache_key)
+                logger.debug(
+                    f"OTP Storage Check - Key: {cache_key}, Stored: '{stored_check}', Original: '{otp}'"
+                )
+
+                # Increment attempt counter
                 cache.set(attempt_key, attempt + 1, timeout=3600)
 
                 try:
                     send_otp(email, otp, "Password Reset")
-                    logger.info(f"Password reset OTP send successfully to : {email} ")
+                    logger.info(f"Password reset OTP sent successfully to: {email}")
 
                     return Response(
                         {
@@ -221,9 +239,7 @@ class ForgetPasswordView(APIView):
             except User.DoesNotExist:
                 logger.warning("Password reset attempted for non-existent email")
                 return Response(
-                    {
-                        "message": "User with email does not exists",
-                    },
+                    {"message": "User with email does not exist"},
                     status=status.HTTP_404_NOT_FOUND,
                 )
         else:
@@ -241,30 +257,62 @@ class VerifyOTPView(APIView):
         if serializer.is_valid():
             email = serializer.validated_data["email"]
             otp = serializer.validated_data["otp"]
-            
-            logger.debug(f"This is the verify data OTP - {otp}, email")
 
             logger.info(f"OTP verification attempt for email: {email}")
+            logger.debug(f"Received OTP: '{otp}'")
+
+            # Check if already verified to prevent multiple verifications
+            verification_key = f"otp_verified_{email}"
+            if cache.get(verification_key):
+                logger.warning(f"OTP already verified for email: {email}")
+                return Response(
+                    {
+                        "error": "OTP already verified. Please proceed to reset password."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
             cache_key = f"password_reset_otp_{email}"
             stored_otp = cache.get(cache_key)
 
+            # Enhanced debugging
+            logger.debug(f"Cache lookup - Key: '{cache_key}'")
+            logger.debug(f"Stored OTP: '{stored_otp}' (type: {type(stored_otp)})")
+            logger.debug(f"Received OTP: '{otp}' (type: {type(otp)})")
+
             if not stored_otp:
-                logger.warning(f"OTP expired or not found.")
+                logger.warning(f"OTP expired or not found for email: {email}")
                 return Response(
                     {"error": "OTP has expired. Please request a new one."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            if str(stored_otp) != str(otp):
+            # Ensure both are strings and strip whitespace for comparison
+            stored_otp_clean = str(stored_otp).strip()
+            received_otp_clean = str(otp).strip()
+
+            logger.debug(
+                f"Cleaned for comparison - Stored: '{stored_otp_clean}', Received: '{received_otp_clean}'"
+            )
+
+            if stored_otp_clean != received_otp_clean:
                 logger.warning("Invalid OTP provided for email: %s", email)
                 return Response(
                     {"error": "Invalid OTP. Please try again."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            verification_key = f"otp_verified_{email}"
-            cache.set(verification_key, True, 900)
+            # Mark OTP as verified with longer timeout for password reset
+            cache.set(verification_key, True, 1800)  # 30 minutes instead of 15
+
+            # Delete the OTP after successful verification to prevent reuse
+            cache.delete(cache_key)
+
+            # Debug: Confirm verification was set
+            verify_check = cache.get(verification_key)
+            logger.debug(
+                f"Verification flag set - Key: '{verification_key}', Value: {verify_check}"
+            )
 
             logger.info("OTP verified successfully for email: %s", email)
             return Response(
@@ -288,60 +336,49 @@ class ResetPasswordConfirmView(APIView):
         serializer = ResetPasswordConfirmSerializer(data=request.data)
         if serializer.is_valid():
             email = serializer.validated_data["email"]
-            otp = serializer.validated_data["otp"]
             new_password = serializer.validated_data["new_password"]
 
             logger.info("Password reset confirmation for email: %s", email)
 
+            # Check if OTP was verified with enhanced debugging
             verification_key = f"otp_verified_{email}"
             is_verified = cache.get(verification_key)
+            
+            logger.debug(f"Password reset verification check - Key: '{verification_key}', Is verified: {is_verified}")
 
             if not is_verified:
-                logger.warning(
-                    "Attempting password reset without OTP verification: %s", email
-                )
+                logger.warning("Attempting password reset without OTP verification: %s", email)
                 return Response(
                     {"error": "OTP verification required. Please verify OTP first."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            cache_key = f"password_reset_otp_{email}"
-            stored_otp = cache.get(cache_key)
-
-            if not stored_otp or str(stored_otp) != str(otp):
-                logger.warning(
-                    "OTP expired or invalid during password reset: %s", email
-                )
-                return Response(
-                    {
-                        "error": "OTP has expired or is invalid. Please start the process again."
-                    },
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
             try:
                 user = User.objects.get(email=email)
+
+                # Validate password length
                 if len(new_password) < 6:
                     return Response(
                         {"error": "Password must be at least 6 characters long."},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
+
+                # Check if new password is different from current password
                 if check_password(new_password, user.password):
                     return Response(
                         {"error": "New password must be different from your current password."},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
 
+                # Set new password
                 user.set_password(new_password)
                 user.save()
 
-                cache.delete(cache_key)  
-                cache.delete(verification_key)  
-                cache.delete(
-                    f"password_reset_attempts_{email}"
-                ) 
+                # Clean up all cache entries related to this password reset
+                cache.delete(verification_key)  # Delete verification flag
+                cache.delete(f"password_reset_attempts_{email}")  # Reset attempt counter
 
-                logger.success("Password reset successful for user: %s", email)
+                logger.info("Password reset successful for user: %s", email)
 
                 return Response(
                     {
@@ -352,9 +389,7 @@ class ResetPasswordConfirmView(APIView):
                 )
 
             except User.DoesNotExist:
-                logger.warning(
-                    "Password reset attempted for non-existent user: %s", email
-                )
+                logger.warning("Password reset attempted for non-existent user: %s", email)
                 return Response(
                     {"error": "User not found. Please check your email address."},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -362,11 +397,15 @@ class ResetPasswordConfirmView(APIView):
             except Exception as e:
                 logger.error("Error during password reset for %s: %s", email, str(e))
                 return Response(
-                    {
-                        "error": "An error occurred while resetting your password. Please try again."
-                    },
+                    {"error": "An error occurred while resetting your password. Please try again."},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
+        else:
+            return Response(
+                {"error": "Invalid data", "details": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
 
 class CheckEmailExistsView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -408,11 +447,21 @@ class ResendOtpView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        attempt_key = f"password_reset_attempts_{email}"
-        attempts = cache.get(attempt_key, 0)
+        # Validate email format
+        try:
+            validate_email(email)
+        except ValidationError:
+            return Response(
+                {"error": "Please enter a valid email address"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-        if attempts >= 5:
-            logger.warning("Too many OTP resend attempts for email: %s", email)
+        # Check rate limiting
+        attempt_key = f"password_reset_attempts_{email}"
+        attempt = cache.get(attempt_key, 0)
+
+        if attempt >= 5:
+            logger.warning(f"Too many password reset attempts for email: {email}")
             return Response(
                 {"error": "Too many attempts. Please try again later."},
                 status=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -420,17 +469,27 @@ class ResendOtpView(APIView):
 
         try:
             user = User.objects.get(email=email)
+            logger.info(f"Resending OTP for user: {user.username}")
 
+            # Generate new OTP
             otp = generate_otp()
 
+            # Store OTP with consistent format and timeout
             cache_key = f"password_reset_otp_{email}"
-            cache.set(cache_key, otp, 600) 
+            cache.set(
+                cache_key, str(otp), timeout=600
+            )  # Fixed: consistent with other views
 
-            cache.set(attempt_key, attempts + 1, 3600)  # 1 hour
+            # Increment attempt counter only once
+            cache.set(
+                attempt_key, attempt + 1, timeout=3600
+            )  # Fixed: removed duplicate increment
 
             try:
                 send_otp(email, otp, "Password Reset - Resend")
-                logger.success("OTP resent successfully to: %s", email)
+                logger.info(
+                    "OTP resent successfully to: %s", email
+                )  # Fixed: logger.success doesn't exist
 
                 return Response(
                     {
@@ -447,9 +506,14 @@ class ResendOtpView(APIView):
                 )
 
         except User.DoesNotExist:
+            logger.warning("Resend OTP attempted for non-existent email")
+            # Still increment attempts to prevent email enumeration attacks
+            cache.set(attempt_key, attempt + 1, timeout=3600)
+
+            # Security: Don't reveal whether email exists or not
             return Response(
                 {
-                    "message": "If this email exists, you will receive an OTP shortly",
+                    "message": "If this email exists in our system, you will receive an OTP shortly",
                     "email": email,
                 },
                 status=status.HTTP_200_OK,

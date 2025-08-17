@@ -149,7 +149,7 @@ class MyAttendanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Attendance
         fields = ["id", "student_name", "class_name", "section_name", "status", "date"]
-    
+
     def get_student_name(self, obj):
         return f"{obj.student.user.first_name} {obj.student.user.last_name}"
 
@@ -162,50 +162,65 @@ class AttendanceStatisticsSerializer(serializers.Serializer):
     attendance_percentage = serializers.FloatField()
 
 
-
-
 class StudentLeaveRequestSerializer(serializers.ModelSerializer):
     student_name = serializers.SerializerMethodField()
     class_teacher_name = serializers.SerializerMethodField()
-    
-    class Meta:
-        model = StudentLeaveRequest
-        fields = ['id', 'student_name', 'class_teacher_name', 'leave_type',
-            'start_date', 'end_date', 'status', 'applied_on', 'reason', 'supporting_document', 'response_comment']
-    
-    def get_student_name(self, obj):
-        return f"{obj.student.user.first_name} {obj.student.user.last_name}"
-    
-    def get_class_teacher_name(self, obj):
-        return f"{obj.class_teacher.user.first_name} {obj.class_teacher.user.last_name}"
-    
-    
-class StudentLeaveRequestDetailSerializer(serializers.ModelSerializer):
-    student_name = serializers.SerializerMethodField()
-    class_teacher_name = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = StudentLeaveRequest
         fields = [
-            'id', 'student_name', 'class_teacher_name', 'leave_type',
-            'start_date', 'end_date', 'reason', 'supporting_document',
-            'status', 'applied_on', 'response_comment'
+            "id",
+            "student_name",
+            "class_teacher_name",
+            "leave_type",
+            "start_date",
+            "end_date",
+            "status",
+            "applied_on",
+            "reason",
+            "supporting_document",
+            "response_comment",
         ]
-        read_only_fields = ['student', 'class_teacher', 'status', 'applied_on']
-        
+
     def get_student_name(self, obj):
         return f"{obj.student.user.first_name} {obj.student.user.last_name}"
-    
+
     def get_class_teacher_name(self, obj):
         return f"{obj.class_teacher.user.first_name} {obj.class_teacher.user.last_name}"
-    
+
+
+class StudentLeaveRequestDetailSerializer(serializers.ModelSerializer):
+    student_name = serializers.SerializerMethodField()
+    class_teacher_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = StudentLeaveRequest
+        fields = [
+            "id",
+            "student_name",
+            "class_teacher_name",
+            "leave_type",
+            "start_date",
+            "end_date",
+            "reason",
+            "supporting_document",
+            "status",
+            "applied_on",
+            "response_comment",
+        ]
+        read_only_fields = ["student", "class_teacher", "status", "applied_on"]
+
+    def get_student_name(self, obj):
+        return f"{obj.student.user.first_name} {obj.student.user.last_name}"
+
+    def get_class_teacher_name(self, obj):
+        return f"{obj.class_teacher.user.first_name} {obj.class_teacher.user.last_name}"
+
     def create(self, validated_data):
-        student = Student.objects.get(user=self.context['request'].user)
+        student = Student.objects.get(user=self.context["request"].user)
         class_teacher = student.class_assigned.class_teacher
-        
+
         leave_request = StudentLeaveRequest.objects.create(
-            student=student,
-            class_teacher=class_teacher,
-            **validated_data
+            student=student, class_teacher=class_teacher, **validated_data
         )
         return leave_request

@@ -5,6 +5,7 @@ from django.core.validators import FileExtensionValidator
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
 
+
 class Subject(models.Model):
     subject_name = models.CharField(max_length=100)
 
@@ -189,23 +190,31 @@ class Exam(models.Model):
     )
 
     title = models.CharField(max_length=100)
-    description = models.TextField(null = True, blank=True)
+    description = models.TextField(null=True, blank=True)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
-    class_section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name="exam_class", null=True, blank=True)
+    class_section = models.ForeignKey(
+        Section,
+        on_delete=models.CASCADE,
+        related_name="exam_class",
+        null=True,
+        blank=True,
+    )
     total_mark = models.PositiveIntegerField()
-    duration = models.DecimalField(max_digits=5, decimal_places=2, help_text="Duration in minutes")
+    duration = models.DecimalField(
+        max_digits=5, decimal_places=2, help_text="Duration in minutes"
+    )
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
     meet_link = models.URLField(max_length=250)
     status = models.CharField(max_length=20, choices=EXAM_STATUS, default="PUBLISHED")
-    
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.title} - {self.subject} "
-    
+
     def is_active(self):
         now = timezone.now()
         return self.start_time <= now <= self.end_time
@@ -214,75 +223,91 @@ class Exam(models.Model):
 class Question(models.Model):
     QUESTION_TYPES = (
         ("MCQ", "Multiple Choice Questions"),
-        ("ESSAY", "Essay/Descriptive")
+        ("ESSAY", "Essay/Descriptive"),
     )
-    
-    exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name="exam_questions")
+
+    exam = models.ForeignKey(
+        Exam, on_delete=models.CASCADE, related_name="exam_questions"
+    )
     question_text = models.TextField()
     question_type = models.CharField(max_length=20, choices=QUESTION_TYPES)
     marks = models.PositiveIntegerField()
     order = models.PositiveIntegerField(help_text="Question number/order in exam")
-    
+
     class Meta:
-        ordering = ['order']
-        
+        ordering = ["order"]
+
+
 class MCQChoice(models.Model):
-    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='choice_questions')
+    question = models.ForeignKey(
+        Question, on_delete=models.CASCADE, related_name="choice_questions"
+    )
     choice_text = models.CharField(max_length=500)
     is_correct = models.BooleanField(default=False)
-    
+
 
 class StudentExam(models.Model):
     EXAM_STATUS = (
-        ('NOT_STARTED', 'Not Started'),
-        ('IN_PROGRESS', 'In Progress'),
-        ('SUBMITTED', 'Submitted'),
-        ('EVALUATED', 'Evaluated')
+        ("NOT_STARTED", "Not Started"),
+        ("IN_PROGRESS", "In Progress"),
+        ("SUBMITTED", "Submitted"),
+        ("EVALUATED", "Evaluated"),
     )
-    
+
     student = models.ForeignKey("students.Student", on_delete=models.CASCADE)
     exam = models.ForeignKey(Exam, on_delete=models.CASCADE)
     start_time = models.DateTimeField(null=True, blank=True)
     submit_time = models.DateTimeField(null=True, blank=True)
-    status = models.CharField(max_length=20, choices=EXAM_STATUS, default='NOT_STARTED')
-    total_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    status = models.CharField(max_length=20, choices=EXAM_STATUS, default="NOT_STARTED")
+    total_score = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True
+    )
 
     class Meta:
-        unique_together = ('student', 'exam')
-        
+        unique_together = ("student", "exam")
+
 
 class StudentAnswer(models.Model):
-    student_exam = models.ForeignKey(StudentExam, on_delete=models.CASCADE, related_name='student_answers')
+    student_exam = models.ForeignKey(
+        StudentExam, on_delete=models.CASCADE, related_name="student_answers"
+    )
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     answer_text = models.TextField(null=True, blank=True)
-    selected_choice = models.ForeignKey(MCQChoice, on_delete=models.CASCADE, null=True, blank=True)
-    marks_obtained = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
-    evaluated_by = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, blank=True)
+    selected_choice = models.ForeignKey(
+        MCQChoice, on_delete=models.CASCADE, null=True, blank=True
+    )
+    marks_obtained = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True
+    )
+    evaluated_by = models.ForeignKey(
+        Teacher, on_delete=models.SET_NULL, null=True, blank=True
+    )
     evaluation_comment = models.TextField(null=True, blank=True)
-    
-    class Meta:
-        unique_together = ('student_exam', 'question')
-        
-        
-# ------------------------------------------
 
+    class Meta:
+        unique_together = ("student_exam", "question")
+
+
+# ------------------------------------------
 
 
 class TeacherLeaveRequest(models.Model):
     LEAVE_TYPE_CHOICES = [
-        ('SICK', 'Sick Leave'),
-        ('PERSONAL', 'Personal Leave'),
-        ('FAMILY', 'Family Emergency'),
-        ('OTHER', 'Other'),
+        ("SICK", "Sick Leave"),
+        ("PERSONAL", "Personal Leave"),
+        ("FAMILY", "Family Emergency"),
+        ("OTHER", "Other"),
     ]
-    
+
     STATUS_CHOICES = [
-        ('PENDING', 'Pending'),
-        ('APPROVED', 'Approved'),
-        ('REJECTED', 'Rejected'),
+        ("PENDING", "Pending"),
+        ("APPROVED", "Approved"),
+        ("REJECTED", "Rejected"),
     ]
-    
-    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name="leave_requests")
+
+    teacher = models.ForeignKey(
+        Teacher, on_delete=models.CASCADE, related_name="leave_requests"
+    )
     leave_type = models.CharField(max_length=50, choices=LEAVE_TYPE_CHOICES)
     start_date = models.DateField()
     end_date = models.DateField()

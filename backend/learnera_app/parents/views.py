@@ -47,24 +47,7 @@ from reportlab.lib.enums import TA_RIGHT, TA_CENTER, TA_LEFT
 from io import BytesIO
 import requests
 from PIL import Image as PILImage
-import logging
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
-
-# handler = logging.FileHandler('media/logs/parent_views_log.log')
-handler = logging.FileHandler('parent_views_log.log')
-handler.setLevel(logging.DEBUG)
-
-
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-
-if not logger.hasHandlers():
-    logger.addHandler(handler)
-
-# Create your views here.
+from loguru import logger
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -275,7 +258,7 @@ class GenerateInvoicePDF(generics.RetrieveAPIView):
                     spaceAfter=5,
                     spaceBefore=0,
                     leading=14,
-                    fontName="Helvetica", 
+                    fontName="Helvetica",
                 )
             )
             styles.add(

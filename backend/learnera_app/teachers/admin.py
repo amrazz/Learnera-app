@@ -1,5 +1,15 @@
 from django.contrib import admin
-from .models import AcademicYear, Attendance, Exam, StudentAnswer, StudentExam, Subject, SchoolClass, Teacher, Section
+from .models import (
+    AcademicYear,
+    Attendance,
+    Exam,
+    StudentAnswer,
+    StudentExam,
+    Subject,
+    SchoolClass,
+    Teacher,
+    Section,
+)
 
 # Register your models here.
 

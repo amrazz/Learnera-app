@@ -5,5 +5,3 @@ from .models import Student, StudentLeaveRequest
 
 admin.site.register(Student)
 admin.site.register(StudentLeaveRequest)
-
-

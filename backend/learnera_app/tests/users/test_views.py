@@ -76,13 +76,13 @@ def test_set_password(user, client):
 
     assert response.status_code == 200
     assert response.data["message"] == "Password set successfully"
-    
-    
+
+
 @pytest.mark.django_db
 def test_set_password_mismatch(user, client):
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     token = default_token_generator.make_token(user)
-    
+
     url = reverse("set-password", args=[uid, token])
     payload = dict(new_password="FalsePass@123", confirm_password="FalsePass@321")
 
